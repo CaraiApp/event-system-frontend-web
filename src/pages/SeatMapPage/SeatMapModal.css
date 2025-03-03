@@ -1,0 +1,14 @@
+.custom-swal-button {
+    background-color: #333 !important; /* Dark background */
+    color: #fff !important; /* White text */
+    border: none !important; /* Remove border */
+    border-radius: 4px !important; /* Optional: Add rounded corners */
+    padding: 10px 20px !important; /* Optional: Adjust padding */
+    font-weight: bold !important; /* Optional: Make the text bold */
+    cursor: pointer !important; /* Show a pointer cursor */
+  }
+  
+  .custom-swal-button:hover {
+    background-color: #555 !important; /* Lighter dark background on hover */
+  }
+  
