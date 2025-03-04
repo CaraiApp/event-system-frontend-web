@@ -90,7 +90,7 @@ const SeatMapPage = ({formData, gallery, template}) => {
    setIsLoading(true); // Set loading state to true when request starts
     try {
       // Make the API request using Axios
-      const response = await axios.post('https://demoticket.inasnapmarketing.ai/api/v1/events/createEvent', formDataPayload, {
+      const response = await axios.post(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/createEvent`, formDataPayload, {
         headers: {
           'Content-Type': 'multipart/form-data', // Adjust header for FormData
           'Authorization': `Bearer ${token}`,   // Add the token to the Authorization header

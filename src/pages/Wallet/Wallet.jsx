@@ -26,7 +26,7 @@ const Wallet = () => {
       const fetchReceipt = async () => {
         try {
           const response = await axios.get(
-            `https://demoticket.inasnapmarketing.ai/api/v1/booking/sessionBookingDetails`,
+            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/sessionBookingDetails`,
             {
               params: { session_id: sessionId },
               responseType: "blob", // Important for handling file responses
@@ -95,7 +95,7 @@ const Wallet = () => {
     
     if (token) {
       try {
-        const response = await axios.get('https://demoticket.inasnapmarketing.ai/api/v1/users/getUser', {
+        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },
@@ -116,7 +116,7 @@ const Wallet = () => {
     const fetchPayments = async () => {
       try {
         const response = await axios.get(
-          `https://demoticket.inasnapmarketing.ai/api/v1/booking/getuserbooking?user_id=${user?._id}`,
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/getuserbooking?user_id=${user?._id}`,
          
         );
         setPayments(response.data.data);

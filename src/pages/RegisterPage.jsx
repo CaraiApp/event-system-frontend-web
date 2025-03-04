@@ -214,7 +214,7 @@ const SignUp = () => {
       setLoading(true);
 
       // Simulate API call
-      const response = await fetch("https://demoticket.inasnapmarketing.ai/api/v1/users/createUser", {
+      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/createUser`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

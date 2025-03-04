@@ -28,7 +28,7 @@ export default function EventPage() {
 
   const fetchEventData = useMemo(() => {
     return async () => {
-      const url = `https://demoticket.inasnapmarketing.ai/api/v1/events/getsingleEvent?id=${id}`;
+      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getsingleEvent?id=${id}`;
       try {
         const response = await axios.get(url);
         setEventData(response.data.data);
@@ -61,7 +61,7 @@ export default function EventPage() {
       const fetchPayments = async () => {
         try {
           const response = await axios.get(
-            `https://demoticket.inasnapmarketing.ai/api/v1/booking/geteventbooking?event_id=${eventData._id}`
+            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/geteventbooking?event_id=${eventData._id}`
           );
           setPayments(response.data.data);
         } catch (error) {

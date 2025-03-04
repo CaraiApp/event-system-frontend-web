@@ -139,7 +139,7 @@ const Header = () => {
   const fetchUser = async () => {
     if (token) {
       try {
-        const response = await axios.get('https://demoticket.inasnapmarketing.ai/api/v1/users/getUser', {
+        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },

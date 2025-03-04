@@ -70,7 +70,7 @@ console.log(updatedEvent, 'updated event')
 
   const fetchAllEvents = async () => {
     try {
-      const response = await axios.get("https://demoticket.inasnapmarketing.ai/api/v1/events/getAllEvents");
+      const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getAllEvents`);
       setEvents(response.data.data);
      
     } catch (error) {
@@ -82,7 +82,7 @@ console.log(updatedEvent, 'updated event')
 
     try {
       const response = await axios.patch(
-        `https://demoticket.inasnapmarketing.ai/api/v1/events/publishedEvent`,
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/publishedEvent`,
         {eventId},  // If you need to send additional data in the body, add it here
         {
           headers: {
@@ -99,7 +99,7 @@ console.log(updatedEvent, 'updated event')
   const handleFeature = async (eventId) => {
     try {
       const response = await axios.patch(
-        `https://demoticket.inasnapmarketing.ai/api/v1/events/featuredEvent`,
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/featuredEvent`,
         {eventId},  // If you need to send additional data in the body, add it here
         {
           headers: {
@@ -161,7 +161,7 @@ console.log(updatedEvent, 'updated event')
     }
     try {
       await axios.put(
-        `https://demoticket.inasnapmarketing.ai/api/v1/events/updateEvent?id=${selectedEvent._id}`,
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/updateEvent?id=${selectedEvent._id}`,
         payload,
         {
           headers: {
@@ -191,7 +191,7 @@ console.log(updatedEvent, 'updated event')
     if (result.isConfirmed) {
       try {
         const response = await axios.patch(
-          `https://demoticket.inasnapmarketing.ai/api/v1/events/deleteEvent?id=${eventId}`,
+          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/deleteEvent?id=${eventId}`,
           {}, // Additional data (if any) can be sent in the body here
           {
             headers: {

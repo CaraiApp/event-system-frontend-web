@@ -15,7 +15,7 @@ const SearchBar = ({ setEvents }) => {
 
     try {
       const response = await axios.get(
-        `https://demoticket.inasnapmarketing.ai/api/v1/events/search/getEventBySearch?name=${value}`
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/search/getEventBySearch?name=${value}`
       );
       const suggestions = response.data.data.map((event) => event.name);
       setEventSuggestions(suggestions);
@@ -36,7 +36,7 @@ const SearchBar = ({ setEvents }) => {
 
     try {
       const response = await axios.get(
-        `https://demoticket.inasnapmarketing.ai/api/v1/events/search/getEventBySearch?name=${name}&area=${area}`
+        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/search/getEventBySearch?name=${name}&area=${area}`
       );
       setEvents(response.data.data);
     } catch (error) {

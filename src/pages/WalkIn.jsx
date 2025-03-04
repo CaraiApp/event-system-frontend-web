@@ -23,7 +23,7 @@ const WalkIn = () => {
 
       // Determine the appropriate URL based on the user role
       const url =
-      'https://demoticket.inasnapmarketing.ai/api/v1/events/walk-in';
+      `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/walk-in`;
       try {
         const response = await axios.get(url , {
           headers: {

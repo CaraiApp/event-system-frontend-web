@@ -27,7 +27,7 @@ const Home = () => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
-        const response = await axios.get('https://demoticket.inasnapmarketing.ai/api/v1/users/getUser', {
+        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },
@@ -59,8 +59,8 @@ const Home = () => {
       // Determine the appropriate URL based on the user role
       const url =
         userRole === "organizer"
-          ? `https://demoticket.inasnapmarketing.ai/api/v1/events/getuserEvent`
-          : "https://demoticket.inasnapmarketing.ai/api/v1/events/getAllEvents";
+          ? `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getuserEvent`
+          : `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getAllEvents`;
       try {
         const response = await axios.get(url , {
           headers: {

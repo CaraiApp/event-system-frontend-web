@@ -27,7 +27,7 @@ const [user, setUser] = useState(null);
     
         if (token) {
           try {
-            const response = await axios.get('https://demoticket.inasnapmarketing.ai/api/v1/users/getUser', {
+            const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
               headers: {
                 Authorization: `Bearer ${token}`, // Add token in headers
               },
@@ -61,7 +61,7 @@ const [user, setUser] = useState(null);
        console.log(payloadData)
         try {
           const response = await axios.post(
-            "https://demoticket.inasnapmarketing.ai/api/v1/booking/stripe",
+            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/stripe`,
             payloadData
           );
             console.log(response)
