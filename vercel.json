@@ -1,12 +1,3 @@
 {
-<<<<<<< HEAD
     "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
   }
-=======
-  "build": {
-    "env": {
-      "NPM_FLAGS": "--legacy-peer-deps"
-    }
-  }
-}
->>>>>>> b6960ab5ff1fcf0b4cc14ae15bab003a7aa2bf1e
