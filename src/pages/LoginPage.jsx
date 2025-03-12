@@ -159,7 +159,6 @@ import {
   Button,
   CssBaseline,
   TextField,
-  Link,
   Grid,
   Typography,
   Container,
@@ -170,6 +169,7 @@ import {
   Box,
   CircularProgress,
 } from "@mui/material";
+import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useRef } from "react";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
@@ -345,14 +345,14 @@ const SignIn = () => {
                   </Grid>
                 </Grid>
 
-                <Grid container justifyContent="center">
-                  {/* <Grid item>
-                    <Link href="#" variant="body2">
-                      Forgot password?
-                    </Link>
-                  </Grid> */}
+                <Grid container justifyContent="space-between" style={{marginTop: '10px'}}>
                   <Grid item>
-                    <Link href="/register" variant="body2" style={{fontSize: 16, fontWeight: 'bold'}}>
+                    <Link to="/forgot-password" variant="body2" style={{textDecoration: 'none', color: '#6497df'}}>
+                      ¿Olvidaste tu contraseña?
+                    </Link>
+                  </Grid>
+                  <Grid item>
+                    <Link to="/register" variant="body2" style={{fontSize: 16, fontWeight: 'bold', textDecoration: 'none', color: '#6497df'}}>
                       {"¿No tienes una cuenta? Inscribirse"}
                     </Link>
                   </Grid>

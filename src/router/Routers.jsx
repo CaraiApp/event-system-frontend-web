@@ -61,6 +61,8 @@ import React from 'react'
 import {Routes, Route, Navigate} from 'react-router-dom'
 import Login from "../pages/LoginPage"
 import Register from "../pages/RegisterPage"
+import ForgotPassword from "../pages/ForgotPassword"
+import ResetPassword from "../pages/ResetPassword"
 import CreateEvent from "../pages/CreateEvent"
 import Home from '../pages/Home';
 import Events from '../pages/Events';
@@ -78,6 +80,16 @@ import WalkIn from '../pages/WalkIn'
 import SeatMapModal from '../pages/SeatMapPage/SeatMapPage'
 import OrganizorMapPage from '../pages/OrganizerMap/OrganizorMapPage'
 import PaymentSuccess from '../pages/PaymentSuccess'
+
+// Placeholder for VerifyEmail component - will need to be created
+const VerifyEmail = () => {
+  return (
+    <div className="p-8 text-center">
+      <h2 className="text-2xl font-bold mb-4">Verificación de correo electrónico</h2>
+      <p>Verificando tu dirección de correo electrónico...</p>
+    </div>
+  );
+};
 // import About from '../pages/About'
 // import Login from '../pages/Login'
 // import Register from '../pages/Register'
@@ -133,16 +145,15 @@ const Routers = () => {
     <>
 
     <Routes>
-      {/* Public Routes */}
+      {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      {/* <Route path="/" element={<Navigate to="/CreateEvent" />} />
-      <Route path="/create-event" element={<CreateEvent/> } /> */}
-
-
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/verify-email/:token" element={<VerifyEmail />} />
       
-
-   <Route path="/" element={<Navigate to="/home" />} />
+      {/* Main Routes */}   
+      <Route path="/" element={<Navigate to="/home" />} />
       <Route path="/home" element={<Home />} />
       <Route path="/create-event" element={<PrivateRoute element={<CreateEvent />} />} />
       <Route path="/events"  element={<Events />}  />
@@ -159,7 +170,7 @@ const Routers = () => {
       <Route path="/team" element={<PrivateRoute element={<Team />} />} />
       <Route path="/gallery" element={<PrivateRoute element={<Gallery />} />} />
       <Route path="/walk-in-events" element={<WalkIn  />} />
- <Route path="/template" element={<OrganizorMapPage />} />
+      <Route path="/template" element={<OrganizorMapPage />} />
    
       <Route path="/events/search" element={<SearchResultList />} />
       <Route path="/notification" element={<Notification />} />
