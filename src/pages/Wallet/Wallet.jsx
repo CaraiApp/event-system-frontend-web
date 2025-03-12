@@ -220,14 +220,4 @@ const Wallet = () => {
   );
 };
 
-export default Wallet;</function_results>
-
-<function_results>
-<error>String to replace and new_string are required parameters. new_string cannot be empty or missing. Please provide a valid replacement string.</error>
-</function_results>
-
-Ahora vamos a subir estos cambios al frontend:
-
-<function_calls>
-<invoke name="Bash">
-<parameter name="command">cd /Users/luiscrouseillesvillena/MisProyectos/V2.EntradasMelilla/event-system-frontend-web-main && git add src/pages/Wallet/Wallet.jsx && git commit -m "Fix API endpoints in Wallet component and add error handling" && git push
+export default Wallet;
