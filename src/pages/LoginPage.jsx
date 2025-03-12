@@ -215,8 +215,8 @@ const SignIn = () => {
       // Set loading state to true while making the request
       setLoading(true);
 
-      // Simulate API call
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/loginUser`, {
+      // Use absolute URL directly for testing
+      const response = await fetch('https://event-system-backend-production.up.railway.app/api/v1/users/loginUser', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
