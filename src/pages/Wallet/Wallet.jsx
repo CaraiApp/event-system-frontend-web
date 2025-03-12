@@ -26,7 +26,7 @@ const Wallet = () => {
       const fetchReceipt = async () => {
         try {
           const response = await axios.get(
-            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/sessionBookingDetails`,
+            `https://event-system-backend-production.up.railway.app/api/v1/booking/sessionBookingDetails`,
             {
               params: { session_id: sessionId },
               responseType: "blob", // Important for handling file responses
@@ -95,7 +95,7 @@ const Wallet = () => {
     
     if (token) {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
+        const response = await axios.get(`https://event-system-backend-production.up.railway.app/api/v1/users/getSingleUser`, {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },
@@ -115,9 +115,14 @@ const Wallet = () => {
     // Fetch payments history
     const fetchPayments = async () => {
       try {
+        console.log("Fetching bookings for user:", user?._id);
         const response = await axios.get(
-          `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/getuserbooking?user_id=${user?._id}`,
-         
+          `https://event-system-backend-production.up.railway.app/api/v1/booking/getuserbooking?user_id=${user?._id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`, // Add token in headers
+            }
+          }
         );
         setPayments(response.data.data);
       } catch (error) {
@@ -127,15 +132,31 @@ const Wallet = () => {
 
     fetchPayments();
   }, [user]);
+  // Add debug information to check what's happening
+  console.log("Rendering Wallet component with user:", user);
+  console.log("Payments available:", payments);
+
   return (
     <Box sx={{ padding: 3, marginTop: 10 }}>
     <Typography variant="h4" gutterBottom sx={{textAlign: 'center', fontWeight: 'bold'}}>
     Administre su billetera e historial de pagos aquí
-
-
     </Typography>
+    
+    {/* Show loading or error state */}
+    {!user && (
+      <Typography variant="body1" sx={{textAlign: 'center'}}>
+        Cargando información del usuario...
+      </Typography>
+    )}
+    
+    {user && payments.length === 0 && (
+      <Typography variant="body1" sx={{textAlign: 'center'}}>
+        No hay pagos o reservas en su historial.
+      </Typography>
+    )}
+    
     <Grid container spacing={3}>
-    {payments.map((payment, index) => (
+    {payments && payments.map((payment, index) => (
   <Grid item xs={12} sm={6} md={4} key={index}>
     <Card sx={{ boxShadow: 3 }}>
       <CardContent>
@@ -199,4 +220,14 @@ const Wallet = () => {
   );
 };
 
-export default Wallet;
+export default Wallet;</function_results>
+
+<function_results>
+<error>String to replace and new_string are required parameters. new_string cannot be empty or missing. Please provide a valid replacement string.</error>
+</function_results>
+
+Ahora vamos a subir estos cambios al frontend:
+
+<function_calls>
+<invoke name="Bash">
+<parameter name="command">cd /Users/luiscrouseillesvillena/MisProyectos/V2.EntradasMelilla/event-system-frontend-web-main && git add src/pages/Wallet/Wallet.jsx && git commit -m "Fix API endpoints in Wallet component and add error handling" && git push
