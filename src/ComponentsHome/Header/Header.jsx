@@ -139,19 +139,24 @@ const Header = () => {
   const fetchUser = async () => {
     if (token) {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
+        console.log("Fetching user with token:", token);
+        // Use direct URL for Railway backend
+        const response = await axios.get(`https://event-system-backend-production.up.railway.app/api/v1/users/getSingleUser`, {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },
         });
+        console.log("User data response:", response.data);
         setUser(response.data.data);
       } catch (error) {
+        console.error('Error fetching user:', error);
         if (error.response && error.response.status === 401) {
           // Clear local storage and handle unauthorized access
+          console.log("Unauthorized access, clearing token");
           localStorage.clear();
           // Optionally, redirect to login page
         } else {
-          console.error('Error fetching user:', error);
+          console.error('Detailed error info:', error.response || error.message || error);
         }
       }
     }
