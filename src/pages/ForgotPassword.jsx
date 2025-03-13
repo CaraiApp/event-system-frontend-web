@@ -67,7 +67,7 @@ export default function ForgotPassword() {
           sx={{ 
             fontWeight: '600',
             textTransform: 'none',
-            fontSize: '1.75rem',
+            fontSize: '2rem',
             color: '#2c3e50',
             mb: 1
           }}
@@ -81,7 +81,7 @@ export default function ForgotPassword() {
           sx={{ 
             mb: 3, 
             textAlign: 'center',
-            fontSize: '1rem',
+            fontSize: '1.2rem',
             maxWidth: '400px',
             lineHeight: 1.5
           }}
@@ -145,7 +145,7 @@ export default function ForgotPassword() {
             onChange={(e) => setEmail(e.target.value.toLowerCase())}
             disabled={isLoading}
             InputProps={{
-              style: { fontSize: '1rem', textTransform: 'lowercase' },
+              style: { fontSize: '1.2rem', textTransform: 'lowercase' },
               inputProps: {
                 style: { textTransform: 'lowercase' }
               }
@@ -155,7 +155,7 @@ export default function ForgotPassword() {
               autoCapitalize: "off"
             }}
             InputLabelProps={{
-              style: { fontSize: '1rem' },
+              style: { fontSize: '1.2rem' },
             }}
             sx={{ 
               "& input": { 

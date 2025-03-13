@@ -175,7 +175,21 @@ import { useNavigate } from "react-router-dom";
 import { useRef } from "react";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
 
-const theme = createTheme();
+const theme = createTheme({
+  typography: {
+    fontSize: 16, // Aumentar el tamaño base de la fuente
+    h5: {
+      fontSize: '1.6rem', // Tamaño más grande para los encabezados h5
+      fontWeight: 600,
+    },
+    body1: {
+      fontSize: '1.1rem', // Texto normal más grande
+    },
+    body2: {
+      fontSize: '1rem', // Texto secundario más grande
+    },
+  },
+});
 
 const CssTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
@@ -349,7 +363,7 @@ const SignIn = () => {
                       inputRef={email}
                       type="email"
                       InputProps={{
-                        style: { fontSize: '1rem', textTransform: 'lowercase' },
+                        style: { fontSize: '1.1rem', textTransform: 'lowercase' },
                         inputProps: {
                           style: { textTransform: 'lowercase' }
                         }
@@ -359,7 +373,7 @@ const SignIn = () => {
                         autoCapitalize: "off"
                       }}
                       InputLabelProps={{
-                        style: { fontSize: '1rem' },
+                        style: { fontSize: '1.1rem' },
                       }}
                       sx={{ 
                         "& input": { 
@@ -378,10 +392,10 @@ const SignIn = () => {
                       inputRef={password}
                       type="password"
                       InputProps={{
-                        style: { fontSize: '1rem' },
+                        style: { fontSize: '1.1rem' },
                       }}
                       InputLabelProps={{
-                        style: { fontSize: '1rem' },
+                        style: { fontSize: '1.1rem' },
                       }}
                     />
                   </Grid>

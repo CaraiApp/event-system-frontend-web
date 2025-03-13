@@ -20,7 +20,7 @@
     transition: 0.2s linear;
 }
 html{
-    font-size: 62.5%;
+    font-size: 80%;  /* Aumentado de 62.5% a 80% */
     overflow-x: hidden;
     scroll-behavior: smooth;
 }
@@ -56,16 +56,16 @@ ul {
 
 @media only screen and (max-width:991px){
     html{
-        font-size: 55%;
+        font-size: 70%;  /* Aumentado de 55% a 70% */
     }
 }
 @media only screen and (max-width:450px){
     html{
-        font-size: 50%;
+        font-size: 65%;  /* Aumentado de 50% a 65% */
     }
 }
 @media only screen and (max-width:370px){
     html{
-        font-size: 40%;
+        font-size: 60%;  /* Aumentado de 40% a 60% */
     }
 }

@@ -131,7 +131,7 @@ export default function ResetPassword() {
           sx={{ 
             fontWeight: '600',
             textTransform: 'none',
-            fontSize: '1.75rem',
+            fontSize: '2rem',
             color: '#2c3e50',
             mb: 1
           }}
@@ -148,7 +148,7 @@ export default function ResetPassword() {
               borderRadius: 1,
               bgcolor: '#e8f5e9',
               color: '#2e7d32',
-              fontSize: '0.95rem',
+              fontSize: '1.2rem',
               display: 'flex',
               alignItems: 'center'
             }}

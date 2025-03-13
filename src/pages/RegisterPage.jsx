@@ -157,7 +157,21 @@ import { Link, useNavigate } from "react-router-dom";
 import { useRef, useState } from "react";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
 
-const theme = createTheme();
+const theme = createTheme({
+  typography: {
+    fontSize: 16, // Aumentar el tamaño base de la fuente
+    h5: {
+      fontSize: '1.6rem', // Tamaño más grande para los encabezados h5
+      fontWeight: 600,
+    },
+    body1: {
+      fontSize: '1.1rem', // Texto normal más grande
+    },
+    body2: {
+      fontSize: '1rem', // Texto secundario más grande
+    },
+  },
+});
 
 const CssTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
@@ -172,13 +186,13 @@ const CssTextField = styled(TextField)({
     }
   },
   "& .MuiInputLabel-root": {
-    fontSize: "1.2rem", // Increase label font size
+    fontSize: "1.3rem", // Increase label font size
   },
   "& .MuiInputBase-input": {
-    fontSize: "1.2rem", // Increase input font size
+    fontSize: "1.3rem", // Increase input font size
   },
   "& .MuiInputBase-input::placeholder": {
-    fontSize: "1rem", // Increase placeholder font size
+    fontSize: "1.1rem", // Increase placeholder font size
   },
 });
 
