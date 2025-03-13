@@ -137,7 +137,7 @@ import {
   TextField,
   FormControlLabel,
   Checkbox,
-  Link,
+  Link as MuiLink,
   Grid,
   Typography,
   Container,
@@ -153,7 +153,7 @@ import {
   CircularProgress,
   Box
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useRef, useState } from "react";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
 
@@ -446,10 +446,6 @@ const SignUp = () => {
                       fontWeight: 'bold', 
                       textDecoration: 'none', 
                       color: '#6497df',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        color: '#3f7ad9',
-                      }
                     }}
                   >
                     ¿Ya tienes una cuenta? Iniciar sesión

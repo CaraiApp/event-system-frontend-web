@@ -168,10 +168,10 @@ import {
   styled,
   Box,
   CircularProgress,
+  Link as MuiLink
 } from "@mui/material";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
 
 const theme = createTheme();
@@ -399,29 +399,20 @@ const SignIn = () => {
 
                 <Grid container justifyContent="space-between" style={{marginTop: '20px'}}>
                   <Grid item>
-                    <Link to="/forgot-password" variant="body2" style={{
+                    <Link to="/forgot-password" style={{
                       textDecoration: 'none', 
                       color: '#6497df',
                       fontSize: '0.95rem',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        color: '#3f7ad9',
-                      }
                     }}>
                       ¿Olvidaste tu contraseña?
                     </Link>
                   </Grid>
                   <Grid item>
-                    <Link to="/register" variant="body2" style={{
+                    <Link to="/register" style={{
                       fontSize: '0.95rem', 
                       fontWeight: 'bold', 
                       textDecoration: 'none', 
                       color: '#6497df',
-                      transition: 'all 0.2s ease',
-                      display: 'inline-block',
-                      '&:hover': {
-                        color: '#3f7ad9',
-                      }
                     }}>
                       ¿No tienes una cuenta? Inscribirse
                     </Link>
