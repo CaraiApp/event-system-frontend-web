@@ -140,8 +140,12 @@ const Header = () => {
     if (token) {
       try {
         console.log("Fetching user with token:", token);
-        // Use direct URL for Railway backend
-        const response = await axios.get(`https://event-system-backend-production.up.railway.app/api/v1/users/getSingleUser`, {
+        
+        // Use Vite environment variable for API URL
+        const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
+        console.log("Using API URL:", apiUrl);
+        
+        const response = await axios.get(`${apiUrl}/api/v1/users/getSingleUser`, {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },
