@@ -155,6 +155,7 @@
 
 
 import * as React from "react";
+import { useState } from "react";
 import {
   Button,
   CssBaseline,
@@ -192,7 +193,7 @@ const CssTextField = styled(TextField)({
 
 const SignIn = () => {
 
-  const [loading, setLoading] = React.useState(false); // Loading state
+  const [loading, setLoading] = useState(false); // Loading state
 
   const mediaLessthanmd = useMediaQuery(theme.breakpoints.down("md"));
   const email = useRef();
@@ -399,29 +400,21 @@ const SignIn = () => {
 
                 <Grid container justifyContent="space-between" style={{marginTop: '20px'}}>
                   <Grid item>
-                    <Link to="/forgot-password" variant="body2" style={{
+                    <Link to="/forgot-password" style={{
                       textDecoration: 'none', 
                       color: '#6497df',
-                      fontSize: '0.95rem',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        color: '#3f7ad9',
-                      }
+                      fontSize: '0.95rem'
                     }}>
                       ¿Olvidaste tu contraseña?
                     </Link>
                   </Grid>
                   <Grid item>
-                    <Link to="/register" variant="body2" style={{
+                    <Link to="/register" style={{
                       fontSize: '0.95rem', 
                       fontWeight: 'bold', 
                       textDecoration: 'none', 
                       color: '#6497df',
-                      transition: 'all 0.2s ease',
-                      display: 'inline-block',
-                      '&:hover': {
-                        color: '#3f7ad9',
-                      }
+                      display: 'inline-block'
                     }}>
                       ¿No tienes una cuenta? Inscribirse
                     </Link>
