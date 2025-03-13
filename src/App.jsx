@@ -1,63 +1,40 @@
-// /* eslint-disable no-unused-vars */
-// import { Route, Routes } from 'react-router-dom'
-// import './App.css'
-// import IndexPage from './pages/IndexPage'
-// import RegisterPage from './pages/RegisterPage'
-// import Layout from './Layout'
-// import LoginPage from './pages/LoginPage'
-// import axios from 'axios'
-// import { UserContextProvider } from './UserContext'
-// import UserAccountPage from './pages/UserAccountPage'
-// import ForgotPassword from './pages/ForgotPassword'
-// import ResetPassword from './pages/ResetPassword'
-// import AddEvent from './pages/AddEvent'
-// import EventPage from './pages/EventPage'
-// import CalendarView from './pages/CalendarView'
-// import OrderSummary from './pages/OrderSummary'
-// import PaymentSummary from './pages/PaymentSummary'
-// import TicketPage from './pages/TicketPage'
-// import CreatEvent from './pages/CreateEvent'
-
-// axios.defaults.baseURL = 'https://event-system-backend-production.up.railway.app';
-// axios.defaults.withCredentials=true;
-
-// function App() {
-//   return (
-//     <UserContextProvider> 
-//     <Routes>
-            
-//       <Route path='/' element={<Layout />}>
-//         <Route index element = {<IndexPage />} />
-//         <Route path='/useraccount' element = {<UserAccountPage />}/>
-//         <Route path='/createEvent' element = {<AddEvent/>} />
-//         <Route path='/event/:id' element= {<EventPage/>} />
-//         <Route path='/calendar' element={<CalendarView />} />
-//         <Route path='/wallet' element={<TicketPage />}/>
-//         <Route path='/event/:id/ordersummary' element = {<OrderSummary />} />
-//       </Route>
-
-//       <Route path='/register' element={<RegisterPage />}/>
-//       <Route path='/login' element={<LoginPage />}/>
-//       <Route path='/forgotpassword' element = {<ForgotPassword/>} />
-//       <Route path='/resetpassword' element = {<ResetPassword/>} />
-//       <Route path='/event/:id/ordersummary/paymentsummary' element = {<PaymentSummary />} />
-      
-    
-//     </Routes>
-//     </UserContextProvider>  
-//   )
-// }
-
-// export default App
-
-
 import './App.css'
 import Layout from './ComponentsHome/Layout/Layout'
-import CreateEvent from './pages/CreateEvent'
-import React from 'react'
+import React, { useEffect } from 'react'
+import axios from 'axios'
+import { UserContextProvider } from './UserContext'
+
+// Configuración global de axios
+axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
+axios.defaults.withCredentials = true;
+
+// Interceptor para logs (opcional pero útil para debuggear)
+axios.interceptors.request.use(config => {
+  console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
+  return config;
+});
+
+axios.interceptors.response.use(
+  response => {
+    console.log(`API Response: ${response.status} from ${response.config.url}`);
+    return response;
+  },
+  error => {
+    console.error(`API Error: ${error.response?.status || 'Network Error'} from ${error.config?.url || 'unknown'}`);
+    return Promise.reject(error);
+  }
+);
 
 const App = () => {
-  return <Layout/>
+  useEffect(() => {
+    console.log('App initialized with backend URL:', axios.defaults.baseURL);
+  }, []);
+
+  return (
+    <UserContextProvider>
+      <Layout/>
+    </UserContextProvider>
+  )
 }
 
 export default App;

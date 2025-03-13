@@ -232,8 +232,9 @@ const SignIn = () => {
       // Set loading state to true while making the request
       setLoading(true);
 
-      // Use absolute URL directly for testing
-      const response = await fetch('https://event-system-backend-production.up.railway.app/api/v1/users/loginUser', {
+      // Use full URL with environment variable
+      const baseUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      const response = await fetch(`${baseUrl}/api/v1/users/loginUser`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

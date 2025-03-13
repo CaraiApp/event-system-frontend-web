@@ -27,7 +27,8 @@ const Home = () => {
     const token = localStorage.getItem("token");
     if (token) {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
+        // Usar axios con la configuración global
+        const response = await axios.get('/api/v1/users/getUser', {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },
@@ -56,13 +57,14 @@ const Home = () => {
       //   return;
       // }
 
-      // Determine the appropriate URL based on the user role
-      const url =
-        userRole === "organizer"
-          ? `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getuserEvent`
-          : `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getAllEvents`;
+      // Determine the appropriate endpoint based on the user role
+      const endpoint = userRole === "organizer" 
+        ? '/api/v1/events/getuserEvent'
+        : '/api/v1/events/getAllEvents';
+        
       try {
-        const response = await axios.get(url , {
+        // Usar axios con la configuración global
+        const response = await axios.get(endpoint, {
           headers: {
             Authorization: `Bearer ${token}`, // Send the token in the Authorization header
           },

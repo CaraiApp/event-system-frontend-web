@@ -141,11 +141,8 @@ const Header = () => {
       try {
         console.log("Fetching user with token:", token);
         
-        // Use Vite environment variable for API URL
-        const apiUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
-        console.log("Using API URL:", apiUrl);
-        
-        const response = await axios.get(`${apiUrl}/api/v1/users/getSingleUser`, {
+        // Usamos axios con la configuración global
+        const response = await axios.get('/api/v1/users/getSingleUser', {
           headers: {
             Authorization: `Bearer ${token}`, // Add token in headers
           },
