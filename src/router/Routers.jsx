@@ -76,6 +76,14 @@ import ContactUs from '../pages/ContactUs'
 import Pricing from '../pages/Pricing';
 import Pricingg from '../pages/Pricingg';
 
+// Dashboard de Organizador
+import OrganizerDashboard from '../pages/OrganizerDashboard/OrganizerDashboard';
+import Overview from '../pages/OrganizerDashboard/pages/Overview';
+import OrganizerEvents from '../pages/OrganizerDashboard/pages/Events';
+import Sales from '../pages/OrganizerDashboard/pages/Sales';
+import Attendees from '../pages/OrganizerDashboard/pages/Attendees';
+import Settings from '../pages/OrganizerDashboard/pages/Settings';
+
 import WalkIn from '../pages/WalkIn'
 import SeatMapModal from '../pages/SeatMapPage/SeatMapPage'
 import OrganizorMapPage from '../pages/OrganizerMap/OrganizorMapPage'
@@ -169,6 +177,15 @@ const Routers = () => {
       <Route path="/about" element={<AboutUs />}  />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/congrtspaymentsuccess" element={<PaymentSuccess />} />
+
+      {/* Dashboard de Organizador */}
+      <Route path="/organizer" element={<PrivateRoute element={<OrganizerDashboard />} />}>
+        <Route index element={<Overview />} />
+        <Route path="events" element={<OrganizerEvents />} />
+        <Route path="sales" element={<Sales />} />
+        <Route path="attendees" element={<Attendees />} />
+        <Route path="settings" element={<Settings />} />
+      </Route>
 
       {/* Admin Routes */}
       <Route path="/template-manager" element={<AdminRoute element={<TemplateManager />} />} />

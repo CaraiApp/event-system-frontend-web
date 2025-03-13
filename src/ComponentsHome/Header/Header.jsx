@@ -277,6 +277,11 @@ const Header = () => {
                     Gestor de Plantillas
                   </Link>
                  )}
+                 {(user?.role === "organizer" || user?.role === "admin") && (
+                  <Link to="/organizer" className="dropdown-item">
+                    Dashboard de Organizador
+                  </Link>
+                 )}
                   <div className="dropdown-item" onClick={handleLogout}>
                     <RxExit />
                     Finalizar la sesión
