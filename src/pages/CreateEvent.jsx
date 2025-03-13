@@ -281,13 +281,13 @@ useEffect(() => {
           <TextField
             fullWidth
             margin="normal"
-            label="Día 2"
+            label="Día 2 (Opcional)"
             name="eventDate2"
             type="datetime-local"
             value={formData.eventDate2}
             onChange={handleChange}
             InputLabelProps={{ shrink: true,     sx: { fontSize: "13px", fontWeight: "bold" }, // Increase font size
-          }}            required
+          }}
           />
         </Grid>
       </Grid>
