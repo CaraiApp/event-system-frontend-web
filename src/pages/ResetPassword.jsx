@@ -30,7 +30,7 @@ export default function ResetPassword() {
   useEffect(() => {
     const verifyToken = async () => {
       try {
-        const response = await fetch(`https://event-system-backend-production.up.railway.app/api/v1/auth/reset-password/${token}`, {
+        const response = await fetch(`https://event-system-backend-production.up.railway.app/api/v1/auth/validate-reset-token/${token}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -42,6 +42,7 @@ export default function ResetPassword() {
           setError('El enlace de restablecimiento ha expirado o no es válido. Por favor, solicita un nuevo enlace.');
         }
       } catch (error) {
+        console.error('Error al validar token:', error);
         setTokenValid(false);
         setError('Error de conexión. Por favor, verifica tu conexión a internet e inténtalo de nuevo.');
       }
