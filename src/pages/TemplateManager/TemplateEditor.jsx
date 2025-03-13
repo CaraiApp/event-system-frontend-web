@@ -143,8 +143,23 @@ const TemplateEditor = () => {
     if (template) {
       // Si tenemos un ID de plantilla, intentamos cargarla desde el backend primero
       if (template.id) {
-        // Usar la URL base del API desde variables de entorno o una URL por defecto
-        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        // Usar la URL base del API desde variables de entorno o un valor por defecto seguro
+        // En producción, se usará la URL configurada en las variables de entorno de Vercel
+        let API_BASE_URL;
+        try {
+          API_BASE_URL = import.meta.env.VITE_API_URL;
+          if (!API_BASE_URL) {
+            // Fallback seguro para desarrollo o si no hay variable definida
+            API_BASE_URL = window.location.hostname === 'localhost' 
+              ? 'http://localhost:3000' 
+              : `${window.location.protocol}//${window.location.hostname}/api`;
+          }
+        } catch (e) {
+          // Si hay error al acceder a variables de entorno, usar URL basada en la ubicación actual
+          API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : `${window.location.protocol}//${window.location.hostname}/api`;
+        }
         const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
         
         // Intentar cargar desde el backend
@@ -900,8 +915,23 @@ const TemplateEditor = () => {
     
     // Guardar en el backend y tener localStorage como respaldo
     try {
-      // Usar la URL base del API desde variables de entorno o una URL por defecto
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      // Usar la URL base del API desde variables de entorno o un valor por defecto seguro
+      // En producción, se usará la URL configurada en las variables de entorno de Vercel
+      let API_BASE_URL;
+      try {
+        API_BASE_URL = import.meta.env.VITE_API_URL;
+        if (!API_BASE_URL) {
+          // Fallback seguro para desarrollo o si no hay variable definida
+          API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : `${window.location.protocol}//${window.location.hostname}/api`;
+        }
+      } catch (e) {
+        // Si hay error al acceder a variables de entorno, usar URL basada en la ubicación actual
+        API_BASE_URL = window.location.hostname === 'localhost' 
+          ? 'http://localhost:3000' 
+          : `${window.location.protocol}//${window.location.hostname}/api`;
+      }
       const backendURL = `${API_BASE_URL}/api/templates`;
       const endpoint = isEditing ? `${backendURL}/${templateId}` : backendURL;
       const method = isEditing ? 'PUT' : 'POST';
