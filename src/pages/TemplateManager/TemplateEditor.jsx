@@ -44,7 +44,6 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowBack } from '@mui/icons-material';
 
 const TemplateEditor = () => {
   const navigate = useNavigate();
