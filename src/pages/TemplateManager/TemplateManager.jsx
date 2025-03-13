@@ -57,28 +57,74 @@ const TemplateManager = () => {
     severity: 'success'
   });
 
-  // Cargar plantillas solo desde localStorage
+  // Load templates from backend and localStorage
   useEffect(() => {
     const loadTemplates = async () => {
       try {
         setLoading(true);
         
-        // Obtener plantillas personalizadas de localStorage
+        // Determinar la URL base del API
+        let API_BASE_URL;
+        try {
+          API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+          if (!API_BASE_URL) {
+            API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+          }
+        } catch (e) {
+          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+        }
+        
+        // Obtener las plantillas del backend
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_BASE_URL}/api/templates`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        let backendTemplates = [];
+        if (response.data && response.data.data) {
+          backendTemplates = response.data.data.map(template => ({
+            ...template,
+            image: template.image || Template1 // Usar imagen predeterminada si no hay imagen
+          }));
+        }
+        
+        // Obtener plantillas personalizadas de localStorage como respaldo
         const customTemplatesJSON = localStorage.getItem('allTemplates');
         const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
         
-        // Fusionar plantillas predeterminadas con las personalizadas
+        // Fusionar plantillas de backend con las predeterminadas y personalizar imagen
         const combinedTemplates = [
           ...templates.filter(t => t.isDefault), // Mantener plantillas predeterminadas
-          ...customTemplates.filter(t => !t.isDefault) // Añadir plantillas personalizadas
+          ...backendTemplates.filter(t => !t.isDefault), // Añadir plantillas del backend
+          // Añadir plantillas locales que no estén en el backend
+          ...customTemplates.filter(t => 
+            !t.isDefault && 
+            !backendTemplates.some(bt => bt.id === t.id)
+          )
         ];
         
         setTemplates(combinedTemplates);
       } catch (error) {
-        console.error('Error al cargar plantillas:', error);
+        console.error('Error al cargar plantillas desde el backend:', error);
         
-        // En caso de error, mantener al menos las plantillas predeterminadas
-        setTemplates(templates.filter(t => t.isDefault));
+        // Si falla el backend, cargar solo desde localStorage
+        const customTemplatesJSON = localStorage.getItem('allTemplates');
+        const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
+        
+        const combinedTemplates = [
+          ...templates.filter(t => t.isDefault),
+          ...customTemplates.filter(t => !t.isDefault)
+        ];
+        
+        setTemplates(combinedTemplates);
+        
+        setSnackbar({
+          open: true,
+          message: 'Usando datos locales como respaldo.',
+          severity: 'info'
+        });
       } finally {
         setLoading(false);
       }
@@ -175,11 +221,31 @@ const TemplateManager = () => {
       dateModified: new Date().toISOString()
     };
     
+    // Determinar la URL base del API
+    let API_BASE_URL;
     try {
+      API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      if (!API_BASE_URL) {
+        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+      }
+    } catch (e) {
+      API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+    }
+    
+    try {
+      // Enviar al backend
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/api/templates`, newTemplateObj, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       // Añadir a la lista local
       setTemplates([...templates, newTemplateObj]);
       
-      // Guardar en localStorage
+      // Guardar en localStorage como respaldo
       const customTemplatesJSON = localStorage.getItem('allTemplates');
       const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
       customTemplates.push(newTemplateObj);
@@ -187,16 +253,25 @@ const TemplateManager = () => {
       
       setSnackbar({
         open: true,
-        message: 'Plantilla añadida correctamente',
+        message: 'Plantilla añadida correctamente en el servidor',
         severity: 'success'
       });
     } catch (error) {
-      console.error('Error al guardar la plantilla:', error);
+      console.error('Error al guardar la plantilla en el servidor:', error);
+      
+      // Añadir a la lista local de todos modos
+      setTemplates([...templates, newTemplateObj]);
+      
+      // Guardar en localStorage como respaldo
+      const customTemplatesJSON = localStorage.getItem('allTemplates');
+      const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
+      customTemplates.push(newTemplateObj);
+      localStorage.setItem('allTemplates', JSON.stringify(customTemplates));
       
       setSnackbar({
         open: true,
-        message: 'Error al guardar la plantilla',
-        severity: 'error'
+        message: 'No se pudo conectar con el servidor. La plantilla se guardó localmente.',
+        severity: 'warning'
       });
     } finally {
       handleAddDialogClose();
