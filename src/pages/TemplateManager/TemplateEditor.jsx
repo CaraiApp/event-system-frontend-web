@@ -143,7 +143,9 @@ const TemplateEditor = () => {
     if (template) {
       // Si tenemos un ID de plantilla, intentamos cargarla desde el backend primero
       if (template.id) {
-        const backendURL = `https://api.entradasmelilla.es/api/templates/${template.id}`;
+        // Usar la URL base del API desde variables de entorno o una URL por defecto
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
         
         // Intentar cargar desde el backend
         axios.get(backendURL, {
@@ -187,11 +189,16 @@ const TemplateEditor = () => {
           // Si falla, usamos los datos de localStorage que nos pasaron (template)
           loadTemplateFromLocalData(template);
           
-          setSnackbar({
-            open: true,
-            message: 'Usando datos locales. No se pudo conectar con el servidor.',
-            severity: 'warning'
-          });
+          // Solo mostramos un mensaje si es un error de conexión real, no en desarrollo local
+          if (import.meta.env.MODE === 'production') {
+            setSnackbar({
+              open: true,
+              message: 'Usando datos locales. No se pudo conectar con el servidor.',
+              severity: 'warning'
+            });
+          } else {
+            console.log('Desarrollo local: usando datos de localStorage');
+          }
         });
       } else {
         // No tenemos ID, usamos los datos que nos pasaron
@@ -893,8 +900,9 @@ const TemplateEditor = () => {
     
     // Guardar en el backend y tener localStorage como respaldo
     try {
-      // Guardado en el backend
-      const backendURL = 'https://api.entradasmelilla.es/api/templates';
+      // Usar la URL base del API desde variables de entorno o una URL por defecto
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const backendURL = `${API_BASE_URL}/api/templates`;
       const endpoint = isEditing ? `${backendURL}/${templateId}` : backendURL;
       const method = isEditing ? 'PUT' : 'POST';
       
@@ -947,11 +955,20 @@ const TemplateEditor = () => {
       .catch(error => {
         console.error('Error al guardar en el backend:', error);
         
-        setSnackbar({
-          open: true,
-          message: `Guardado en el servidor fallido, pero se ha guardado localmente: ${error.message}`,
-          severity: 'warning'
-        });
+        // Solo mostramos error de backend en producción
+        if (import.meta.env.MODE === 'production') {
+          setSnackbar({
+            open: true,
+            message: `Guardado en el servidor fallido, pero se ha guardado localmente: ${error.message}`,
+            severity: 'warning'
+          });
+        } else {
+          setSnackbar({
+            open: true,
+            message: `Guardado localmente con éxito en desarrollo`,
+            severity: 'success'
+          });
+        }
         
         // Redirigir a la lista de plantillas después de guardar
         setTimeout(() => {
@@ -2026,9 +2043,15 @@ const TemplateEditor = () => {
           <DialogContentText>
             ¿Estás seguro de que deseas guardar esta plantilla? Estará disponible para todos los organizadores.
           </DialogContentText>
-          <DialogContentText sx={{ mt: 2, color: 'green' }}>
-            La plantilla se guardará en el servidor. También se mantendrá una copia local como respaldo.
-          </DialogContentText>
+          {import.meta.env.MODE === 'production' ? (
+            <DialogContentText sx={{ mt: 2, color: 'green' }}>
+              La plantilla se guardará en el servidor. También se mantendrá una copia local como respaldo.
+            </DialogContentText>
+          ) : (
+            <DialogContentText sx={{ mt: 2, color: 'blue' }}>
+              Modo desarrollo: La plantilla se guardará localmente en tu navegador (localStorage).
+            </DialogContentText>
+          )}
           <TextField
             autoFocus
             margin="dense"
