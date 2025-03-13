@@ -341,8 +341,17 @@ const SignUp = () => {
                     required
                     inputRef={email}
                     type="email"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                     InputProps={{
                       style: { fontSize: '1rem' },
+                      autoCapitalize: "none",
+                      inputProps: {
+                        autoCapitalize: "none",
+                        autoCorrect: "off",
+                        spellCheck: "false"
+                      }
                     }}
                     InputLabelProps={{
                       style: { fontSize: '1rem' },

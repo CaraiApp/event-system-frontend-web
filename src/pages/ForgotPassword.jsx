@@ -140,12 +140,21 @@ export default function ForgotPassword() {
             label="Correo electrónico"
             name="email"
             autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck="false"
             autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
             InputProps={{
               style: { fontSize: '1rem' },
+              autoCapitalize: "none",
+              inputProps: {
+                autoCapitalize: "none",
+                autoCorrect: "off",
+                spellCheck: "false"
+              }
             }}
             InputLabelProps={{
               style: { fontSize: '1rem' },
