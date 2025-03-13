@@ -107,7 +107,7 @@ const navigate = useNavigate();
   // //  setIsLoading(true); // Set loading state to true when request starts
   // //   try {
   // //     // Make the API request using Axios
-  // //     const response = await axios.post('http://localhost:8080/api/v1/events/createEvent', formDataPayload, {
+  // //     const response = await axios.post('https://event-system-backend-production.up.railway.app/api/v1/events/createEvent', formDataPayload, {
   // //       headers: {
   // //         'Content-Type': 'multipart/form-data', // Adjust header for FormData
   // //         'Authorization': `Bearer ${token}`,   // Add the token to the Authorization header

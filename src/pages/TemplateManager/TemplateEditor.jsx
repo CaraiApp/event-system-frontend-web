@@ -149,16 +149,12 @@ const TemplateEditor = () => {
         try {
           API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
           if (!API_BASE_URL) {
-            // Fallback seguro para desarrollo o si no hay variable definida
-            API_BASE_URL = window.location.hostname === 'localhost' 
-              ? 'http://localhost:3000' 
-              : 'https://event-system-backend-production.up.railway.app';
+            // Fallback seguro para producción
+            API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
           }
         } catch (e) {
-          // Si hay error al acceder a variables de entorno, usar URL basada en la ubicación actual
-          API_BASE_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : 'https://event-system-backend-production.up.railway.app';
+          // Si hay error al acceder a variables de entorno, usar la URL de producción
+          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
         }
         const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
         
@@ -921,16 +917,12 @@ const TemplateEditor = () => {
       try {
         API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         if (!API_BASE_URL) {
-          // Fallback seguro para desarrollo o si no hay variable definida
-          API_BASE_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : 'https://event-system-backend-production.up.railway.app';
+          // Fallback seguro para producción
+          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
         }
       } catch (e) {
-        // Si hay error al acceder a variables de entorno, usar URL basada en la ubicación actual
-        API_BASE_URL = window.location.hostname === 'localhost' 
-          ? 'http://localhost:3000' 
-          : 'https://event-system-backend-production.up.railway.app';
+        // Usar URL de producción si hay error
+        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
       }
       const backendURL = `${API_BASE_URL}/api/templates`;
       const endpoint = isEditing ? `${backendURL}/${templateId}` : backendURL;
