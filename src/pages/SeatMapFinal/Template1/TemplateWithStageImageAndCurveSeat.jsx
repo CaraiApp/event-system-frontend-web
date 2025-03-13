@@ -20,10 +20,28 @@ const navigate = useNavigate();
     Array.from({ length: count }, (_, i) => `${prefix}${i + 1}`).filter(Boolean);
 
   // Combined seats array: VIP seats first, then Economy seats
-  const [seats, setSeats] = useState([
-    ...generateSeats("VIP", vipSeatsCount),
-    ...generateSeats("E", economySeatsCount),
-  ]);
+  // Check if we have a custom template with predefined seats
+  const [seats, setSeats] = useState(() => {
+    // Check if a custom template with predefined seats is available
+    const customTemplate = localStorage.getItem('customTemplate');
+    if (customTemplate) {
+      try {
+        const templateData = JSON.parse(customTemplate);
+        if (templateData.template === template && templateData.seats && templateData.seats.length > 0) {
+          console.log('Using custom template seats:', templateData.seats.length);
+          return templateData.seats;
+        }
+      } catch (e) {
+        console.error('Error parsing custom template:', e);
+      }
+    }
+    
+    // Fall back to default seat generation
+    return [
+      ...generateSeats("VIP", vipSeatsCount),
+      ...generateSeats("E", economySeatsCount),
+    ];
+  });
   const [draggedSeat, setDraggedSeat] = useState(null);
 
   const handleDragStart = (seat) => {

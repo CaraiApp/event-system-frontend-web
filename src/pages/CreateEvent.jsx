@@ -108,15 +108,34 @@ useEffect(() => {
    
   };
   
-  const handleTemplateSelection =    (template) => {
-   
+  const handleTemplateSelection = (template) => {
+    // Check if there's a custom template configuration
+    const customTemplateData = localStorage.getItem('allTemplates');
+    let customTemplate = null;
+    
+    if (customTemplateData) {
+      try {
+        const templates = JSON.parse(customTemplateData);
+        customTemplate = templates.find(t => t.id === template);
+        
+        if (customTemplate) {
+          // Store the selected custom template for the seat map component to use
+          localStorage.setItem('customTemplate', JSON.stringify({
+            template,
+            seats: customTemplate.seats,
+            stageDimensions: customTemplate.stageDimensions
+          }));
+          
+          console.log(`Using custom template: ${customTemplate.name}`);
+        }
+      } catch (e) {
+        console.error('Error parsing custom templates:', e);
+      }
+    }
 
     // Close the modal and navigate to the seat map with selected template
     setShowTemplates(false);
     navigate('/template', { state: { template, formData, gallery } });
-
-
- 
   };
   
 
@@ -521,15 +540,15 @@ useEffect(() => {
       >
         {/* Template Cards */}
         {[
-          { image: Template1, label: "Plantilla 1", id: "template1" },
-          { image: Template2, label: "Plantilla 2", id: "template2" },
-          { image: Template3, label: "Plantilla 3", id: "template3" },
+          { image: Template1, label: "Plantilla 1", id: "template1", description: "Escenario con asientos curvos" },
+          { image: Template2, label: "Plantilla 2", id: "template2", description: "Disposición en forma rectangular" },
+          { image: Template3, label: "Plantilla 3", id: "template3", description: "Disposición con secciones separadas" },
         ].map((template, index) => (
           <Card
             key={index}
             sx={{
               width: 450,
-              height: 250,
+              height: 280,
               border: "2px solid transparent",
               borderRadius: 2,
               transition: "all 0.3s ease",
@@ -537,7 +556,7 @@ useEffect(() => {
               cursor: "pointer",
               "&:hover, &:focus": {
                 border: "2px solid #007bff",
-                transform: "scale(1.1)",
+                transform: "scale(1.05)",
               },
             }}
             onClick={() => handleTemplateSelection(template.id)}
@@ -566,13 +585,38 @@ useEffect(() => {
               alt={template.label}
               sx={{
                 width: "100%",
-                height: "100%",
+                height: "80%",
                 objectFit: "contain",
                 borderRadius: 1,
               }}
             />
+            
+            {/* Description */}
+            <Box
+              sx={{
+                padding: "8px 12px",
+                textAlign: "left",
+                fontSize: "14px",
+                color: "#555",
+              }}
+            >
+              {template.description}
+            </Box>
           </Card>
         ))}
+        
+        <Typography 
+          variant="caption" 
+          sx={{ 
+            width: "100%", 
+            textAlign: "center", 
+            mt: 2, 
+            color: "text.secondary",
+            fontSize: "14px"
+          }}
+        >
+          * Los administradores pueden crear, editar o eliminar plantillas en el Gestor de Plantillas
+        </Typography>
       </Box>
     </Box>
   </Box>

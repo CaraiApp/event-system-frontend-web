@@ -270,11 +270,15 @@ const Header = () => {
                   <Link to="/wallet" className="dropdown-item">
                     Billetera
                   </Link>
-                 )} 
+                 )}
+                 {user?.role === "organizer" && (
+                  <Link to="/template-manager" className="dropdown-item">
+                    Gestor de Plantillas
+                  </Link>
+                 )}
                   <div className="dropdown-item" onClick={handleLogout}>
                     <RxExit />
                     Finalizar la sesión
-
                   </div>
                 </div>
               )}

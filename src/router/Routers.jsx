@@ -69,7 +69,7 @@ import Events from '../pages/Events';
 import EventPage from "../pages/EventPage/EventPage";
 import OrderSummary from "../pages/OrderSummary/OrderSummary";
 import Wallet from "../pages/Wallet/Wallet";
-import PrivateRoute from "./PrivateRoute";
+import PrivateRoute, { AdminRoute } from "./PrivateRoute";
 import SeatMapPage from '../pages/SeatMapPage/SeatMapPage'
 import AboutUs from '../pages/AboutUs'
 import ContactUs from '../pages/ContactUs'
@@ -80,6 +80,8 @@ import WalkIn from '../pages/WalkIn'
 import SeatMapModal from '../pages/SeatMapPage/SeatMapPage'
 import OrganizorMapPage from '../pages/OrganizerMap/OrganizorMapPage'
 import PaymentSuccess from '../pages/PaymentSuccess'
+import TemplateManager from '../pages/TemplateManager/TemplateManager'
+import TemplateEditor from '../pages/TemplateManager/TemplateEditor'
 
 // Placeholder for VerifyEmail component - will need to be created
 const VerifyEmail = () => {
@@ -167,6 +169,10 @@ const Routers = () => {
       <Route path="/about" element={<AboutUs />}  />
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/congrtspaymentsuccess" element={<PaymentSuccess />} />
+
+      {/* Admin Routes */}
+      <Route path="/template-manager" element={<AdminRoute element={<TemplateManager />} />} />
+      <Route path="/template-editor" element={<AdminRoute element={<TemplateEditor />} />} />
 
       <Route path="/team" element={<PrivateRoute element={<Team />} />} />
       <Route path="/gallery" element={<PrivateRoute element={<Gallery />} />} />
