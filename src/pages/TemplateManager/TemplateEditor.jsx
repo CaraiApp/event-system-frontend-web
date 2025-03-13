@@ -143,18 +143,8 @@ const TemplateEditor = () => {
     if (template) {
       // Si tenemos un ID de plantilla, intentamos cargarla desde el backend primero
       if (template.id) {
-        // Usar la URL base del API desde variables de entorno o un valor por defecto seguro
-        let API_BASE_URL;
-        try {
-          API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-          if (!API_BASE_URL) {
-            // Fallback seguro para producción
-            API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-          }
-        } catch (e) {
-          // Si hay error al acceder a variables de entorno, usar la URL de producción
-          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-        }
+        // Usar la variable de entorno para la URL del backend
+        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
         
         // Intentar cargar desde el backend
@@ -905,18 +895,8 @@ const TemplateEditor = () => {
     
     // Guardar en el backend y tener localStorage como respaldo
     try {
-      // Usar la URL base del API desde variables de entorno o un valor por defecto seguro
-      let API_BASE_URL;
-      try {
-        API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        if (!API_BASE_URL) {
-          // Fallback seguro para producción
-          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-        }
-      } catch (e) {
-        // Usar URL de producción si hay error
-        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-      }
+      // Usar la variable de entorno para la URL del backend
+      const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
       const backendURL = `${API_BASE_URL}/api/templates`;
       const endpoint = isEditing ? `${backendURL}/${templateId}` : backendURL;
       const method = isEditing ? 'PUT' : 'POST';

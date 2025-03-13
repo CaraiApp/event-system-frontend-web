@@ -63,16 +63,8 @@ const TemplateManager = () => {
       try {
         setLoading(true);
         
-        // Determinar la URL base del API
-        let API_BASE_URL;
-        try {
-          API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-          if (!API_BASE_URL) {
-            API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-          }
-        } catch (e) {
-          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-        }
+        // Usar la variable de entorno para la URL del backend
+        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         
         // Obtener las plantillas del backend
         const token = localStorage.getItem('token');
@@ -221,16 +213,8 @@ const TemplateManager = () => {
       dateModified: new Date().toISOString()
     };
     
-    // Determinar la URL base del API
-    let API_BASE_URL;
-    try {
-      API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-      if (!API_BASE_URL) {
-        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-      }
-    } catch (e) {
-      API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-    }
+    // Usar la variable de entorno para la URL del backend
+    const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
     
     try {
       // Enviar al backend
