@@ -144,7 +144,19 @@ useEffect(() => {
             value={formData.name}
             onChange={handleChange}
             required
-            sx={{ fontSize: '16px' }}
+            sx={{ fontSize: '16px',
+              "& .MuiInputBase-input": {
+                textTransform: "none"
+              } 
+            }}
+            inputProps={{
+              style: { textTransform: "none" },
+              autoCapitalize: "none"
+            }}
+            InputProps={{
+              style: { fontSize: '16px' },
+              autoCapitalize: "none",
+            }}
             InputLabelProps={{ style: { fontSize: '18px' } }}
           />
           <TextField
@@ -155,18 +167,42 @@ useEffect(() => {
             value={formData.venue}
             onChange={handleChange}
             required
-            sx={{ fontSize: '16px' }}
+            sx={{ fontSize: '16px',
+              "& .MuiInputBase-input": {
+                textTransform: "none"
+              } 
+            }}
+            inputProps={{
+              style: { textTransform: "none" },
+              autoCapitalize: "none"
+            }}
+            InputProps={{
+              style: { fontSize: '16px' },
+              autoCapitalize: "none",
+            }}
             InputLabelProps={{ style: { fontSize: '18px' } }}
           />
           <TextField
             fullWidth
             margin="normal"
-            label="DIRECCIÓN"
+            label="Dirección"
             name="address"
             value={formData.address}
             onChange={handleChange}
             required
-            sx={{ fontSize: '16px' }}
+            sx={{ fontSize: '16px',
+              "& .MuiInputBase-input": {
+                textTransform: "none"
+              } 
+            }}
+            inputProps={{
+              style: { textTransform: "none" },
+              autoCapitalize: "none"
+            }}
+            InputProps={{
+              style: { fontSize: '16px' },
+              autoCapitalize: "none",
+            }}
             InputLabelProps={{ style: { fontSize: '18px' } }}
           />
           <TextField
@@ -175,11 +211,27 @@ useEffect(() => {
             label="Descripción"
             name="desc"
             value={formData.desc}
-            onChange={handleChange}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Mantiene el valor original sin capitalización automática
+              setFormData({ ...formData, desc: value });
+            }}
             required
             multiline
             rows={4}
-            sx={{ fontSize: '16px' }}
+            sx={{ fontSize: '16px', 
+              "& .MuiInputBase-input": {
+                textTransform: "none"
+              } 
+            }}
+            inputProps={{
+              style: { textTransform: "none" },
+              autoCapitalize: "none"
+            }}
+            InputProps={{
+              style: { fontSize: '16px' },
+              autoCapitalize: "none",
+            }}
             InputLabelProps={{ style: { fontSize: '18px' } }}
           />
           <TextField
