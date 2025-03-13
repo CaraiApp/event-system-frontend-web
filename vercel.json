@@ -1,11 +1,11 @@
 {
     "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
     "env": {
-      "VITE_API_URL": "https://api.event-system.com"
+      "VITE_API_URL": "https://api.entradasmelilla.es"
     },
     "build": {
       "env": {
-        "VITE_API_URL": "https://api.event-system.com"
+        "VITE_API_URL": "https://api.entradasmelilla.es"
       }
     }
   }
