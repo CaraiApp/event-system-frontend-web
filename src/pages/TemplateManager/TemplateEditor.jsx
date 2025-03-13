@@ -141,80 +141,8 @@ const TemplateEditor = () => {
     
     // Cargar datos de plantilla existente o inicializar nueva
     if (template) {
-      // Si tenemos un ID de plantilla, intentamos cargarla desde el backend primero
-      if (template.id) {
-        // Usar la URL base del API desde variables de entorno o un valor por defecto seguro
-        // En producción, se usará la URL configurada en las variables de entorno de Vercel
-        let API_BASE_URL;
-        try {
-          API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-          if (!API_BASE_URL) {
-            // Fallback seguro para producción
-            API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-          }
-        } catch (e) {
-          // Si hay error al acceder a variables de entorno, usar la URL de producción
-          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-        }
-        const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
-        
-        // Intentar cargar desde el backend
-        axios.get(backendURL, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        })
-        .then(response => {
-          console.log('Plantilla cargada desde el backend:', response.data);
-          const templateData = response.data;
-          
-          // Cargar datos
-          if (templateData.seats) {
-            setSeats(templateData.seats);
-            setNextSeatId(Math.max(...templateData.seats.map(seat => parseInt(seat.id.split('-')[1] || '0'))) + 1);
-          }
-          
-          if (templateData.sections && Array.isArray(templateData.sections)) {
-            setSections(templateData.sections);
-          }
-          
-          if (templateData.texts && Array.isArray(templateData.texts)) {
-            setTexts(templateData.texts);
-          }
-          
-          if (templateData.stageDimensions) {
-            setStageDimensions(templateData.stageDimensions);
-          }
-          
-          setTemplateName(templateData.name);
-          
-          setSnackbar({
-            open: true,
-            message: 'Plantilla cargada correctamente desde el servidor',
-            severity: 'success'
-          });
-        })
-        .catch(error => {
-          console.error('Error al cargar desde el backend, usando datos locales:', error);
-          
-          // Si falla, usamos los datos de localStorage que nos pasaron (template)
-          loadTemplateFromLocalData(template);
-          
-          // Solo mostramos un mensaje si es un error de conexión real, no en desarrollo local
-          if (import.meta.env.MODE === 'production') {
-            setSnackbar({
-              open: true,
-              message: 'Usando datos locales. No se pudo conectar con el servidor.',
-              severity: 'warning'
-            });
-          } else {
-            console.log('Desarrollo local: usando datos de localStorage');
-          }
-        });
-      } else {
-        // No tenemos ID, usamos los datos que nos pasaron
-        loadTemplateFromLocalData(template);
-      }
+      // Cargar directamente desde los datos locales pasados
+      loadTemplateFromLocalData(template);
     } else {
       // Inicializar con ejemplos para facilitar el diseño
       initializeDefaultLayout();
@@ -909,26 +837,8 @@ const TemplateEditor = () => {
     
     console.log(`${isEditing ? 'Actualizando' : 'Guardando'} plantilla:`, templateData);
     
-    // Guardar en el backend y tener localStorage como respaldo
     try {
-      // Usar la URL base del API desde variables de entorno o un valor por defecto seguro
-      // En producción, se usará la URL configurada en las variables de entorno de Vercel
-      let API_BASE_URL;
-      try {
-        API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        if (!API_BASE_URL) {
-          // Fallback seguro para producción
-          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-        }
-      } catch (e) {
-        // Usar URL de producción si hay error
-        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
-      }
-      const backendURL = `${API_BASE_URL}/api/templates`;
-      const endpoint = isEditing ? `${backendURL}/${templateId}` : backendURL;
-      const method = isEditing ? 'PUT' : 'POST';
-      
-      // Iniciamos el guardado en el backend y en localStorage en paralelo
+      // Iniciamos el guardado
       setOpenSaveDialog(false);
       setSnackbar({
         open: true,
@@ -936,7 +846,7 @@ const TemplateEditor = () => {
         severity: 'info'
       });
       
-      // Guardar en localStorage como respaldo
+      // Guardar en localStorage
       const existingTemplatesJSON = localStorage.getItem('allTemplates');
       const existingTemplates = existingTemplatesJSON ? JSON.parse(existingTemplatesJSON) : [];
       const existingIndex = existingTemplates.findIndex(t => t.id === templateId);
@@ -948,55 +858,18 @@ const TemplateEditor = () => {
       }
       localStorage.setItem('allTemplates', JSON.stringify(existingTemplates));
       
-      // Enviar al backend
-      axios({
-        method,
-        url: endpoint,
-        data: templateData,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      .then(response => {
-        console.log('Plantilla guardada en el backend:', response.data);
-        
-        setSnackbar({
-          open: true,
-          message: isEditing 
-            ? 'Plantilla actualizada correctamente en el servidor.' 
-            : 'Plantilla guardada correctamente en el servidor.',
-          severity: 'success'
-        });
-        
-        // Redirigir a la lista de plantillas después de guardar
-        setTimeout(() => {
-          navigate('/template-manager');
-        }, 1500);
-      })
-      .catch(error => {
-        console.error('Error al guardar en el backend:', error);
-        
-        // Solo mostramos error de backend en producción
-        if (import.meta.env.MODE === 'production') {
-          setSnackbar({
-            open: true,
-            message: `Guardado en el servidor fallido, pero se ha guardado localmente: ${error.message}`,
-            severity: 'warning'
-          });
-        } else {
-          setSnackbar({
-            open: true,
-            message: `Guardado localmente con éxito en desarrollo`,
-            severity: 'success'
-          });
-        }
-        
-        // Redirigir a la lista de plantillas después de guardar
-        setTimeout(() => {
-          navigate('/template-manager');
-        }, 2500);
+      setSnackbar({
+        open: true,
+        message: isEditing 
+          ? 'Plantilla actualizada correctamente' 
+          : 'Plantilla guardada correctamente',
+        severity: 'success'
       });
+      
+      // Redirigir a la lista de plantillas después de guardar
+      setTimeout(() => {
+        navigate('/template-manager');
+      }, 1500);
     } catch (error) {
       console.error('Error al guardar la plantilla:', error);
       setSnackbar({
@@ -2065,15 +1938,9 @@ const TemplateEditor = () => {
           <DialogContentText>
             ¿Estás seguro de que deseas guardar esta plantilla? Estará disponible para todos los organizadores.
           </DialogContentText>
-          {import.meta.env.MODE === 'production' ? (
-            <DialogContentText sx={{ mt: 2, color: 'green' }}>
-              La plantilla se guardará en el servidor. También se mantendrá una copia local como respaldo.
-            </DialogContentText>
-          ) : (
-            <DialogContentText sx={{ mt: 2, color: 'blue' }}>
-              Modo desarrollo: La plantilla se guardará localmente en tu navegador (localStorage).
-            </DialogContentText>
-          )}
+          <DialogContentText sx={{ mt: 2, color: 'green' }}>
+            La plantilla se guardará localmente en tu navegador (localStorage).
+          </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
