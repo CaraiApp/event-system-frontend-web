@@ -13,6 +13,7 @@ import { Box } from '@mui/material';
 import axios from 'axios';
 import FeaturedEventsList from '../ComponentsHome/FeaturedEvents/FeaturedEventsList.jsx';
 import LoadingScreen from '../components/LoadingScreen/LoadingScreen.jsx';
+import DebugPanel from '../components/DebugPanel/DebugPanel.jsx';
 const Home = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -133,6 +134,9 @@ const Home = () => {
     <Testimonials/>
     {/* ---------------------x---------------- Testimonials section ---------------x--------------------- */}
     {/* <Footer/> */}
+    
+    {/* Panel de depuración */}
+    <DebugPanel />
     </>
   );
 }
