@@ -4,7 +4,7 @@ Este documento explica cómo configurar correctamente las variables de entorno p
 
 ## Variables de Entorno Requeridas
 
-- `VITE_API_URL`: URL base del API backend (ej: https://api.event-system.com)
+- `VITE_REACT_APP_BACKEND_BASEURL`: URL base del API backend (ej: https://event-system-backend-production.up.railway.app)
 
 ## Pasos para Configurar en Vercel
 

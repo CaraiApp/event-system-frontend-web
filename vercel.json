@@ -1,11 +1,11 @@
 {
     "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
     "env": {
-      "VITE_API_URL": "https://api.entradasmelilla.es"
+      "VITE_REACT_APP_BACKEND_BASEURL": "https://event-system-backend-production.up.railway.app"
     },
     "build": {
       "env": {
-        "VITE_API_URL": "https://api.entradasmelilla.es"
+        "VITE_REACT_APP_BACKEND_BASEURL": "https://event-system-backend-production.up.railway.app"
       }
     }
   }
