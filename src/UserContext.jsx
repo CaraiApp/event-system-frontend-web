@@ -18,8 +18,7 @@ export function UserContextProvider({children}){
           
           console.log('Fetching user data with token:', token);
           
-          // Usar el path relativo con la configuración estándar de axios
-          console.log('Fetching user with token');
+          console.log('Fetching user data...');
           
           const response = await axios.get('/api/v1/users/getSingleUser', {
             headers: {
