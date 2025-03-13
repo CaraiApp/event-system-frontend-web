@@ -18,8 +18,8 @@ export function UserContextProvider({children}){
           
           console.log('Fetching user data with token:', token);
           
-          // Con el proxy CORS, usamos el path relativo
-          console.log('Fetching user with token through CORS proxy');
+          // Usar el path relativo con la configuración estándar de axios
+          console.log('Fetching user with token');
           
           const response = await axios.get('/api/v1/users/getSingleUser', {
             headers: {

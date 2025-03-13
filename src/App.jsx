@@ -5,11 +5,8 @@ import axios from 'axios'
 import { UserContextProvider } from './UserContext'
 
 // Configuración global de axios
-// Usamos un proxy CORS para evitar problemas de CORS en producción
-axios.defaults.baseURL = 'https://corsproxy.io/?' + encodeURIComponent(
-  import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app'
-);
-axios.defaults.withCredentials = false; // Cambiado a false cuando usamos proxy CORS
+axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
+axios.defaults.withCredentials = true;
 
 // Configuraciones para peticiones
 axios.defaults.headers.common['Content-Type'] = 'application/json';
@@ -21,8 +18,8 @@ axios.interceptors.request.use(config => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
-  // No necesitamos withCredentials cuando usamos un proxy CORS
-  // config.withCredentials = true;
+  // Asegurar que las credenciales se envíen siempre
+  config.withCredentials = true;
   
   console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, config);
   return config;
