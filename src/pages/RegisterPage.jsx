@@ -192,12 +192,19 @@ const SignUp = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false); // Loading state
 
+  const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Reset previous errors
+    setError("");
+    setPasswordError("");
+
     // Check if passwords match
     if (password?.current?.value !== confirmPassword?.current?.value) {
-      console.log("Passwords do not match");
+      setPasswordError("Las contraseñas no coinciden");
       return;
     }
 
@@ -206,7 +213,7 @@ const SignUp = () => {
       username: userName.current.value,
       email: email.current.value,
       password: password.current.value,
-      role: role, // Include the selected role
+      role: role || "user", // Include the selected role, default to user
     };
 
     try {
@@ -222,19 +229,20 @@ const SignUp = () => {
         body: JSON.stringify(user),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         console.log("User created successfully:", data);
         // Redirect to login page after successful signup
         navigate("/login");
       } else {
-        const errorData = await response.json();
-        console.log("Error:", errorData);
-        // Handle error (e.g., show error message)
+        // Show specific error message from the backend or default message
+        setError(data.message || "Error al crear la cuenta. Por favor, inténtalo de nuevo.");
+        console.log("Error:", data);
       }
     } catch (error) {
+      setError("Error de conexión. Por favor, inténtalo de nuevo más tarde.");
       console.log("Request failed:", error);
-      // Handle network or other errors
     } finally {
       // Set loading state to false once the request is complete
       setLoading(false);
@@ -250,7 +258,7 @@ const SignUp = () => {
     <ThemeProvider theme={theme}>
              
 
-      <Container component="main" style={{ display: "flex", height: "100vh", marginTop: 70 }}>
+      <Container component="main" style={{ display: "flex", minHeight: "100vh", marginTop: 50, padding: "20px" }}>
         <CssBaseline />
         {loading && (
           
@@ -270,10 +278,42 @@ const SignUp = () => {
             }}
           >
             <form style={{ width: "100%", maxWidth: "400px" }} onSubmit={handleSubmit}>
-              <Typography component="h1" variant="h5" sx={{ mb: 3, textAlign: "center" }}>
-              INSCRIBIRSE
-
+              <Typography 
+                component="h1" 
+                variant="h5" 
+                sx={{ 
+                  mb: 3, 
+                  textAlign: "center",
+                  fontWeight: "600",
+                  textTransform: "none",
+                  fontSize: "1.75rem",
+                  color: "#2c3e50"
+                }}
+              >
+                Crear cuenta
               </Typography>
+              
+              {/* Error message display */}
+              {error && (
+                <Box 
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    width: '100%',
+                    borderRadius: 1,
+                    bgcolor: '#ffebee',
+                    color: '#d32f2f',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#d32f2f" style={{marginRight: '8px'}}>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                  </svg>
+                  {error}
+                </Box>
+              )}
 
               <Grid container spacing={2}>
                 <Grid item xs={12}>
@@ -284,6 +324,12 @@ const SignUp = () => {
                     required
                     autoFocus
                     inputRef={userName}
+                    InputProps={{
+                      style: { fontSize: '1rem' },
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: '1rem' },
+                    }}
                   />
                 </Grid>
 
@@ -293,9 +339,14 @@ const SignUp = () => {
                     variant="outlined"
                     fullWidth
                     required
-                    autoFocus
                     inputRef={email}
                     type="email"
+                    InputProps={{
+                      style: { fontSize: '1rem' },
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: '1rem' },
+                    }}
                   />
                 </Grid>
 
@@ -305,57 +356,103 @@ const SignUp = () => {
                     variant="outlined"
                     fullWidth
                     required
-                    autoFocus
                     inputRef={password}
                     type="password"
+                    InputProps={{
+                      style: { fontSize: '1rem' },
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: '1rem' },
+                    }}
                   />
                 </Grid>
 
                 <Grid item xs={12}>
                   <CssTextField
-                    label="confirmar Contraseña"
+                    label="Confirmar contraseña"
                     variant="outlined"
                     fullWidth
                     required
-                    autoFocus
                     inputRef={confirmPassword}
                     type="password"
+                    error={!!passwordError}
+                    helperText={passwordError}
+                    InputProps={{
+                      style: { fontSize: '1rem' },
+                    }}
+                    InputLabelProps={{
+                      style: { fontSize: '1rem' },
+                    }}
+                    FormHelperTextProps={{
+                      style: { 
+                        fontSize: '0.8rem',
+                        color: '#d32f2f',
+                        marginLeft: 0,
+                        marginTop: '4px'
+                      }
+                    }}
                   />
                 </Grid>
 
                 {/* Role Selection Dropdown */}
                 <Grid item xs={12}>
                   <FormControl fullWidth required>
-                    <InputLabel id="role-select-label">Role</InputLabel>
+                    <InputLabel id="role-select-label" style={{ fontSize: '1rem' }}>Tipo de cuenta</InputLabel>
                     <Select
                       labelId="role-select-label"
                       value={role}
                       onChange={(e) => setRole(e.target.value)}
-                      label="Role"
+                      label="Tipo de cuenta"
                       fullWidth
+                      style={{ fontSize: '1rem' }}
                     >
-                      <MenuItem value="user">Usuario</MenuItem>
-                      <MenuItem value="organizer">Organizador</MenuItem>
-                      <MenuItem value="admin">Administrador</MenuItem>
+                      <MenuItem value="user" style={{ fontSize: '1rem' }}>Usuario</MenuItem>
+                      <MenuItem value="organizer" style={{ fontSize: '1rem' }}>Organizador</MenuItem>
+                      <MenuItem value="admin" style={{ fontSize: '1rem' }}>Administrador</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
 
                 <Grid item md={12} xs={12} justifyContent="center">
-                  <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}
-                                      disabled={loading} // Disable button while loading
->
-Inscribirse
-
+                  <Button 
+                    type="submit" 
+                    fullWidth 
+                    variant="contained" 
+                    sx={{ 
+                      mt: 3, 
+                      mb: 2,
+                      py: 1.5,
+                      fontSize: '1rem',
+                      fontWeight: 'bold',
+                      textTransform: 'none',
+                      boxShadow: '0px 3px 5px rgba(0, 0, 0, 0.2)'
+                    }}
+                    disabled={loading} // Disable button while loading
+                  >
+                    {loading ? 
+                      <CircularProgress size={24} color="inherit" /> : 
+                      'Crear cuenta'
+                    }
                   </Button>
                 </Grid>
               </Grid>
 
-              <Grid container justifyContent="center">
+              <Grid container justifyContent="center" sx={{ mt: 2 }}>
                 <Grid item>
-                  <Link href="/login" variant="body2" style={{ fontSize: 17, fontWeight: "bold" }}>
-                  ¿Ya tienes una cuenta? Iniciar sesión
-
+                  <Link 
+                    to="/login" 
+                    style={{ 
+                      fontSize: '0.95rem', 
+                      fontWeight: 'bold', 
+                      textDecoration: 'none', 
+                      color: '#6497df',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        color: '#3f7ad9',
+                      }
+                    }}
+                  >
+                    ¿Ya tienes una cuenta? Iniciar sesión
                   </Link>
                 </Grid>
               </Grid>

@@ -48,36 +48,87 @@ export default function ForgotPassword() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 10, mb: 4 }}>
+    <Container maxWidth="sm" sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
       <Box
         sx={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           backgroundColor: 'white',
-          padding: 4,
+          padding: { xs: 3, sm: 4 },
           borderRadius: 2,
-          boxShadow: 1,
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+          width: '100%',
         }}
       >
-        <Typography component="h1" variant="h5" gutterBottom>
+        <Typography 
+          component="h1" 
+          variant="h5"
+          sx={{ 
+            fontWeight: '600',
+            textTransform: 'none',
+            fontSize: '1.75rem',
+            color: '#2c3e50',
+            mb: 1
+          }}
+        >
           Recuperar contraseña
         </Typography>
         
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+        <Typography 
+          variant="body1" 
+          color="text.secondary" 
+          sx={{ 
+            mb: 3, 
+            textAlign: 'center',
+            fontSize: '1rem',
+            maxWidth: '400px',
+            lineHeight: 1.5
+          }}
+        >
           Introduce tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
         </Typography>
 
         {message && (
-          <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
+          <Box 
+            sx={{
+              p: 2,
+              mb: 2,
+              width: '100%',
+              borderRadius: 1,
+              bgcolor: '#e8f5e9',
+              color: '#2e7d32',
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32" style={{marginRight: '8px'}}>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
             {message}
-          </Alert>
+          </Box>
         )}
 
         {error && (
-          <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+          <Box 
+            sx={{
+              p: 2,
+              mb: 2,
+              width: '100%',
+              borderRadius: 1,
+              bgcolor: '#ffebee',
+              color: '#d32f2f',
+              fontSize: '0.95rem',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#d32f2f" style={{marginRight: '8px'}}>
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
             {error}
-          </Alert>
+          </Box>
         )}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
@@ -93,13 +144,27 @@ export default function ForgotPassword() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}
+            InputProps={{
+              style: { fontSize: '1rem' },
+            }}
+            InputLabelProps={{
+              style: { fontSize: '1rem' },
+            }}
           />
           
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            sx={{ mt: 3, mb: 2 }}
+            sx={{ 
+              mt: 3, 
+              mb: 3,
+              py: 1.5,
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              textTransform: 'none',
+              boxShadow: '0px 3px 5px rgba(0, 0, 0, 0.2)'
+            }}
             disabled={isLoading}
           >
             {isLoading ? <CircularProgress size={24} /> : 'Enviar instrucciones'}
@@ -107,16 +172,19 @@ export default function ForgotPassword() {
           
           <Grid container justifyContent="center">
             <Grid item>
-              <Link to="/login" style={{ textDecoration: 'none' }}>
-                <Button
-                  startIcon={
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                      <path fillRule="evenodd" d="M11.03 3.97a.75.75 0 010 1.06l-6.22 6.22H21a.75.75 0 010 1.5H4.81l6.22 6.22a.75.75 0 11-1.06 1.06l-7.5-7.5a.75.75 0 010-1.06l7.5-7.5a.75.75 0 011.06 0z" clipRule="evenodd" />
-                    </svg>
-                  }
-                >
-                  Volver al inicio de sesión
-                </Button>
+              <Link to="/login" style={{ 
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#6497df',
+                fontSize: '0.95rem',
+                fontWeight: 'medium',
+                transition: 'color 0.2s ease'
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16" style={{marginRight: '4px'}}>
+                  <path fillRule="evenodd" d="M11.03 3.97a.75.75 0 010 1.06l-6.22 6.22H21a.75.75 0 010 1.5H4.81l6.22 6.22a.75.75 0 11-1.06 1.06l-7.5-7.5a.75.75 0 010-1.06l7.5-7.5a.75.75 0 011.06 0z" clipRule="evenodd" />
+                </svg>
+                Volver al inicio de sesión
               </Link>
             </Grid>
           </Grid>

@@ -201,9 +201,9 @@ const SignIn = () => {
   const navigate = useNavigate();
 
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [error, setError] = useState("");
 
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const user = {
@@ -212,6 +212,8 @@ const SignIn = () => {
     };
 
     try {
+      // Reset error message
+      setError("");
       // Set loading state to true while making the request
       setLoading(true);
 
@@ -224,23 +226,24 @@ const SignIn = () => {
         body: JSON.stringify(user),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("User created successfully:", data);
+      const data = await response.json();
 
-             // Store token and role in localStorage
-      localStorage.setItem("token", data.data.token);
-      localStorage.setItem("role", data.data.user.role);
-        // Redirect to login page after successful signup
+      if (response.ok) {
+        console.log("Login successful:", data);
+
+        // Store token and role in localStorage
+        localStorage.setItem("token", data.data.token);
+        localStorage.setItem("role", data.data.user.role);
+        // Redirect to home page after successful login
         navigate("/home");
       } else {
-        const errorData = await response.json();
-        console.log("Error:", errorData);
-        // Handle error (e.g., show error message)
+        // Show specific error message from the backend or default message
+        setError(data.message || "Correo electrónico o contraseña incorrectos");
+        console.log("Error:", data);
       }
     } catch (error) {
+      setError("Error de conexión. Por favor, inténtalo de nuevo más tarde.");
       console.log("Request failed:", error);
-      // Handle network or other errors
     } finally {
       // Set loading state to false once the request is complete
       setLoading(false);
@@ -260,7 +263,7 @@ const SignIn = () => {
       <ThemeProvider theme={theme}>
         <Container
           component="main"
-          style={{ display: "flex", height: "100vh" , marginTop: 150}}
+          style={{ display: "flex", minHeight: "100vh", marginTop: 50, padding: "20px"}}
         >
            {loading && (
                     <Box
@@ -301,11 +304,39 @@ const SignIn = () => {
                 <Typography
                   component="h1"
                   variant="h5"
-                  sx={{ mb: 3, textAlign: "center" }}
+                  sx={{ 
+                    mb: 3, 
+                    textAlign: "center",
+                    fontWeight: "600",
+                    textTransform: "none",
+                    fontSize: "1.75rem",
+                    color: "#2c3e50"
+                  }}
                 >
-                 INICIAR SESIÓN
-
+                  Iniciar sesión
                 </Typography>
+
+                {/* Error message display */}
+                {error && (
+                  <Box 
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      width: '100%',
+                      borderRadius: 1,
+                      bgcolor: '#ffebee',
+                      color: '#d32f2f',
+                      fontSize: '0.9rem',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#d32f2f" style={{marginRight: '8px'}}>
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    {error}
+                  </Box>
+                )}
 
                 <Grid container spacing={2}>
                   <Grid item xs={12}>
@@ -316,6 +347,12 @@ const SignIn = () => {
                       required
                       inputRef={email}
                       type="email"
+                      InputProps={{
+                        style: { fontSize: '1rem' },
+                      }}
+                      InputLabelProps={{
+                        style: { fontSize: '1rem' },
+                      }}
                     />
                   </Grid>
 
@@ -327,6 +364,12 @@ const SignIn = () => {
                       required
                       inputRef={password}
                       type="password"
+                      InputProps={{
+                        style: { fontSize: '1rem' },
+                      }}
+                      InputLabelProps={{
+                        style: { fontSize: '1rem' },
+                      }}
                     />
                   </Grid>
 
@@ -335,25 +378,52 @@ const SignIn = () => {
                       type="submit"
                       fullWidth
                       variant="contained"
-                      sx={{ mt: 3, mb: 2 }}
+                      sx={{ 
+                        mt: 3, 
+                        mb: 2,
+                        py: 1.5,
+                        fontSize: '1rem',
+                        fontWeight: 'bold',
+                        textTransform: 'none',
+                        boxShadow: '0px 3px 5px rgba(0, 0, 0, 0.2)'
+                      }}
                       disabled={loading} // Disable button while loading
                     >
-                   Iniciar sesión
-
-
+                      {loading ? 
+                        <CircularProgress size={24} color="inherit" /> : 
+                        'Iniciar sesión'
+                      }
                     </Button>
                   </Grid>
                 </Grid>
 
-                <Grid container justifyContent="space-between" style={{marginTop: '10px'}}>
+                <Grid container justifyContent="space-between" style={{marginTop: '20px'}}>
                   <Grid item>
-                    <Link to="/forgot-password" variant="body2" style={{textDecoration: 'none', color: '#6497df'}}>
+                    <Link to="/forgot-password" variant="body2" style={{
+                      textDecoration: 'none', 
+                      color: '#6497df',
+                      fontSize: '0.95rem',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        color: '#3f7ad9',
+                      }
+                    }}>
                       ¿Olvidaste tu contraseña?
                     </Link>
                   </Grid>
                   <Grid item>
-                    <Link to="/register" variant="body2" style={{fontSize: 16, fontWeight: 'bold', textDecoration: 'none', color: '#6497df'}}>
-                      {"¿No tienes una cuenta? Inscribirse"}
+                    <Link to="/register" variant="body2" style={{
+                      fontSize: '0.95rem', 
+                      fontWeight: 'bold', 
+                      textDecoration: 'none', 
+                      color: '#6497df',
+                      transition: 'all 0.2s ease',
+                      display: 'inline-block',
+                      '&:hover': {
+                        color: '#3f7ad9',
+                      }
+                    }}>
+                      ¿No tienes una cuenta? Inscribirse
                     </Link>
                   </Grid>
                 </Grid>
