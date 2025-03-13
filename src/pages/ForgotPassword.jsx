@@ -140,24 +140,27 @@ export default function ForgotPassword() {
             label="Correo electrónico"
             name="email"
             autoComplete="email"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck="false"
             autoFocus
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value.toLowerCase())}
             disabled={isLoading}
             InputProps={{
-              style: { fontSize: '1rem' },
-              autoCapitalize: "none",
+              style: { fontSize: '1rem', textTransform: 'lowercase' },
               inputProps: {
-                autoCapitalize: "none",
-                autoCorrect: "off",
-                spellCheck: "false"
+                style: { textTransform: 'lowercase' }
               }
+            }}
+            inputProps={{
+              style: { textTransform: 'lowercase' },
+              autoCapitalize: "off"
             }}
             InputLabelProps={{
               style: { fontSize: '1rem' },
+            }}
+            sx={{ 
+              "& input": { 
+                textTransform: "lowercase" 
+              }
             }}
           />
           

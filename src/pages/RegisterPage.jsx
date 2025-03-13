@@ -211,7 +211,7 @@ const SignUp = () => {
     // Create the user object from form data
     const user = {
       username: userName.current.value,
-      email: email.current.value,
+      email: email.current.value.toLowerCase(),
       password: password.current.value,
       role: role || "user", // Include the selected role, default to user
     };
@@ -341,20 +341,23 @@ const SignUp = () => {
                     required
                     inputRef={email}
                     type="email"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck="false"
                     InputProps={{
-                      style: { fontSize: '1rem' },
-                      autoCapitalize: "none",
+                      style: { fontSize: '1rem', textTransform: 'lowercase' },
                       inputProps: {
-                        autoCapitalize: "none",
-                        autoCorrect: "off",
-                        spellCheck: "false"
+                        style: { textTransform: 'lowercase' }
                       }
+                    }}
+                    inputProps={{
+                      style: { textTransform: 'lowercase' },
+                      autoCapitalize: "off"
                     }}
                     InputLabelProps={{
                       style: { fontSize: '1rem' },
+                    }}
+                    sx={{ 
+                      "& input": { 
+                        textTransform: "lowercase" 
+                      }
                     }}
                   />
                 </Grid>
