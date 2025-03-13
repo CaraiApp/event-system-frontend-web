@@ -232,34 +232,34 @@ const SignIn = () => {
       // Set loading state to true while making the request
       setLoading(true);
 
-      // Use full URL with environment variable
-      const baseUrl = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-      const response = await fetch(`${baseUrl}/api/v1/users/loginUser`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(user),
-      });
+      // Usar axios para aprovechar el proxy CORS
+      const { default: axios } = await import('axios');
+      
+      // Hacer la petición a través de axios que ya tiene configurado el proxy CORS
+      const response = await axios.post('/api/v1/users/loginUser', user);
+      
+      // Usar directamente la respuesta de axios
+      const data = response.data;
 
-      const data = await response.json();
+      // La respuesta de axios es exitosa si llega aquí (sin excepciones)
+      console.log("Login successful:", data);
 
-      if (response.ok) {
-        console.log("Login successful:", data);
-
-        // Store token and role in localStorage
-        localStorage.setItem("token", data.data.token);
-        localStorage.setItem("role", data.data.user.role);
-        // Redirect to home page after successful login
-        navigate("/home");
-      } else {
-        // Show specific error message from the backend or default message
-        setError(data.message || "Correo electrónico o contraseña incorrectos");
-        console.log("Error:", data);
-      }
+      // Store token and role in localStorage
+      localStorage.setItem("token", data.data.token);
+      localStorage.setItem("role", data.data.user.role);
+      // Redirect to home page after successful login
+      navigate("/home");
     } catch (error) {
-      setError("Error de conexión. Por favor, inténtalo de nuevo más tarde.");
-      console.log("Request failed:", error);
+      console.error("Error completo:", error);
+      
+      // Mostrar mensaje de error específico del backend si está disponible
+      if (error.response && error.response.data) {
+        setError(error.response.data.message || "Correo electrónico o contraseña incorrectos");
+        console.log("Error del servidor:", error.response.data);
+      } else {
+        setError("Error de conexión. Por favor, inténtalo de nuevo más tarde.");
+        console.log("Error de conexión:", error.message);
+      }
     } finally {
       // Set loading state to false once the request is complete
       setLoading(false);

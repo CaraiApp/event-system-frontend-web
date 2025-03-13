@@ -234,29 +234,29 @@ const SignUp = () => {
       // Set loading state to true while making the request
       setLoading(true);
 
-      // Use absolute URL directly for testing
-      const response = await fetch('https://event-system-backend-production.up.railway.app/api/v1/users/createUser', {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(user),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        console.log("User created successfully:", data);
-        // Redirect to login page after successful signup
-        navigate("/login");
-      } else {
-        // Show specific error message from the backend or default message
-        setError(data.message || "Error al crear la cuenta. Por favor, inténtalo de nuevo.");
-        console.log("Error:", data);
-      }
+      // Usar axios para aprovechar el proxy CORS
+      const { default: axios } = await import('axios');
+      
+      // Hacer la petición a través de axios que ya tiene configurado el proxy CORS
+      const response = await axios.post('/api/v1/users/createUser', user);
+      
+      // Acceder directamente a la respuesta de axios
+      const data = response.data;
+      
+      console.log("User created successfully:", data);
+      // Redirect to login page after successful signup
+      navigate("/login");
     } catch (error) {
-      setError("Error de conexión. Por favor, inténtalo de nuevo más tarde.");
-      console.log("Request failed:", error);
+      console.error("Error completo:", error);
+      
+      // Mostrar mensaje de error específico del backend si está disponible
+      if (error.response && error.response.data) {
+        setError(error.response.data.message || "Error al crear la cuenta. Por favor, inténtalo de nuevo.");
+        console.log("Error del servidor:", error.response.data);
+      } else {
+        setError("Error de conexión. Por favor, inténtalo de nuevo más tarde.");
+        console.log("Error de conexión:", error.message);
+      }
     } finally {
       // Set loading state to false once the request is complete
       setLoading(false);
