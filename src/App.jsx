@@ -4,10 +4,12 @@ import React, { useEffect } from 'react'
 import axios from 'axios'
 import { UserContextProvider } from './UserContext'
 
-// Configuración global de axios
-axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
-axios.defaults.withCredentials = true;
-axios.defaults.timeout = 10000; // Timeout de 10 segundos
+// Configuración global de axios - Usando un proxy CORS público como solución final
+axios.defaults.baseURL = 'https://corsproxy.io/?' + encodeURIComponent(
+  import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app'
+);
+axios.defaults.withCredentials = false; // Debe ser false cuando se usa proxy CORS
+axios.defaults.timeout = 15000; // Aumentado a 15 segundos
 
 // Configuraciones para peticiones
 axios.defaults.headers.common['Content-Type'] = 'application/json';
@@ -24,8 +26,8 @@ axios.interceptors.request.use(config => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
-  // Asegurar que las credenciales se envíen siempre
-  config.withCredentials = true;
+  // No usar withCredentials cuando se utiliza un proxy CORS
+  // config.withCredentials = true;
   
   console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, config);
   return config;
@@ -42,26 +44,26 @@ axios.interceptors.response.use(
   error => {
     console.error('Error completo:', error);
     
-    // Implementar reintento para errores de red
+    // Implementar sistema de reintento con varios servicios de proxy CORS
     const config = error.config;
     
     // Si es un error de red y no se ha intentado reenviar ya
     if (error.message === 'Network Error' && !config._retry) {
       config._retry = true;
-      console.log('Reintentando petición después de error de red...');
+      console.log('Reintentando petición a través de proxy alternativo...');
       
       // Pequeño retraso antes de reintentar
       return new Promise(resolve => {
         setTimeout(() => {
-          // Modificar el withCredentials para ver si así funciona
-          config.withCredentials = false;
+          // Usar otro servicio de proxy CORS (cors-anywhere como fallback)
+          const apiURL = config.url || '';
+          const backendURL = 'https://event-system-backend-production.up.railway.app';
+          const fullURL = apiURL.startsWith('/') ? backendURL + apiURL : apiURL;
           
-          // También podemos probar con la URL absoluta
-          if (config.url?.startsWith('/')) {
-            const backendUrl = 'https://event-system-backend-production.up.railway.app';
-            config.url = backendUrl + config.url;
-            config.baseURL = '';
-          }
+          // Crea una nueva URL utilizando el proxy alternativo
+          config.url = 'https://cors-anywhere.herokuapp.com/' + encodeURIComponent(fullURL);
+          config.baseURL = '';
+          config.withCredentials = false;
           
           resolve(axios(config));
         }, 1000);
