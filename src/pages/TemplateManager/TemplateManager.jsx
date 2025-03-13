@@ -57,33 +57,80 @@ const TemplateManager = () => {
     severity: 'success'
   });
 
-  // Load templates from localStorage or defaults
+  // Load templates from backend and localStorage
   useEffect(() => {
-    // Cargar plantillas
-    const loadTemplates = () => {
+    const loadTemplates = async () => {
       try {
-        // Obtener plantillas personalizadas de localStorage
+        setLoading(true);
+        
+        // Determinar la URL base del API
+        let API_BASE_URL;
+        try {
+          API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+          if (!API_BASE_URL) {
+            API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+          }
+        } catch (e) {
+          API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+        }
+        
+        // Obtener las plantillas del backend
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`${API_BASE_URL}/api/templates`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        let backendTemplates = [];
+        if (response.data && response.data.data) {
+          backendTemplates = response.data.data.map(template => ({
+            ...template,
+            image: template.image || Template1 // Usar imagen predeterminada si no hay imagen
+          }));
+        }
+        
+        // Obtener plantillas personalizadas de localStorage como respaldo
         const customTemplatesJSON = localStorage.getItem('allTemplates');
         const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
         
-        // Combinar con plantillas predeterminadas
+        // Fusionar plantillas de backend con las predeterminadas y personalizar imagen
         const combinedTemplates = [
           ...templates.filter(t => t.isDefault), // Mantener plantillas predeterminadas
-          ...customTemplates.filter(t => !t.isDefault) // Añadir plantillas personalizadas
+          ...backendTemplates.filter(t => !t.isDefault), // Añadir plantillas del backend
+          // Añadir plantillas locales que no estén en el backend
+          ...customTemplates.filter(t => 
+            !t.isDefault && 
+            !backendTemplates.some(bt => bt.id === t.id)
+          )
         ];
         
         setTemplates(combinedTemplates);
-        setLoading(false);
       } catch (error) {
-        console.error('Error al cargar plantillas:', error);
+        console.error('Error al cargar plantillas desde el backend:', error);
+        
+        // Si falla el backend, cargar solo desde localStorage
+        const customTemplatesJSON = localStorage.getItem('allTemplates');
+        const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
+        
+        const combinedTemplates = [
+          ...templates.filter(t => t.isDefault),
+          ...customTemplates.filter(t => !t.isDefault)
+        ];
+        
+        setTemplates(combinedTemplates);
+        
+        setSnackbar({
+          open: true,
+          message: 'No se pudo conectar con el servidor. Usando datos locales.',
+          severity: 'warning'
+        });
+      } finally {
         setLoading(false);
       }
     };
     
-    // Simular retraso para mostrar el loader
-    const timer = setTimeout(loadTemplates, 1000);
-    
-    return () => clearTimeout(timer);
+    loadTemplates();
   }, []);
 
   const handleAddDialogOpen = () => {
@@ -155,46 +202,166 @@ const TemplateManager = () => {
     }));
   };
 
-  const handleAddTemplate = () => {
-    // Here you would normally send the new template to your API
+  const handleAddTemplate = async () => {
+    setLoading(true);
+    
+    // Generar una ID única para la plantilla
+    const templateId = `template-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+    
+    // Preparar los datos de la nueva plantilla
     const newTemplateObj = {
-      id: `template${templates.length + 1}`,
+      id: templateId,
       name: newTemplate.name,
       rows: newTemplate.rows,
       columns: newTemplate.columns,
       defaultSeats: newTemplate.rows * newTemplate.columns,
       image: newTemplate.templateFile ? URL.createObjectURL(newTemplate.templateFile) : Template1,
-      isDefault: false
+      isDefault: false,
+      dateCreated: new Date().toISOString(),
+      dateModified: new Date().toISOString()
     };
-
-    setTemplates([...templates, newTemplateObj]);
-    handleAddDialogClose();
     
-    setSnackbar({
-      open: true,
-      message: 'Plantilla añadida correctamente',
-      severity: 'success'
-    });
+    // Determinar la URL base del API
+    let API_BASE_URL;
+    try {
+      API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      if (!API_BASE_URL) {
+        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+      }
+    } catch (e) {
+      API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+    }
+    
+    try {
+      // Enviar al backend
+      const token = localStorage.getItem('token');
+      await axios.post(`${API_BASE_URL}/api/templates`, newTemplateObj, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Añadir a la lista local
+      setTemplates([...templates, newTemplateObj]);
+      
+      // Guardar en localStorage como respaldo
+      const customTemplatesJSON = localStorage.getItem('allTemplates');
+      const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
+      customTemplates.push(newTemplateObj);
+      localStorage.setItem('allTemplates', JSON.stringify(customTemplates));
+      
+      setSnackbar({
+        open: true,
+        message: 'Plantilla añadida correctamente en el servidor',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error al guardar la plantilla en el servidor:', error);
+      
+      // Añadir a la lista local de todos modos
+      setTemplates([...templates, newTemplateObj]);
+      
+      // Guardar en localStorage como respaldo
+      const customTemplatesJSON = localStorage.getItem('allTemplates');
+      const customTemplates = customTemplatesJSON ? JSON.parse(customTemplatesJSON) : [];
+      customTemplates.push(newTemplateObj);
+      localStorage.setItem('allTemplates', JSON.stringify(customTemplates));
+      
+      setSnackbar({
+        open: true,
+        message: 'No se pudo conectar con el servidor. La plantilla se guardó localmente.',
+        severity: 'warning'
+      });
+    } finally {
+      handleAddDialogClose();
+      setLoading(false);
+    }
   };
 
-  const handleEditTemplate = () => {
-    // Here you would normally send the updated template to your API
-    const updatedTemplates = templates.map(template => 
-      template.id === selectedTemplate.id ? selectedTemplate : template
-    );
+  const handleEditTemplate = async () => {
+    setLoading(true);
     
-    setTemplates(updatedTemplates);
-    handleEditDialogClose();
+    // Actualizar la fecha de modificación
+    const updatedTemplate = {
+      ...selectedTemplate,
+      dateModified: new Date().toISOString()
+    };
     
-    setSnackbar({
-      open: true,
-      message: 'Plantilla actualizada correctamente',
-      severity: 'success'
-    });
+    // Determinar la URL base del API
+    let API_BASE_URL;
+    try {
+      API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      if (!API_BASE_URL) {
+        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+      }
+    } catch (e) {
+      API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+    }
+    
+    try {
+      // Enviar actualización al backend
+      const token = localStorage.getItem('token');
+      await axios.put(`${API_BASE_URL}/api/templates/${updatedTemplate.id}`, updatedTemplate, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      // Actualizar la lista local
+      const updatedTemplates = templates.map(template => 
+        template.id === updatedTemplate.id ? updatedTemplate : template
+      );
+      setTemplates(updatedTemplates);
+      
+      // Actualizar en localStorage
+      const customTemplatesJSON = localStorage.getItem('allTemplates');
+      if (customTemplatesJSON) {
+        const customTemplates = JSON.parse(customTemplatesJSON);
+        const updatedCustomTemplates = customTemplates.map(template => 
+          template.id === updatedTemplate.id ? updatedTemplate : template
+        );
+        localStorage.setItem('allTemplates', JSON.stringify(updatedCustomTemplates));
+      }
+      
+      setSnackbar({
+        open: true,
+        message: 'Plantilla actualizada correctamente en el servidor',
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error al actualizar la plantilla en el servidor:', error);
+      
+      // Actualizar la lista local de todos modos
+      const updatedTemplates = templates.map(template => 
+        template.id === updatedTemplate.id ? updatedTemplate : template
+      );
+      setTemplates(updatedTemplates);
+      
+      // Actualizar en localStorage
+      const customTemplatesJSON = localStorage.getItem('allTemplates');
+      if (customTemplatesJSON) {
+        const customTemplates = JSON.parse(customTemplatesJSON);
+        const updatedCustomTemplates = customTemplates.map(template => 
+          template.id === updatedTemplate.id ? updatedTemplate : template
+        );
+        localStorage.setItem('allTemplates', JSON.stringify(updatedCustomTemplates));
+      }
+      
+      setSnackbar({
+        open: true,
+        message: 'No se pudo conectar con el servidor. La plantilla se actualizó localmente.',
+        severity: 'warning'
+      });
+    } finally {
+      handleEditDialogClose();
+      setLoading(false);
+    }
   };
 
-  const handleDeleteTemplate = () => {
-    // Don't allow deletion of default templates
+  const handleDeleteTemplate = async () => {
+    // No permitir eliminar plantillas predeterminadas
     if (selectedTemplate.isDefault) {
       setSnackbar({
         open: true,
@@ -205,15 +372,33 @@ const TemplateManager = () => {
       return;
     }
     
+    setLoading(true);
+    
+    // Determinar la URL base del API
+    let API_BASE_URL;
     try {
+      API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      if (!API_BASE_URL) {
+        API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+      }
+    } catch (e) {
+      API_BASE_URL = 'https://event-system-backend-production.up.railway.app';
+    }
+    
+    try {
+      // Eliminar del backend
+      const token = localStorage.getItem('token');
+      await axios.delete(`${API_BASE_URL}/api/templates/${selectedTemplate.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
       // Eliminar de localStorage
       const customTemplatesJSON = localStorage.getItem('allTemplates');
-      
       if (customTemplatesJSON) {
         const customTemplates = JSON.parse(customTemplatesJSON);
         const updatedCustomTemplates = customTemplates.filter(t => t.id !== selectedTemplate.id);
-        
-        // Guardar plantillas actualizadas
         localStorage.setItem('allTemplates', JSON.stringify(updatedCustomTemplates));
       }
       
@@ -221,20 +406,34 @@ const TemplateManager = () => {
       const updatedTemplates = templates.filter(template => template.id !== selectedTemplate.id);
       setTemplates(updatedTemplates);
       
-      handleDeleteDialogClose();
-      
       setSnackbar({
         open: true,
-        message: 'Plantilla eliminada correctamente',
+        message: 'Plantilla eliminada correctamente del servidor',
         severity: 'success'
       });
     } catch (error) {
-      console.error('Error al eliminar plantilla:', error);
+      console.error('Error al eliminar plantilla del servidor:', error);
+      
+      // Eliminar de localStorage y estado local de todos modos
+      const customTemplatesJSON = localStorage.getItem('allTemplates');
+      if (customTemplatesJSON) {
+        const customTemplates = JSON.parse(customTemplatesJSON);
+        const updatedCustomTemplates = customTemplates.filter(t => t.id !== selectedTemplate.id);
+        localStorage.setItem('allTemplates', JSON.stringify(updatedCustomTemplates));
+      }
+      
+      // Actualizar estado local
+      const updatedTemplates = templates.filter(template => template.id !== selectedTemplate.id);
+      setTemplates(updatedTemplates);
+      
       setSnackbar({
         open: true,
-        message: 'Error al eliminar la plantilla',
-        severity: 'error'
+        message: 'No se pudo conectar con el servidor. La plantilla se eliminó localmente.',
+        severity: 'warning'
       });
+    } finally {
+      handleDeleteDialogClose();
+      setLoading(false);
     }
   };
 
