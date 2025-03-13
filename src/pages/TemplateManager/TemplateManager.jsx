@@ -365,7 +365,7 @@ const TemplateManager = () => {
     <Container maxWidth="lg" sx={{ mt: 12, mb: 8 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <IconButton 
-          onClick={() => navigate(-1)} 
+          onClick={() => navigate('/home')} 
           sx={{ mr: 2 }}
           aria-label="volver"
         >

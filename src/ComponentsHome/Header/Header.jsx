@@ -234,7 +234,7 @@ const Header = () => {
       <div className="navbar__right__btns">
         {token ? (
           <>
-            {user?.role === 'organizer' && (
+            {(user?.role === 'organizer' || user?.role === 'admin') && (
               <Button className="btn primary__btn">
                 <Link to="/pricing">
                 
@@ -272,7 +272,7 @@ const Header = () => {
                     Billetera
                   </Link>
                  )}
-                 {user?.role === "organizer" && (
+                 {(user?.role === "organizer" || user?.role === "admin") && (
                   <Link to="/template-manager" className="dropdown-item">
                     Gestor de Plantillas
                   </Link>

@@ -19,12 +19,12 @@ export const AdminRoute = ({ element }) => {
     return <Navigate to="/login" />;
   }
   
-  // If user is not an organizer (admin), redirect to home
-  if (role !== 'organizer') {
+  // If user is not an organizer or admin, redirect to home
+  if (role !== 'organizer' && role !== 'admin') {
     return <Navigate to="/home" />;
   }
   
-  // If token is present and user is an organizer, allow access to the route
+  // If token is present and user is an organizer or admin, allow access to the route
   return element;
 };
 
