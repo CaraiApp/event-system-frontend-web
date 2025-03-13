@@ -8,8 +8,13 @@ import { UserContextProvider } from './UserContext'
 axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
 axios.defaults.withCredentials = true;
 
-// Interceptor para logs (opcional pero útil para debuggear)
+// Interceptor para incluir automáticamente el token JWT en todas las peticiones
 axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
   console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
   return config;
 });
@@ -20,6 +25,12 @@ axios.interceptors.response.use(
     return response;
   },
   error => {
+    if (error.response && error.response.status === 401) {
+      // Token expirado o inválido
+      console.error('Sesión expirada o token inválido');
+      localStorage.removeItem('token');
+      // No redirigimos automáticamente aquí para evitar ciclos de redirección
+    }
     console.error(`API Error: ${error.response?.status || 'Network Error'} from ${error.config?.url || 'unknown'}`);
     return Promise.reject(error);
   }

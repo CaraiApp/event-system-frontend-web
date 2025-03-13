@@ -26,9 +26,7 @@ export const authAPI = {
     const token = localStorage.getItem('token');
     if (!token) return null;
     
-    return axios.get('/api/v1/users/getSingleUser', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    return axios.get('/api/v1/users/getSingleUser');
   },
   
   // Cerrar sesión (en el cliente - no hay endpoint de logout)
@@ -118,7 +116,7 @@ export const templateAPI = {
   
   // Crear una plantilla
   createTemplate: async (templateData) => {
-    return axios.post('/api/templates/create', templateData);
+    return axios.post('/api/templates', templateData);
   },
   
   // Actualizar una plantilla
