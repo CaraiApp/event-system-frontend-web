@@ -141,9 +141,19 @@ const TemplateEditor = () => {
     
     // Cargar datos de plantilla existente o inicializar nueva
     if (template) {
-      // Si tenemos un ID de plantilla, intentamos cargarla desde el backend primero
+      // Si tenemos un ID de plantilla, verificamos primero si es una plantilla predefinida o personalizada
       if (template.id) {
-        // Usar la variable de entorno para la URL del backend
+        // Las plantillas personalizadas (template-custom-*) solo deberían intentar cargarse del backend si no tenemos los datos locales
+        const isCustomTemplate = template.id.startsWith('template-custom-');
+        
+        // Si es una plantilla personalizada y tenemos los datos, la cargamos directamente desde los datos locales
+        if (isCustomTemplate && template.seats) {
+          console.log('Cargando plantilla personalizada desde datos locales');
+          loadTemplateFromLocalData(template);
+          return;
+        }
+        
+        // Para las plantillas predefinidas o si no tenemos datos completos, intentamos cargar desde el backend
         const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
         
@@ -189,11 +199,8 @@ const TemplateEditor = () => {
           // Si falla, usamos los datos de localStorage que nos pasaron (template)
           loadTemplateFromLocalData(template);
           
-          setSnackbar({
-            open: true,
-            message: 'Usando datos locales como respaldo',
-            severity: 'info'
-          });
+          // No mostrar mensaje de error para no confundir al usuario
+          // Solo registramos en consola para depuración
         });
       } else {
         // No tenemos ID, usamos los datos que nos pasaron
