@@ -153,7 +153,7 @@ const navigate = useNavigate();
  setIsLoading(true); // Set loading state to true when request starts
   try {
     // Make the API request using Axios
-    const response = await axios.post(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/createEvent`, formDataPayload, {
+    const response = await axios.post(`https://event-system-backend-production.up.railway.app/api/v1/events/createEvent`, formDataPayload, {
       headers: {
         'Content-Type': 'multipart/form-data', // Adjust header for FormData
         'Authorization': `Bearer ${token}`,   // Add the token to the Authorization header
@@ -172,13 +172,30 @@ const navigate = useNavigate();
     }
   } catch (err) {
     console.error('Error creating event:', err);
-    // Optionally, handle specific error cases, e.g., if err.response is defined
-    if (err.response && err.response.status) {
+    
+    // Mostrar información más detallada sobre el error
+    if (err.response) {
+      // El servidor respondió con un status fuera del rango 2xx
       console.error(`API returned error status: ${err.response.status}`);
+      console.error('Error message:', err.response.data);
+      
+      // Si es un error 405, mostrar un mensaje específico
+      if (err.response.status === 405) {
+        alert('Error de método no permitido. Por favor, contacta al soporte técnico.');
+      } else {
+        alert(`Error al crear el evento: ${err.response.data.message || 'Error del servidor'}`);
+      }
+    } else if (err.request) {
+      // La solicitud se realizó pero no se recibió respuesta
+      console.error('No response received:', err.request);
+      alert('No se recibió respuesta del servidor. Verifica tu conexión a internet.');
+    } else {
+      // Algo ocurrió en la configuración de la solicitud que disparó un error
+      console.error('Error setting up request:', err.message);
+      alert(`Error al configurar la solicitud: ${err.message}`);
     }
   } finally {
-    setIsLoading(false); // Set loading state to true when request starts
-
+    setIsLoading(false);
   }
   };
 
