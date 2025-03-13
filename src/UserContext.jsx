@@ -15,20 +15,38 @@ export function UserContextProvider({children}){
       if (token && !user) {
         try {
           setLoading(true);
-          // Usar la URL completa con la variable de entorno
-          const response = await axios.get('/api/v1/users/getSingleUser', {
+          
+          console.log('Fetching user data with token:', token);
+          
+          // Intentamos con la ruta completa absoluta en lugar de relativa
+          const apiUrl = `${axios.defaults.baseURL}/api/v1/users/getSingleUser`;
+          console.log('API URL for user fetch:', apiUrl);
+          
+          const response = await axios.get(apiUrl, {
             headers: {
               Authorization: `Bearer ${token}`
-            }
+            },
+            // Asegurar que se envían cookies y credenciales
+            withCredentials: true
           });
+          
+          console.log('User fetch response:', response);
           
           if (response.data && response.data.data) {
             setUser(response.data.data);
+            console.log('User data set successfully:', response.data.data);
           }
         } catch (error) {
           console.error('Error fetching user in UserContext:', error);
+          console.error('Error details:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data
+          });
+          
           if (error.response && error.response.status === 401) {
             // Token inválido o expirado
+            console.log('Removing invalid token');
             localStorage.removeItem('token');
           }
         } finally {
