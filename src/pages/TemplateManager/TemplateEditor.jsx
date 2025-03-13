@@ -155,7 +155,7 @@ const TemplateEditor = () => {
         
         // Para las plantillas predefinidas o si no tenemos datos completos, intentamos cargar desde el backend
         const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        const backendURL = `${API_BASE_URL}/api/v1/templates/${template.id}`;
+        const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
         
         // Intentar cargar desde el backend
         axios.get(backendURL, {
@@ -904,7 +904,7 @@ const TemplateEditor = () => {
     try {
       // Usar la variable de entorno para la URL del backend
       const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-      const backendURL = `${API_BASE_URL}/api/v1/templates`;
+      const backendURL = `${API_BASE_URL}/api/templates`;
       const endpoint = isEditing ? `${backendURL}/${templateId}` : backendURL;
       const method = isEditing ? 'PUT' : 'POST';
       
