@@ -106,22 +106,22 @@ export const bookingAPI = {
 export const templateAPI = {
   // Obtener todas las plantillas
   getTemplates: async () => {
-    return axios.get('/api/templates');
+    return axios.get('/api/v1/templates');
   },
   
   // Obtener una plantilla específica
   getTemplate: async (templateId) => {
-    return axios.get(`/api/templates/${templateId}`);
+    return axios.get(`/api/v1/templates/${templateId}`);
   },
   
   // Crear una plantilla
   createTemplate: async (templateData) => {
-    return axios.post('/api/templates', templateData);
+    return axios.post('/api/v1/templates', templateData);
   },
   
   // Actualizar una plantilla
   updateTemplate: async (templateId, templateData) => {
-    return axios.put(`/api/templates/${templateId}`, templateData);
+    return axios.put(`/api/v1/templates/${templateId}`, templateData);
   }
 };
 
