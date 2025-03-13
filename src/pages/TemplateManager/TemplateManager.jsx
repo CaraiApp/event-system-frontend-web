@@ -68,7 +68,7 @@ const TemplateManager = () => {
         
         // Obtener las plantillas del backend
         const token = localStorage.getItem('token');
-        const response = await axios.get(`${API_BASE_URL}/api/templates`, {
+        const response = await axios.get(`${API_BASE_URL}/api/v1/templates`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -219,7 +219,7 @@ const TemplateManager = () => {
     try {
       // Enviar al backend
       const token = localStorage.getItem('token');
-      await axios.post(`${API_BASE_URL}/api/templates`, newTemplateObj, {
+      await axios.post(`${API_BASE_URL}/api/v1/templates`, newTemplateObj, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
