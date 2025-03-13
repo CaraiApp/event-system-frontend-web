@@ -18,16 +18,13 @@ export function UserContextProvider({children}){
           
           console.log('Fetching user data with token:', token);
           
-          // Intentamos con la ruta completa absoluta en lugar de relativa
-          const apiUrl = `${axios.defaults.baseURL}/api/v1/users/getSingleUser`;
-          console.log('API URL for user fetch:', apiUrl);
+          // Con el proxy CORS, usamos el path relativo
+          console.log('Fetching user with token through CORS proxy');
           
-          const response = await axios.get(apiUrl, {
+          const response = await axios.get('/api/v1/users/getSingleUser', {
             headers: {
               Authorization: `Bearer ${token}`
-            },
-            // Asegurar que se envían cookies y credenciales
-            withCredentials: true
+            }
           });
           
           console.log('User fetch response:', response);
