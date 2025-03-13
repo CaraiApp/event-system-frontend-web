@@ -7,9 +7,15 @@ import { UserContextProvider } from './UserContext'
 // Configuración global de axios
 axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
 axios.defaults.withCredentials = true;
+axios.defaults.timeout = 10000; // Timeout de 10 segundos
 
 // Configuraciones para peticiones
 axios.defaults.headers.common['Content-Type'] = 'application/json';
+
+// Configurar para que acepte certificados autofirmados en desarrollo
+axios.defaults.httpsAgent = {
+  rejectUnauthorized: false
+};
 
 // Interceptor para incluir automáticamente el token JWT en todas las peticiones
 axios.interceptors.request.use(config => {
@@ -35,6 +41,32 @@ axios.interceptors.response.use(
   },
   error => {
     console.error('Error completo:', error);
+    
+    // Implementar reintento para errores de red
+    const config = error.config;
+    
+    // Si es un error de red y no se ha intentado reenviar ya
+    if (error.message === 'Network Error' && !config._retry) {
+      config._retry = true;
+      console.log('Reintentando petición después de error de red...');
+      
+      // Pequeño retraso antes de reintentar
+      return new Promise(resolve => {
+        setTimeout(() => {
+          // Modificar el withCredentials para ver si así funciona
+          config.withCredentials = false;
+          
+          // También podemos probar con la URL absoluta
+          if (config.url?.startsWith('/')) {
+            const backendUrl = 'https://event-system-backend-production.up.railway.app';
+            config.url = backendUrl + config.url;
+            config.baseURL = '';
+          }
+          
+          resolve(axios(config));
+        }, 1000);
+      });
+    }
     
     if (error.response && error.response.status === 401) {
       // Token expirado o inválido
