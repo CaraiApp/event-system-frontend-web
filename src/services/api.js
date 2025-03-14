@@ -99,6 +99,11 @@ export const eventAPI = {
   // Eliminar un evento
   deleteEvent: async (eventId) => {
     return axios.delete(`/api/v1/events/${eventId}`);
+  },
+  
+  // Cancelar un evento
+  cancelEvent: async (eventId) => {
+    return axios.put(`/api/v1/events/${eventId}`, { status: 'cancelled' });
   }
 };
 
@@ -119,6 +124,22 @@ export const bookingAPI = {
   // Obtener una reserva específica
   getBooking: async (bookingId) => {
     return axios.get(`/api/v1/booking/${bookingId}`);
+  },
+  
+  // Obtener reservas de un evento específico
+  getEventBookings: async (eventId) => {
+    return axios.get(`/api/v1/booking/geteventbooking?event_id=${eventId}`);
+  },
+  
+  // Verificar si un evento tiene reservas (útil antes de eliminar)
+  hasEventBookings: async (eventId) => {
+    try {
+      const response = await axios.get(`/api/v1/booking/geteventbooking?event_id=${eventId}`);
+      return response.data && response.data.data && response.data.data.length > 0;
+    } catch (error) {
+      console.error('Error checking event bookings:', error);
+      return false; // En caso de error, asumimos que no hay reservas
+    }
   }
 };
 

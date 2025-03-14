@@ -140,17 +140,17 @@ const Events = () => {
   };
   
   const handleViewDetails = () => {
-    navigate(`/events/${selectedEventId}`);
+    navigate(`/event-detail/${selectedEventId}`);
     handleMenuClose();
   };
   
   const handleViewAnalytics = () => {
-    navigate(`/organizer/events/${selectedEventId}/analytics`);
+    navigate(`/organizer/events/${selectedEventId}/statistics`);
     handleMenuClose();
   };
   
   const handleEditEvent = () => {
-    navigate(`/events/edit/${selectedEventId}`);
+    navigate(`/organizer/events/${selectedEventId}/edit`);
     handleMenuClose();
   };
   

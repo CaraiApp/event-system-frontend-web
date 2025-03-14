@@ -80,6 +80,8 @@ import Pricingg from '../pages/Pricingg';
 import OrganizerDashboard from '../pages/OrganizerDashboard/OrganizerDashboard';
 import Overview from '../pages/OrganizerDashboard/pages/Overview';
 import OrganizerEvents from '../pages/OrganizerDashboard/pages/Events';
+import EventStatistics from '../pages/OrganizerDashboard/pages/EventStatistics';
+import EventEdit from '../pages/OrganizerDashboard/pages/EventEdit';
 import Sales from '../pages/OrganizerDashboard/pages/Sales';
 import Attendees from '../pages/OrganizerDashboard/pages/Attendees';
 import Settings from '../pages/OrganizerDashboard/pages/Settings';
@@ -192,6 +194,8 @@ const Routers = () => {
       <Route path="/organizer" element={<OrganizerRoute element={<OrganizerDashboard />} />}>
         <Route index element={<Overview />} />
         <Route path="events" element={<OrganizerEvents />} />
+        <Route path="events/:id/statistics" element={<EventStatistics />} />
+        <Route path="events/:id/edit" element={<EventEdit />} />
         <Route path="sales" element={<Sales />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="settings" element={<Settings />} />
