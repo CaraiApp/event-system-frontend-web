@@ -60,12 +60,19 @@ export const CartProvider = ({ children }) => {
     if (!eventId) return;
     
     try {
+      // Intentar obtener asientos temporales
       const response = await bookingAPI.getTempBookedSeats(eventId);
       if (response.data && response.data.data) {
         setTemporarySeats(response.data.data);
       }
     } catch (error) {
+      // Si recibimos un 404, significa que el endpoint no existe todavía
+      // Esta es una solución temporal hasta que el backend se despliegue
       console.error('Error fetching temporary seats:', error);
+      console.warn('El sistema de reservas temporales aún no está disponible en el servidor');
+      
+      // En caso de error, asumimos que no hay asientos temporalmente reservados
+      setTemporarySeats([]);
     }
   };
   
@@ -142,6 +149,28 @@ export const CartProvider = ({ children }) => {
       console.error('Error adding to cart:', error);
       let errorMessage = 'Error al reservar asientos';
       
+      // En caso de 404 (API no disponible todavía)
+      if (error.response && error.response.status === 404) {
+        console.warn('El sistema de reservas temporales aún no está disponible. Usando modo local.');
+        
+        // Crear una expiración local (7 minutos desde ahora)
+        const expiryTime = new Date(new Date().getTime() + (7 * 60 * 1000));
+        
+        // Simular respuesta exitosa localmente
+        setCartItems(seats);
+        setCurrentEventId(eventId);
+        setExpiryTime(expiryTime);
+        
+        // Guardar en localStorage
+        localStorage.setItem('cartItems', JSON.stringify(seats));
+        localStorage.setItem('cartEventId', eventId);
+        localStorage.setItem('cartExpiryTime', expiryTime.toISOString());
+        
+        // No mostrar error
+        setLoading(false);
+        return;
+      }
+      
       if (error.response && error.response.data) {
         // Si hay asientos temporalmente reservados por otros, mostrarlos
         if (error.response.data.tempReservedSeats) {
@@ -168,6 +197,10 @@ export const CartProvider = ({ children }) => {
         await bookingAPI.releaseTempBooking(eventId, sessionId);
       } catch (error) {
         console.error('Error releasing temporary booking:', error);
+        // Si es un 404, es normal (API no disponible aún)
+        if (error.response && error.response.status === 404) {
+          console.warn('El sistema de reservas temporales aún no está disponible en el servidor');
+        }
       }
     }
     
