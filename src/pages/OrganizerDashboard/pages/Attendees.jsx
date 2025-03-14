@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, 
   TableHead, TableRow, TablePagination, Button, Chip, CircularProgress,
-  TextField, MenuItem, IconButton, Menu, InputAdornment, Grid, Card, CardContent
+  TextField, MenuItem, IconButton, Menu, InputAdornment, Grid, Card, CardContent,
+  Alert
 } from '@mui/material';
 import { 
   FilterList as FilterListIcon, 
@@ -14,9 +15,11 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   CloudDownload as DownloadIcon,
-  PeopleOutline as PeopleOutlineIcon
+  PeopleOutline as PeopleOutlineIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import { COMMON_STRINGS } from '../../../utils/strings';
 
 const Attendees = () => {
   const [attendees, setAttendees] = useState([]);
@@ -41,180 +44,150 @@ const Attendees = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontró token de autenticación');
+        setError(COMMON_STRINGS.noToken);
         setLoading(false);
         return;
       }
       
       try {
-        // Este endpoint se implementará en el backend
-        // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        // const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/attendees`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
+        console.group('ðŸŽ« DEBUG - Attendees.jsx - ObtenciÃ³n de asistentes');
+        console.log('ðŸŽ« Intentando obtener datos de asistentes...');
         
-        // Datos de prueba
-        setTimeout(() => {
-          const mockEvents = [
-            { id: 1, name: 'Concierto de Jazz' },
-            { id: 2, name: 'Teatro Infantil' },
-            { id: 3, name: 'Torneo de Ajedrez' },
-            { id: 4, name: 'Festival de Danza' },
-            { id: 5, name: 'Concierto de Rock' }
-          ];
-          
-          const mockAttendees = [
-            { 
-              id: 1, 
-              name: 'Juan Pérez', 
-              email: 'juan@example.com',
-              phone: '+34 612345678',
-              ticketId: 'TKT-1001',
-              event: 'Concierto de Jazz',
-              eventId: 1,
-              purchaseDate: '2023-08-15T14:30:00',
-              checkedIn: true,
-              status: 'confirmed',
-              seatInfo: 'Fila A, Asiento 12'
-            },
-            { 
-              id: 2, 
-              name: 'María García', 
-              email: 'maria@example.com',
-              phone: '+34 623456789',
-              ticketId: 'TKT-1002',
-              event: 'Teatro Infantil',
-              eventId: 2,
-              purchaseDate: '2023-08-16T10:15:00',
-              checkedIn: false,
-              status: 'confirmed',
-              seatInfo: 'Fila B, Asiento 5'
-            },
-            { 
-              id: 3, 
-              name: 'Pedro Rodríguez', 
-              email: 'pedro@example.com',
-              phone: '+34 634567890',
-              ticketId: 'TKT-1003',
-              event: 'Concierto de Jazz',
-              eventId: 1,
-              purchaseDate: '2023-08-16T16:45:00',
-              checkedIn: true,
-              status: 'confirmed',
-              seatInfo: 'Fila A, Asiento 14'
-            },
-            { 
-              id: 4, 
-              name: 'Ana Martínez', 
-              email: 'ana@example.com',
-              phone: '+34 645678901',
-              ticketId: 'TKT-1004',
-              event: 'Torneo de Ajedrez',
-              eventId: 3,
-              purchaseDate: '2023-08-17T09:20:00',
-              checkedIn: false,
-              status: 'pending',
-              seatInfo: 'Mesa 3'
-            },
-            { 
-              id: 5, 
-              name: 'Carlos Sánchez', 
-              email: 'carlos@example.com',
-              phone: '+34 656789012',
-              ticketId: 'TKT-1005',
-              event: 'Teatro Infantil',
-              eventId: 2,
-              purchaseDate: '2023-08-17T13:10:00',
-              checkedIn: true,
-              status: 'confirmed',
-              seatInfo: 'Fila C, Asiento 8'
-            },
-            { 
-              id: 6, 
-              name: 'Laura Gómez', 
-              email: 'laura@example.com',
-              phone: '+34 667890123',
-              ticketId: 'TKT-1006',
-              event: 'Festival de Danza',
-              eventId: 4,
-              purchaseDate: '2023-08-18T18:30:00',
-              checkedIn: false,
-              status: 'confirmed',
-              seatInfo: 'Fila D, Asiento 15'
-            },
-            { 
-              id: 7, 
-              name: 'Roberto Fernández', 
-              email: 'roberto@example.com',
-              phone: '+34 678901234',
-              ticketId: 'TKT-1007',
-              event: 'Concierto de Rock',
-              eventId: 5,
-              purchaseDate: '2023-08-18T20:00:00',
-              checkedIn: false,
-              status: 'cancelled',
-              seatInfo: 'Fila E, Asiento 7'
-            },
-            { 
-              id: 8, 
-              name: 'Elena Torres', 
-              email: 'elena@example.com',
-              phone: '+34 689012345',
-              ticketId: 'TKT-1008',
-              event: 'Concierto de Jazz',
-              eventId: 1,
-              purchaseDate: '2023-08-19T19:15:00',
-              checkedIn: false,
-              status: 'confirmed',
-              seatInfo: 'Fila B, Asiento 9'
-            },
-            { 
-              id: 9, 
-              name: 'Javier López', 
-              email: 'javier@example.com',
-              phone: '+34 690123456',
-              ticketId: 'TKT-1009',
-              event: 'Torneo de Ajedrez',
-              eventId: 3,
-              purchaseDate: '2023-08-19T10:45:00',
-              checkedIn: false,
-              status: 'pending',
-              seatInfo: 'Mesa 5'
-            },
-            { 
-              id: 10, 
-              name: 'Sofia Navarro', 
-              email: 'sofia@example.com',
-              phone: '+34 601234567',
-              ticketId: 'TKT-1010',
-              event: 'Festival de Danza',
-              eventId: 4,
-              purchaseDate: '2023-08-20T15:30:00',
-              checkedIn: true,
-              status: 'confirmed',
-              seatInfo: 'Fila A, Asiento 3'
-            }
-          ];
-          
-          setEvents(mockEvents);
-          setAttendees(mockAttendees);
-          
-          // Calcular resumen
-          const totalAttendees = mockAttendees.length;
-          const confirmedAttendees = mockAttendees.filter(a => a.status === 'confirmed').length;
-          const pendingAttendees = mockAttendees.filter(a => a.status === 'pending').length;
-          
-          setSummary({
-            totalAttendees,
-            confirmedAttendees,
-            pendingAttendees
+        // Usar variable de entorno para URL base
+        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+        console.log('ðŸŽ« URL base API:', API_BASE_URL);
+        
+        // Primero obtener los eventos del organizador
+        console.log('ðŸŽ« Obteniendo eventos del organizador...');
+        try {
+          const eventsResponse = await axios.get(`${API_BASE_URL}/api/v1/events/getuserEvent`, {
+            headers: { Authorization: `Bearer ${token}` }
           });
           
-          setLoading(false);
-        }, 1000);
+          console.log('ðŸŽ« Eventos obtenidos correctamente:', eventsResponse.data);
+          
+          let userEvents = [];
+          if (eventsResponse.data && eventsResponse.data.data) {
+            userEvents = eventsResponse.data.data.map(event => ({
+              id: event._id,
+              name: event.name || event.title
+            }));
+            setEvents(userEvents);
+          }
+          
+          // Ahora obtener los asistentes de cada evento
+          console.log('ðŸŽ« Obteniendo asistentes para cada evento...');
+          
+          try {
+            // Intenta obtener asistentes desde el endpoint especÃ­fico
+            const attendeesResponse = await axios.get(`${API_BASE_URL}/api/v1/attendees`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (attendeesResponse.data && attendeesResponse.data.data) {
+              console.log('ðŸŽ« Asistentes obtenidos correctamente:', attendeesResponse.data);
+              
+              const attendeesData = attendeesResponse.data.data;
+              setAttendees(attendeesData);
+              
+              // Calcular resumen
+              const totalAttendees = attendeesData.length;
+              const confirmedAttendees = attendeesData.filter(a => a.status === 'confirmed' || a.checkedIn).length;
+              const pendingAttendees = attendeesData.filter(a => a.status === 'pending' || (!a.checkedIn && a.status !== 'cancelled')).length;
+              
+              setSummary({
+                totalAttendees,
+                confirmedAttendees,
+                pendingAttendees
+              });
+            } else {
+              console.log('ðŸŽ« No se encontraron asistentes registrados');
+              // Si no hay asistentes, establecer arrays vacÃ­os
+              setAttendees([]);
+              setSummary({
+                totalAttendees: 0,
+                confirmedAttendees: 0,
+                pendingAttendees: 0
+              });
+            }
+          } catch (attendeesError) {
+            console.error('ðŸŽ« Error al obtener asistentes:', attendeesError);
+            
+            // Intenta mÃ©todo alternativo: buscar tickets en eventos
+            console.log('ðŸŽ« Intentando obtener asistentes desde eventos...');
+            let allAttendees = [];
+            
+            for (const event of userEvents) {
+              try {
+                const eventDetailsResponse = await axios.get(`${API_BASE_URL}/api/v1/events/${event.id}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (eventDetailsResponse.data && eventDetailsResponse.data.data && 
+                    eventDetailsResponse.data.data.tickets && eventDetailsResponse.data.data.tickets.length > 0) {
+                  
+                  const eventTickets = eventDetailsResponse.data.data.tickets.map(ticket => ({
+                    id: ticket._id,
+                    name: ticket.buyerName || 'Asistente',
+                    email: ticket.buyerEmail || 'No disponible',
+                    phone: ticket.buyerPhone || 'No disponible',
+                    ticketId: ticket.code || `TKT-${ticket._id.substring(0, 6)}`,
+                    event: event.name,
+                    eventId: event.id,
+                    purchaseDate: ticket.createdAt || new Date().toISOString(),
+                    checkedIn: ticket.used || false,
+                    status: ticket.cancelled ? 'cancelled' : ticket.used ? 'confirmed' : 'pending',
+                    seatInfo: ticket.seatNumber || 'No asignado'
+                  }));
+                  
+                  allAttendees = [...allAttendees, ...eventTickets];
+                }
+              } catch (eventError) {
+                console.error(`ðŸŽ« Error al obtener tickets para evento ${event.id}:`, eventError);
+              }
+            }
+            
+            if (allAttendees.length > 0) {
+              console.log('ðŸŽ« Asistentes obtenidos desde eventos:', allAttendees);
+              setAttendees(allAttendees);
+              
+              // Calcular resumen
+              const totalAttendees = allAttendees.length;
+              const confirmedAttendees = allAttendees.filter(a => a.status === 'confirmed' || a.checkedIn).length;
+              const pendingAttendees = allAttendees.filter(a => a.status === 'pending' || (!a.checkedIn && a.status !== 'cancelled')).length;
+              
+              setSummary({
+                totalAttendees,
+                confirmedAttendees,
+                pendingAttendees
+              });
+            } else {
+              console.log('ðŸŽ« No se encontraron asistentes en ninguna fuente');
+              setAttendees([]);
+              setSummary({
+                totalAttendees: 0,
+                confirmedAttendees: 0,
+                pendingAttendees: 0
+              });
+            }
+          }
+        } catch (eventsError) {
+          console.error('ðŸŽ« Error al obtener eventos:', eventsError);
+          // Establecer arrays vacÃ­os para evitar errores
+          setEvents([]);
+          setAttendees([]);
+          setSummary({
+            totalAttendees: 0,
+            confirmedAttendees: 0,
+            pendingAttendees: 0
+          });
+        }
+        
+        console.groupEnd();
+        setLoading(false);
       } catch (error) {
-        console.error('Error fetching attendees data:', error);
-        setError('Error al cargar los datos de asistentes');
+        console.error('Error general al obtener datos:', error);
+        setError(COMMON_STRINGS.errorCargarEventos);
         setLoading(false);
       }
     };
@@ -247,7 +220,7 @@ const Attendees = () => {
   };
   
   const handleExportData = () => {
-    alert('Función de exportación de datos a implementar');
+    alert('Funciï¿½n de exportaciï¿½n de datos a implementar');
   };
   
   const handleMenuClick = (event, attendeeId) => {
@@ -271,7 +244,7 @@ const Attendees = () => {
   };
   
   const handleToggleCheckIn = () => {
-    // Implementación para marcar como asistido
+    // Implementaciï¿½n para marcar como asistido
     const attendee = attendees.find(a => a.id === selectedAttendeeId);
     
     if (attendee) {
@@ -291,34 +264,46 @@ const Attendees = () => {
   // Filtrar asistentes
   const filteredAttendees = attendees.filter(attendee => {
     // Filtrar por evento
-    if (filterEvent && attendee.eventId.toString() !== filterEvent) return false;
+    if (filterEvent && attendee.eventId && attendee.eventId.toString() !== filterEvent) return false;
     
     // Filtrar por estado
     if (filterStatus && attendee.status !== filterStatus) return false;
     
-    // Filtrar por término de búsqueda
+    // Filtrar por tÃ©rmino de bÃºsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
+      const name = (attendee.name || attendee.buyerName || '').toLowerCase();
+      const email = (attendee.email || attendee.buyerEmail || '').toLowerCase();
+      const ticketId = (attendee.ticketId || attendee.code || '').toLowerCase();
+      const phone = (attendee.phone || attendee.buyerPhone || '').toLowerCase();
+      
       return (
-        attendee.name.toLowerCase().includes(term) ||
-        attendee.email.toLowerCase().includes(term) ||
-        attendee.ticketId.toLowerCase().includes(term) ||
-        attendee.phone.toLowerCase().includes(term)
+        name.includes(term) ||
+        email.includes(term) ||
+        ticketId.includes(term) ||
+        phone.includes(term)
       );
     }
     
     return true;
   });
   
-  // Calcular paginación
+  // Calcular paginaciï¿½n
   const paginatedAttendees = filteredAttendees.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
   
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    if (!dateString) return 'Fecha no disponible';
+    
+    try {
+      const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return new Date(dateString).toLocaleDateString(undefined, options);
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      return dateString;
+    }
   };
   
   const getStatusChip = (status) => {
@@ -344,9 +329,7 @@ const Attendees = () => {
   
   if (error) {
     return (
-      <Paper sx={{ p: 3, bgcolor: '#FFF3F3', my: 2 }}>
-        <Typography color="error">{error}</Typography>
-      </Paper>
+      <Alert severity="error" sx={{ my: 2 }}>{error}</Alert>
     );
   }
   
@@ -476,7 +459,7 @@ const Attendees = () => {
                   </InputAdornment>
                 ),
               }}
-              placeholder="Nombre, email, teléfono o ID de entrada"
+              placeholder="Nombre, email, telÃ©fono o ID de entrada"
             />
           </Grid>
         </Grid>
@@ -519,29 +502,29 @@ const Attendees = () => {
                   key={attendee.id}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell>{attendee.ticketId}</TableCell>
-                  <TableCell>{attendee.name}</TableCell>
+                  <TableCell>{attendee.ticketId || attendee.code || `TICKET-${attendee.id ? attendee.id.substring(0, 6) : 'N/A'}`}</TableCell>
+                  <TableCell>{attendee.name || attendee.buyerName || 'Asistente'}</TableCell>
                   <TableCell>
-                    <Typography variant="body2">{attendee.email}</Typography>
+                    <Typography variant="body2">{attendee.email || attendee.buyerEmail || 'No disponible'}</Typography>
                     <Typography variant="caption" color="textSecondary">
-                      {attendee.phone}
+                      {attendee.phone || attendee.buyerPhone || 'No disponible'}
                     </Typography>
                   </TableCell>
-                  <TableCell>{attendee.event}</TableCell>
-                  <TableCell>{attendee.seatInfo}</TableCell>
-                  <TableCell>{formatDate(attendee.purchaseDate)}</TableCell>
+                  <TableCell>{attendee.event || attendee.eventName || 'Evento'}</TableCell>
+                  <TableCell>{attendee.seatInfo || attendee.seat || attendee.seatNumber || 'No asignado'}</TableCell>
+                  <TableCell>{formatDate(attendee.purchaseDate || attendee.createdAt)}</TableCell>
                   <TableCell align="center">
                     {attendee.checkedIn ? (
-                      <Chip 
+                                  <Chip 
                         icon={<CheckCircleIcon />} 
-                        label="Asistió" 
+                        label="AsistiÃ³" 
                         color="success" 
                         size="small" 
                       />
                     ) : (
                       <Chip 
                         icon={<CancelIcon />} 
-                        label="No asistió" 
+                        label="No asistiÃ³" 
                         variant="outlined" 
                         size="small" 
                       />
@@ -566,10 +549,24 @@ const Attendees = () => {
               
               {paginatedAttendees.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={9} align="center" sx={{ py: 3 }}>
-                    <Typography variant="body1">
-                      No se encontraron asistentes
-                    </Typography>
+                  <TableCell colSpan={9} align="center" sx={{ py: 5 }}>
+                    <Box sx={{ textAlign: 'center', my: 3 }}>
+                      <Typography variant="h6" color="primary" gutterBottom>
+                        {COMMON_STRINGS.noAsistentesCreados}
+                      </Typography>
+                      <Typography variant="body1" paragraph>
+                        {COMMON_STRINGS.mensajeCrearEvento}
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<AddIcon />}
+                        href="/pricing"
+                        sx={{ mt: 2 }}
+                      >
+                        {COMMON_STRINGS.crearEvento}
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               )}
@@ -590,7 +587,7 @@ const Attendees = () => {
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por página:"
+            labelRowsPerPage={COMMON_STRINGS.filasPorPagina}
             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
           />
         </Box>

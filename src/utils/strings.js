@@ -24,6 +24,9 @@ export const COMMON_STRINGS = {
   noEventosEncontrados: "No se encontraron eventos",
   noEventosCreados: "Aún no has creado ningún evento",
   mensajeCrearPrimerEvento: "Crea tu primer evento para empezar a vender entradas",
+  noAsistentesEncontrados: "No se encontraron asistentes",
+  noAsistentesCreados: "Aún no hay asistentes registrados",
+  mensajeCrearEvento: "Crea eventos y vende entradas para ver aquí a tus asistentes",
   
   // Textos en eventos
   competicionAbierta: "Competición abierta a todos los niveles",
