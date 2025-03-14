@@ -172,7 +172,7 @@ const OrganizerDashboard = () => {
     { text: COMMON_STRINGS.misEventos, icon: <EventNoteIcon />, path: '/organizer/events' },
     { text: COMMON_STRINGS.ventas, icon: <BarChartIcon />, path: '/organizer/sales' },
     { text: COMMON_STRINGS.asistentes, icon: <PeopleIcon />, path: '/organizer/attendees' },
-    { text: COMMON_STRINGS.gestionMapas, icon: <MapIcon />, path: '/organizer/map-manager' },
+    { text: COMMON_STRINGS.gestionMapas, icon: <MapIcon />, path: '/template-manager' },
     { text: COMMON_STRINGS.configuracion, icon: <SettingsIcon />, path: '/organizer/settings' },
   ];
   

@@ -199,7 +199,6 @@ const Routers = () => {
         <Route path="sales" element={<Sales />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="map-manager" element={<MapManager />} />
       </Route>
 
       {/* Dashboard de Administrador - Ruta independiente */}
@@ -215,9 +214,9 @@ const Routers = () => {
         <Route path="organizers" element={<UserManagement />} /> {/* Filtro especial para organizadores */}
       </Route>
 
-      {/* Admin Routes */}
-      <Route path="/template-manager" element={<AdminRoute element={<TemplateManager />} />} />
-      <Route path="/template-editor" element={<AdminRoute element={<TemplateEditor />} />} />
+      {/* Template Manager (accesible por admin y organizador) */}
+      <Route path="/template-manager" element={<PrivateRoute element={<TemplateManager />} />} />
+      <Route path="/template-editor" element={<PrivateRoute element={<TemplateEditor />} />} />
 
       <Route path="/team" element={<PrivateRoute element={<Team />} />} />
       <Route path="/gallery" element={<PrivateRoute element={<Gallery />} />} />
