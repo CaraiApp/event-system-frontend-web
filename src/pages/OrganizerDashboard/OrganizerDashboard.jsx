@@ -42,7 +42,7 @@ const OrganizerDashboard = () => {
   };
   
   const handleProfile = () => {
-    navigate('/profile');
+    navigate('/organizer/settings');
     handleMenuClose();
   };
   

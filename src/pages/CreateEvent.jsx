@@ -18,7 +18,10 @@ import {
   InputLabel,
   Card,
   CardMedia,
-  Grid
+  Grid,
+  Tabs,
+  Tab,
+  Alert
 } from '@mui/material';
 import { styled } from '@mui/system';
 import { Delete } from '@mui/icons-material';
@@ -27,7 +30,7 @@ import Template1 from "../assets/c2.png";
 import Template2 from "../assets/c1.png";
 import Template3 from "../assets/c3.png";
 import LoadingScreen from '../components/LoadingScreen/LoadingScreen';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import CloseIcon from "@mui/icons-material/Close";
 
 
@@ -51,26 +54,36 @@ const FormContainer = styled(Box)({
 
 const EventForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showTemplates, setShowTemplates] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFreeEvent, setIsFreeEvent] = useState(() => {
+    // Check if we're creating a free event from the URL query parameter
+    const searchParams = new URLSearchParams(location.search);
+    return searchParams.get('type') === 'free';
+  });
+  
   const [formData, setFormData] = useState(() => {
     const savedData = localStorage.getItem('eventForm');
-    return savedData ? JSON.parse(savedData) : {
+    const baseData = {
       name: '',
       venue: '',
       address: '',
       desc: '',
-      vipPrice: '',
-      vipSize: '',
+      vipPrice: isFreeEvent ? '0' : '',
+      vipSize: isFreeEvent ? '0' : '',
       economySize: '',
-      economyPrice: '',
-      currency: '',
+      economyPrice: isFreeEvent ? '0' : '',
+      currency: isFreeEvent ? 'EUR' : '',
       photo: null,
       eventDate: '',
       eventDate2: '',
       category: '',
-      paymentMethod: '',
+      paymentMethod: isFreeEvent ? 'Free' : '',
+      isFree: isFreeEvent,
     };
+    
+    return savedData ? JSON.parse(savedData) : baseData;
   });
   const [gallery, setGallery] = useState([]);
 // Save to localStorage on change
@@ -103,9 +116,29 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowTemplates(true);
-  
-   
+    
+    // Para eventos gratuitos, completamos los campos de precio automáticamente
+    if (isFreeEvent) {
+      setFormData(prev => ({
+        ...prev,
+        vipPrice: '0',
+        vipSize: '0',
+        economyPrice: '0',
+        currency: 'EUR',
+        paymentMethod: 'Free',
+        isFree: true
+      }));
+      
+      // Para eventos gratuitos, podemos saltar la selección de mapa de asientos
+      // y proceder directamente a crear el evento
+      // navigate('/template', { state: { template: 'basic', formData, gallery, isFree: true } });
+      
+      // O mostrar la selección de plantillas si se requiere
+      setShowTemplates(true);
+    } else {
+      // Para eventos pagados, mostramos la selección de plantillas de asientos
+      setShowTemplates(true);
+    }
   };
   
   const handleTemplateSelection = (template) => {
@@ -113,6 +146,32 @@ useEffect(() => {
     const customTemplateData = localStorage.getItem('allTemplates');
     let customTemplate = null;
     
+    // Si es un evento gratuito, usamos un template básico o saltamos la configuración de asientos
+    if (isFreeEvent) {
+      // Para eventos gratuitos, podemos usar un template básico sin mapa de asientos
+      setShowTemplates(false);
+      
+      // Pasamos un flag para indicar que es un evento gratuito
+      navigate('/template', { 
+        state: { 
+          template: 'basic', 
+          formData: {
+            ...formData,
+            vipPrice: '0',
+            vipSize: '0',
+            economyPrice: '0',
+            currency: 'EUR',
+            paymentMethod: 'Free',
+            isFree: true
+          }, 
+          gallery,
+          isFree: true 
+        } 
+      });
+      return;
+    }
+    
+    // Para eventos pagados, procesamos normalmente la selección de template
     if (customTemplateData) {
       try {
         const templates = JSON.parse(customTemplateData);
@@ -143,17 +202,19 @@ useEffect(() => {
 
   return (
     <Background>
-
-   {isLoading && (
-            
-                          <LoadingScreen  />
-                       
-                      )}
+      {isLoading && <LoadingScreen />}
+      
       <FormContainer sx={{ marginTop: 17, marginBottom: 10 }}>
-        <Typography variant="h4" align="center" sx={{ marginBottom: 3 }}>
-        Crear evento
-
+        <Typography variant="h4" align="center" sx={{ marginBottom: 2 }}>
+          {isFreeEvent ? 'Crear Evento Gratuito' : 'Crear Evento'}
         </Typography>
+        
+        {isFreeEvent && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Estás creando un evento gratuito. No se requerirá pago para las entradas.
+          </Alert>
+        )}
+        
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
@@ -253,71 +314,91 @@ useEffect(() => {
             }}
             InputLabelProps={{ style: { fontSize: '18px' } }}
           />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Precio VIP"
-            name="vipPrice"
-            type="number"
-            value={formData.vipPrice}
-            onChange={handleChange}
-            required
-            sx={{ fontSize: '16px' }}
-            InputLabelProps={{ style: { fontSize: '18px' } }}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Asientos VIP"
-            name="vipSize"
-            type="number"
-            value={formData.vipSize}
-            onChange={handleChange}
-            required
-            sx={{ fontSize: '16px' }}
-            InputLabelProps={{ style: { fontSize: '18px' } }}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Asientos económicos"
-            name="economySize"
-            type="number"
-            value={formData.economySize}
-            onChange={handleChange}
-            required
-            sx={{ fontSize: '16px' }}
-            InputLabelProps={{ style: { fontSize: '18px' } }}
-          />
-          <TextField
-            fullWidth
-            margin="normal"
-            label="Precio económico"
-            name="economyPrice"
-            type="number"
-            value={formData.economyPrice}
-            onChange={handleChange}
-            required
-            sx={{ fontSize: '16px' }}
-            InputLabelProps={{ style: { fontSize: '18px' } }}
-          />
+          {!isFreeEvent && (
+            <>
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Precio VIP"
+                name="vipPrice"
+                type="number"
+                value={formData.vipPrice}
+                onChange={handleChange}
+                required={!isFreeEvent}
+                sx={{ fontSize: '16px' }}
+                InputLabelProps={{ style: { fontSize: '18px' } }}
+              />
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Asientos VIP"
+                name="vipSize"
+                type="number"
+                value={formData.vipSize}
+                onChange={handleChange}
+                required={!isFreeEvent}
+                sx={{ fontSize: '16px' }}
+                InputLabelProps={{ style: { fontSize: '18px' } }}
+              />
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Asientos económicos"
+                name="economySize"
+                type="number"
+                value={formData.economySize}
+                onChange={handleChange}
+                required={!isFreeEvent}
+                sx={{ fontSize: '16px' }}
+                InputLabelProps={{ style: { fontSize: '18px' } }}
+              />
+              <TextField
+                fullWidth
+                margin="normal"
+                label="Precio económico"
+                name="economyPrice"
+                type="number"
+                value={formData.economyPrice}
+                onChange={handleChange}
+                required={!isFreeEvent}
+                sx={{ fontSize: '16px' }}
+                InputLabelProps={{ style: { fontSize: '18px' } }}
+              />
 
-<FormControl fullWidth margin="normal">
-  <InputLabel style={{ fontSize: '16px' }}>Divisa</InputLabel>
-  <Select
-    name="currency"
-    value={formData.currency || ''}
-    onChange={handleChange}
-    style={{ fontSize: '16px' }}
-    required
-  >
-    <MenuItem value="USD">USD</MenuItem>
-    <MenuItem value="EUR">EUR</MenuItem>
-    {/* <MenuItem value="PKR">PKR</MenuItem> */}
-    <MenuItem value="INR">INR</MenuItem>
-    <MenuItem value="GBP">GBP</MenuItem>
-  </Select>
-</FormControl>
+              <FormControl fullWidth margin="normal">
+                <InputLabel style={{ fontSize: '16px' }}>Divisa</InputLabel>
+                <Select
+                  name="currency"
+                  value={formData.currency || ''}
+                  onChange={handleChange}
+                  style={{ fontSize: '16px' }}
+                  required={!isFreeEvent}
+                >
+                  <MenuItem value="USD">USD</MenuItem>
+                  <MenuItem value="EUR">EUR</MenuItem>
+                  {/* <MenuItem value="PKR">PKR</MenuItem> */}
+                  <MenuItem value="INR">INR</MenuItem>
+                  <MenuItem value="GBP">GBP</MenuItem>
+                </Select>
+              </FormControl>
+            </>
+          )}
+          
+          {isFreeEvent && (
+            <TextField
+              fullWidth
+              margin="normal"
+              label="Número de entradas disponibles"
+              name="economySize"
+              type="number"
+              value={formData.economySize}
+              onChange={handleChange}
+              required
+              sx={{ fontSize: '16px' }}
+              InputLabelProps={{ style: { fontSize: '18px' } }}
+              helperText="Indique el número máximo de asistentes para su evento gratuito"
+            />
+          )}
           {/* <labe></labe> */}
           <Typography mt={2} sx={{ fontSize: '18px', fontWeight: 600}}>Fecha y hora del evento
           </Typography>
@@ -385,35 +466,44 @@ useEffect(() => {
               </MenuItem>
             </Select>
           </FormControl>
-          <FormControl component="fieldset" margin="normal">
-            <Typography variant="body1" sx={{ fontSize: '18px', marginBottom: 1 , fontWeight: 600}}>
-            Método de pago de entradas
-
-            </Typography>
-            <RadioGroup
-              name="paymentMethod"
-              value={formData.paymentMethod}
-              onChange={handleChange}
-              row
-            >
-              <FormControlLabel
-  value="Online"
-  control={<Radio sx={{ transform: 'scale(1.5)' }} />} // Scales the size of the radio button
-  label={
-    <Typography sx={{ fontSize: '1.25rem' }}>Pago en línea
-</Typography> // Increases label size
-  }
-/>
-<FormControlLabel
-  value="Walk-in"
-  control={<Radio sx={{ transform: 'scale(1.5)' }} />}
-  label={
-    <Typography sx={{ fontSize: '1.25rem' }}>Pago sin cita previa
-</Typography>
-  }
-/>
-            </RadioGroup>
-          </FormControl>
+          {!isFreeEvent && (
+            <FormControl component="fieldset" margin="normal">
+              <Typography variant="body1" sx={{ fontSize: '18px', marginBottom: 1, fontWeight: 600}}>
+                Método de pago de entradas
+              </Typography>
+              <RadioGroup
+                name="paymentMethod"
+                value={formData.paymentMethod}
+                onChange={handleChange}
+                row
+              >
+                <FormControlLabel
+                  value="Online"
+                  control={<Radio sx={{ transform: 'scale(1.5)' }} />}
+                  label={<Typography sx={{ fontSize: '1.25rem' }}>Pago en línea</Typography>}
+                />
+                <FormControlLabel
+                  value="Walk-in"
+                  control={<Radio sx={{ transform: 'scale(1.5)' }} />}
+                  label={<Typography sx={{ fontSize: '1.25rem' }}>Pago sin cita previa</Typography>}
+                />
+              </RadioGroup>
+            </FormControl>
+          )}
+          
+          {isFreeEvent && (
+            <Box sx={{ my: 2 }}>
+              <Typography variant="body1" sx={{ fontSize: '18px', fontWeight: 600, mb: 1 }}>
+                Método de distribución de entradas
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Las entradas para este evento gratuito estarán disponibles a través de:
+              </Typography>
+              <Alert severity="success" sx={{ mb: 1 }}>
+                Registro online con código QR
+              </Alert>
+            </Box>
+          )}
 
 
                    <Button

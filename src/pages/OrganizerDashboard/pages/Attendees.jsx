@@ -234,7 +234,29 @@ const Attendees = () => {
   };
   
   const handleViewAttendee = () => {
-    alert(`Ver detalles del asistente ${selectedAttendeeId}`);
+    // Encontrar el asistente seleccionado
+    const attendee = attendees.find(a => a.id === selectedAttendeeId);
+    
+    if (attendee) {
+      // Muestra los detalles de la entrada en un modal o alert (en una implementación real, debería ser un modal)
+      const ticketDetails = `
+        Detalles de la entrada:
+        - ID: ${attendee.ticketId || attendee.code || 'No disponible'}
+        - Evento: ${attendee.event || attendee.eventName || 'No disponible'}
+        - Nombre: ${attendee.name || attendee.buyerName || 'No disponible'}
+        - Email: ${attendee.email || attendee.buyerEmail || 'No disponible'}
+        - Teléfono: ${attendee.phone || attendee.buyerPhone || 'No disponible'}
+        - Asiento: ${attendee.seatInfo || attendee.seat || attendee.seatNumber || 'No asignado'}
+        - Fecha de compra: ${formatDate(attendee.purchaseDate || attendee.createdAt)}
+        - Estado: ${attendee.status || 'No disponible'}
+        - Código QR: ${attendee.qrCode || 'Disponible para escaneo'}
+      `;
+      
+      alert(ticketDetails);
+    } else {
+      alert('No se encontraron detalles de la entrada.');
+    }
+    
     handleMenuClose();
   };
   
