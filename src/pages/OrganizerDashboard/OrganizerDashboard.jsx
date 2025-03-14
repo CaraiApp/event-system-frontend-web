@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton, 
-        ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Container } from '@mui/material';
-import { Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon,
-        EventNote as EventNoteIcon, BarChart as BarChartIcon, People as PeopleIcon,
-        Settings as SettingsIcon, Logout as LogoutIcon, Home as HomeIcon } from '@mui/icons-material';
+import { 
+  Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton, 
+  ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Container,
+  Menu, MenuItem, ListItemAvatar, Tooltip
+} from '@mui/material';
+import { 
+  Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon,
+  EventNote as EventNoteIcon, BarChart as BarChartIcon, People as PeopleIcon,
+  Settings as SettingsIcon, Logout as LogoutIcon, Home as HomeIcon,
+  Person as PersonIcon, AccountCircle as AccountCircleIcon 
+} from '@mui/icons-material';
 import axios from 'axios';
 import './OrganizerDashboard.css';
 
@@ -14,8 +20,29 @@ const OrganizerDashboard = () => {
   const [open, setOpen] = useState(true);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [anchorEl, setAnchorEl] = useState(null); // Para el menú desplegable de usuario
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Manejo del menú desplegable
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+  
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    navigate('/login');
+  };
+  
+  const handleProfile = () => {
+    navigate('/profile');
+    handleMenuClose();
+  };
   
   // Verificar autenticaci�n y rol de usuario
   useEffect(() => {
@@ -137,16 +164,52 @@ const OrganizerDashboard = () => {
               <HomeIcon />
             </IconButton>
             
-            <Typography variant="body2" sx={{ mr: 2 }}>
-              {user?.username || 'Usuario'}
-            </Typography>
-            <Avatar
-              alt={user?.username || 'User'}
-              src={user?.photo}
-              sx={{ width: 32, height: 32 }}
+            <Tooltip title="Ajustes de cuenta">
+              <IconButton
+                onClick={handleMenuOpen}
+                size="small"
+                sx={{ ml: 2 }}
+                aria-controls={Boolean(anchorEl) ? 'account-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={Boolean(anchorEl) ? 'true' : undefined}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography variant="body2" sx={{ mr: 1 }}>
+                    {user?.username || 'Usuario'}
+                  </Typography>
+                  <Avatar
+                    alt={user?.username || 'User'}
+                    src={user?.photo}
+                    sx={{ width: 32, height: 32 }}
+                  >
+                    {user?.username ? user.username[0].toUpperCase() : 'U'}
+                  </Avatar>
+                </Box>
+              </IconButton>
+            </Tooltip>
+            
+            {/* Menú desplegable para el usuario */}
+            <Menu
+              anchorEl={anchorEl}
+              id="account-menu"
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             >
-              {user?.username ? user.username[0].toUpperCase() : 'U'}
-            </Avatar>
+              <MenuItem onClick={handleProfile}>
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                Mi Perfil
+              </MenuItem>
+              <MenuItem onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" />
+                </ListItemIcon>
+                Cerrar Sesión
+              </MenuItem>
+            </Menu>
           </Box>
         </Toolbar>
       </AppBar>

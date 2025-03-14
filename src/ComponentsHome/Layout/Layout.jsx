@@ -1,5 +1,5 @@
-import React from 'react'
-
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
 import Header from '../Header/Header'
 import Routers from '../../router/Routers'
 import Footer from '../Footer/Footer'
@@ -7,17 +7,48 @@ import { useLocation } from 'react-router-dom'
 
 const Layout = () => {
   const location = useLocation();
+  const [hideUI, setHideUI] = useState(false);
 
+  // Rutas donde no se debe mostrar el encabezado ni el pie de página
   const isTemplateRoute = location.pathname.includes('template') || location.pathname.includes('congrtspaymentsuccess');
-  const isTemplateRoutee = location.pathname.includes('seatMap') || location.pathname.includes('congrtspaymentsuccess');;
+  const isTemplateRoutee = location.pathname.includes('seatMap') || location.pathname.includes('congrtspaymentsuccess');
+  const isDashboardRoute = location.pathname.includes('/admin') || location.pathname.includes('/organizer');
+
+  // Verificar configuración UI desde el backend cuando cambia la ruta
+  useEffect(() => {
+    const checkUIConfig = async () => {
+      if (isDashboardRoute) {
+        try {
+          const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+          const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/ui-config`, {
+            params: { route: location.pathname }
+          });
+          
+          if (response.data && response.data.data) {
+            setHideUI(response.data.data.hideHeader);
+            console.log('UI Config recibida:', response.data.data);
+          }
+        } catch (error) {
+          console.log('Error al obtener configuración UI:', error);
+          // Si hay error, ocultamos por defecto el encabezado y el pie para las rutas de dashboard
+          setHideUI(true);
+        }
+      } else {
+        setHideUI(false);
+      }
+    };
+
+    checkUIConfig();
+  }, [location.pathname, isDashboardRoute]);
+
+  // Determinar si debemos ocultar los elementos UI
+  const shouldHideElements = isTemplateRoute || isTemplateRoutee || isDashboardRoute || hideUI;
 
   return (
     <>
-            
-
-            {!isTemplateRoute && !isTemplateRoutee && <Header />}
+      {!shouldHideElements && <Header />}
       <Routers/>
-      {!isTemplateRoute && !isTemplateRoutee && <Footer />}
+      {!shouldHideElements && <Footer />}
     </>
   )
 }

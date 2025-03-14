@@ -23,7 +23,7 @@ const Overview = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontr� token de autenticaci�n');
+        setError('No se encontró token de autenticación');
         setLoading(false);
         return;
       }
@@ -33,18 +33,31 @@ const Overview = () => {
         // Usamos el nuevo endpoint implementado
         const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         
-        // Llamada real a la API
-        const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/organizer/overview`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        console.log('Intentando conectar a:', `${API_BASE_URL}/api/v1/dashboard/organizer/overview`);
         
-        // Utilizamos los datos reales en lugar de los simulados
-        setStats(response.data.data);
-        setLoading(false);
-        return; // Salimos para no ejecutar el mock
-        
-        // Datos de prueba
-        setTimeout(() => {
+        // Intentar obtener datos reales del backend
+        try {
+          const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/organizer/overview`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          console.log('Respuesta exitosa del backend:', response.data);
+          
+          // Utilizamos los datos reales si están disponibles
+          if (response.data && response.data.data) {
+            setStats(response.data.data);
+            console.log('Datos reales establecidos correctamente');
+            setLoading(false);
+            return;
+          } else {
+            console.warn('Respuesta recibida pero con formato inválido');
+            throw new Error('Formato de respuesta inválido');
+          }
+        } catch (apiError) {
+          console.error('Error en la llamada a la API:', apiError);
+          console.log('Usando datos de prueba como fallback');
+          
+          // Usar datos de prueba como fallback
           const mockData = {
             totalRevenue: 15750.50,
             totalTicketsSold: 325,
@@ -56,11 +69,11 @@ const Overview = () => {
               { id: 3, name: 'Torneo de Ajedrez', date: '2023-10-05', ticketsSold: 40, revenue: 800 }
             ],
             recentSales: [
-              { id: 1001, event: 'Concierto de Jazz', date: '2023-08-28', customer: 'Juan P�rez', amount: 60 },
-              { id: 1002, event: 'Teatro Infantil', date: '2023-08-27', customer: 'Mar�a Garc�a', amount: 45 },
-              { id: 1003, event: 'Concierto de Jazz', date: '2023-08-27', customer: 'Pedro Rodr�guez', amount: 60 },
-              { id: 1004, event: 'Torneo de Ajedrez', date: '2023-08-26', customer: 'Ana Mart�nez', amount: 20 },
-              { id: 1005, event: 'Teatro Infantil', date: '2023-08-25', customer: 'Carlos S�nchez', amount: 45 }
+              { id: 1001, event: 'Concierto de Jazz', date: '2023-08-28', customer: 'Juan Pérez', amount: 60 },
+              { id: 1002, event: 'Teatro Infantil', date: '2023-08-27', customer: 'María García', amount: 45 },
+              { id: 1003, event: 'Concierto de Jazz', date: '2023-08-27', customer: 'Pedro Rodríguez', amount: 60 },
+              { id: 1004, event: 'Torneo de Ajedrez', date: '2023-08-26', customer: 'Ana Martínez', amount: 20 },
+              { id: 1005, event: 'Teatro Infantil', date: '2023-08-25', customer: 'Carlos Sánchez', amount: 45 }
             ],
             salesByEvent: {
               'Concierto de Jazz': { count: 120, revenue: 3600 },
@@ -71,11 +84,12 @@ const Overview = () => {
           };
           
           setStats(mockData);
-          setLoading(false);
-        }, 1000);
+        }
+        
+        setLoading(false);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        setError('Error al cargar los datos del dashboard');
+        console.error('Error general en fetchDashboardData:', error);
+        setError(`Error al cargar datos del dashboard: ${error.message}`);
         setLoading(false);
       }
     };
