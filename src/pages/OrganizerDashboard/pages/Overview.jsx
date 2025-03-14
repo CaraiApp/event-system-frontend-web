@@ -269,6 +269,7 @@ const Overview = () => {
           </Paper>
         </Grid>
       </Grid>
+      )}
       
       {/* Upcoming Events & Recent Sales - solo mostramos si hay datos */}
       {!hasNoData && (
