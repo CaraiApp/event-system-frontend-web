@@ -142,14 +142,46 @@ export default function EventPage() {
 
         <div className="event-details-container">
           <div className="event-details-wrapper">
+            {eventData?.status === 'cancelled' && (
+              <div style={{
+                position: 'absolute',
+                top: '20px',
+                left: '20px',
+                zIndex: 10,
+                backgroundColor: 'rgba(255, 0, 0, 0.8)',
+                color: 'white',
+                padding: '8px 16px',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                textTransform: 'uppercase',
+                transform: 'rotate(-10deg)'
+              }}>
+                EVENTO CANCELADO
+              </div>
+            )}
             <img
               src={eventData?.photo}
               alt="Event"
               className="event-image"
+              style={eventData?.status === 'cancelled' ? { opacity: 0.7, filter: 'grayscale(50%)' } : {}}
             />
             <div className="event-info">
               <div className="event-header">
-                <h1 className="event-heading">{eventData?.name}</h1>
+                <h1 className="event-heading">
+                  {eventData?.name}
+                  {eventData?.status === 'cancelled' && 
+                    <span style={{ 
+                      fontSize: '0.6em', 
+                      color: 'red',
+                      marginLeft: '10px',
+                      fontWeight: 'normal',
+                      verticalAlign: 'middle'
+                    }}>
+                      (CANCELADO)
+                    </span>
+                  }
+                </h1>
                 <div className="price-badge">
                   Personaje: {eventData?.vipprice} {eventData?.currency}
                 </div>
@@ -238,12 +270,31 @@ export default function EventPage() {
 
 <DynamicGallery gallery={eventData?.gallery} />
 
-{(userRole === "user" || !userRole )  && eventData?.ticket !== "Walk-in" && (
-                <button onClick={handleBookNow} className="buy-ticket-btn">
-                 RESERVAR AHORA
-
-                </button>
-              )}
+{(userRole === "user" || !userRole) && 
+  eventData?.ticket !== "Walk-in" && 
+  eventData?.status !== "cancelled" && (
+    <button onClick={handleBookNow} className="buy-ticket-btn">
+      RESERVAR AHORA
+    </button>
+  )}
+              
+{eventData?.status === "cancelled" && (
+    <div style={{
+      padding: '15px',
+      backgroundColor: '#ffebee',
+      border: '1px solid #f44336',
+      borderRadius: '4px',
+      marginTop: '20px',
+      textAlign: 'center'
+    }}>
+      <Typography variant="h6" color="error">
+        Este evento ha sido cancelado
+      </Typography>
+      <Typography variant="body2" color="textSecondary">
+        Lo sentimos, este evento ya no está disponible. Por favor, contacte con el organizador para más información.
+      </Typography>
+    </div>
+  )}
               {userRole && userRole !== "user" && (
                 <Box sx={{ padding: 3, marginTop: 10 }}>
                   <Typography

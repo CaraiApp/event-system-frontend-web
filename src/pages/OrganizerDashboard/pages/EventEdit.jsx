@@ -159,7 +159,9 @@ const EventEdit = () => {
       setError(null);
       
       // Set event status to cancelled
-      const response = await eventAPI.updateEvent(id, { status: 'cancelled' });
+      console.log("Cancelando evento:", id);
+      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/${id}`;
+      const response = await axios.put(url, { status: 'cancelled' });
       
       if (response.data && response.data.success) {
         setSuccess('Evento cancelado con éxito');

@@ -162,7 +162,8 @@ const Events = () => {
     // Filter by tab (status)
     if (tabValue === 1 && !(event.published || event.status === 'active')) return false;
     if (tabValue === 2 && !(event.status === 'finished' || (event.eventDate && new Date(event.eventDate) < new Date()))) return false;
-    if (tabValue === 3 && (event.published || event.status === 'active' || event.status === 'finished')) return false;
+    if (tabValue === 3 && !(event.status === 'cancelled')) return false;
+    if (tabValue === 4 && (event.published || event.status === 'active' || event.status === 'finished' || event.status === 'cancelled')) return false;
     
     // Filter by search term
     if (searchTerm) {
@@ -209,6 +210,8 @@ const Events = () => {
         return <Chip label="Finalizado" color="default" size="small" />;
       case 'draft':
         return <Chip label="Borrador" color="warning" size="small" />;
+      case 'cancelled':
+        return <Chip label="Cancelado" color="error" size="small" sx={{ fontWeight: 'bold' }} />;
       default:
         return <Chip label={status} size="small" />;
     }
@@ -315,6 +318,7 @@ const Events = () => {
               <Tab label="Todos" />
               <Tab label="Activos" />
               <Tab label="Finalizados" />
+              <Tab label="Cancelados" />
               <Tab label="Borradores" />
             </Tabs>
           </Box>
