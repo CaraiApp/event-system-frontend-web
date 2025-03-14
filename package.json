@@ -31,7 +31,8 @@
     "reactstrap": "^9.2.3",
     "recharts": "^2.15.1",
     "slick-carousel": "^1.8.1",
-    "sweetalert2": "^11.15.3"
+    "sweetalert2": "^11.15.3",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@types/react": "^18.0.37",

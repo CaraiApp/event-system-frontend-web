@@ -3,6 +3,7 @@ import Layout from './ComponentsHome/Layout/Layout'
 import React, { useEffect } from 'react'
 import axios from 'axios'
 import { UserContextProvider } from './UserContext'
+import { CartProvider } from './CartContext'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import theme from './styles/theme'
@@ -66,7 +67,9 @@ const App = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <UserContextProvider>
-        <Layout/>
+        <CartProvider>
+          <Layout/>
+        </CartProvider>
       </UserContextProvider>
     </ThemeProvider>
   )

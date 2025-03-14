@@ -192,6 +192,30 @@ export const bookingAPI = {
       console.error('Error checking event bookings:', error);
       return false; // En caso de error, asumimos que no hay reservas
     }
+  },
+  
+  // RESERVAS TEMPORALES (CARRITO DE COMPRA)
+  // Crear/actualizar reserva temporal de asientos (bloqueo de 7 minutos)
+  createTempBooking: async (eventId, seatNumbers, sessionId = null) => {
+    const data = {
+      event_id: eventId,
+      seatNumbers,
+      sessionId
+    };
+    return axios.post('/api/v1/temp-bookings/create', data);
+  },
+  
+  // Obtener asientos temporalmente reservados para un evento
+  getTempBookedSeats: async (eventId) => {
+    return axios.get(`/api/v1/temp-bookings/get?event_id=${eventId}`);
+  },
+  
+  // Liberar reserva temporal
+  releaseTempBooking: async (eventId, sessionId) => {
+    return axios.post('/api/v1/temp-bookings/release', { 
+      event_id: eventId, 
+      sessionId 
+    });
   }
 };
 

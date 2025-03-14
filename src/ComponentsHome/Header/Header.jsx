@@ -95,6 +95,7 @@ import { RxExit } from 'react-icons/rx';
 import './Header.css';
 import { Avatar } from '@mui/material';
 import axios from 'axios';
+import CartIndicator from '../../components/Cart/CartIndicator';
 
 const nav__links = [
   { path: '/home', display: 'Hogar' },
@@ -241,6 +242,9 @@ const Header = () => {
                 {isMobile ? 'Add Event' :  'Create Event'}</Link>
               </Button>
             )}
+{/* Cart Indicator */}
+<CartIndicator />
+
 {user?.username && (
   <div className="profile-container" ref={dropdownRef}>
               <div className="profile-wrapper" onClick={toggleDropdown}>

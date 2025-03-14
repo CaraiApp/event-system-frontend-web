@@ -1,41 +1,116 @@
  // Curve Template 1 User
- import React, { useState } from "react";
- import { Box, Button, Typography, Paper, Tooltip, IconButton } from "@mui/material";
- import { EventSeat } from "@mui/icons-material";
+ import React, { useState, useEffect } from "react";
+ import { Box, Button, Typography, Paper, Tooltip, IconButton, Snackbar, Alert, CircularProgress } from "@mui/material";
+ import { EventSeat, ShoppingCart, AccessTime } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { useCart } from "../../../CartContext";
 
  const FinalSeatMapWithDynamicSections = ({event, selectionDate}) => {
 
   const navigate = useNavigate();
-   // Final array after drag-and-drop adjustments by the organizer
-   const comingSeats = event?.finalSeats;
-   const finalSeats = comingSeats[0].split(",");
-   const reservedSeats =selectionDate !== "first" ? event?.reservedSeats : event?.reservedSeatsSec;
+  // Integrar el contexto del carrito
+  const { 
+    cartItems, 
+    addToCart, 
+    clearCart, 
+    loading, 
+    error, 
+    timeRemaining, 
+    formatTimeRemaining, 
+    isSeatReserved, 
+    temporarySeats,
+    fetchTemporarySeats 
+  } = useCart();
+  
+  // Estado para alertas
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'info' });
+  
+  // Final array after drag-and-drop adjustments by the organizer
+  const comingSeats = event?.finalSeats;
+  const finalSeats = comingSeats[0].split(",");
+  const reservedSeats = selectionDate !== "first" ? event?.reservedSeats : event?.reservedSeatsSec;
  
-   const originalVipCount = Number(event?.vipSize); // Organizer-defined count of VIP seats
-   console.log(Number(event?.vipSize), 'sizeofvip')
-   const [selectedSeats, setSelectedSeats] = useState([]);
+  const originalVipCount = Number(event?.vipSize); // Organizer-defined count of VIP seats
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  
+  // Inicializar el carrito al cargar el componente
+  useEffect(() => {
+    if (event?._id) {
+      fetchTemporarySeats(event._id);
+      
+      // Si ya hay asientos en el carrito para este evento, cargarlos como seleccionados
+      if (cartItems && cartItems.length > 0) {
+        setSelectedSeats(cartItems);
+      }
+    }
+  }, [event]);
  
-   const middleSeats = finalSeats.slice(0, originalVipCount); 
-   const remainingSeats = finalSeats.slice(originalVipCount); 
+  const middleSeats = finalSeats.slice(0, originalVipCount); 
+  const remainingSeats = finalSeats.slice(originalVipCount); 
    
-   // Divide the remaining seats into left and right sections
-   const halfRemaining = Math.ceil(remainingSeats.length / 2);
-   const leftSeats = remainingSeats.slice(0, halfRemaining); 
-   const rightSeats = remainingSeats.slice(halfRemaining); 
+  // Divide the remaining seats into left and right sections
+  const halfRemaining = Math.ceil(remainingSeats.length / 2);
+  const leftSeats = remainingSeats.slice(0, halfRemaining); 
+  const rightSeats = remainingSeats.slice(halfRemaining); 
+  
+  // Cerrar alerta
+  const handleCloseAlert = () => {
+    setAlert({...alert, open: false});
+  };
+  
+  // Verificar si un asiento está disponible
+  const isSeatAvailable = (seat) => {
+    const isPermanentlyReserved = reservedSeats.includes(seat);
+    const isTempReserved = temporarySeats.includes(seat) && !cartItems.includes(seat);
+    
+    return !isPermanentlyReserved && !isTempReserved;
+  };
    
-   const handleSeatClick = (seat) => {
+  const handleSeatClick = (seat) => {
+    // No permitir selección de asientos reservados permanentemente
+    if (reservedSeats.includes(seat)) {
+      setAlert({
+        open: true,
+        message: 'Este asiento ya está reservado',
+        severity: 'warning'
+      });
+      return;
+    }
+    
+    // Comprobar si está reservado temporalmente por otro usuario
+    if (temporarySeats.includes(seat) && !cartItems.includes(seat)) {
+      setAlert({
+        open: true,
+        message: 'Este asiento está temporalmente reservado por otro usuario',
+        severity: 'warning'
+      });
+      return;
+    }
  
-     if (reservedSeats.includes(seat)) return; // Prevent reserved seats from being selected
- 
-     setSelectedSeats((prev) =>
-       prev.includes(seat)
-         ? prev.filter((s) => s !== seat)
-         : [...prev, seat]
-     );
-   };
+    // Actualizar selección local
+    const newSelectedSeats = selectedSeats.includes(seat)
+      ? selectedSeats.filter(s => s !== seat)
+      : [...selectedSeats, seat];
+    
+    setSelectedSeats(newSelectedSeats);
+    
+    // Si hay selección, actualizar el carrito
+    if (newSelectedSeats.length > 0) {
+      addToCart(event._id, newSelectedSeats).catch(err => {
+        console.error('Error updating cart:', err);
+        setAlert({
+          open: true,
+          message: err.message || 'Error al actualizar el carrito',
+          severity: 'error'
+        });
+      });
+    } else if (cartItems.length > 0) {
+      // Si la selección quedó vacía, limpiar el carrito
+      clearCart(event._id);
+    }
+  };
  
    const calculateTotalPrice = () => {
      const vipPrice = event?.vipprice;;
@@ -47,6 +122,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
      }, 0);
    };
  
+   // Renderizar los asientos con información de estado actualizada
    const renderSeats = (seats, gridTemplateColumns) => (
      <Box
        sx={{
@@ -59,46 +135,74 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
        {seats.map((seat) => {
          const isVip = seat.startsWith("VIP");
          const isSelected = selectedSeats.includes(seat);
-         const isReserved = reservedSeats.includes(seat);
+         
+         // Verificar diferentes estados de reserva
+         const isPermanentlyReserved = reservedSeats.includes(seat);
+         const isTempReservedByOthers = temporarySeats.includes(seat) && !cartItems.includes(seat);
+         const isTempReservedByMe = cartItems.includes(seat);
+         
+         // Determinar tooltip según estado
+         let tooltipTitle = "Disponible";
+         if (isPermanentlyReserved) tooltipTitle = "Asiento reservado";
+         else if (isTempReservedByOthers) tooltipTitle = "Temporalmente reservado por otro usuario";
+         else if (isTempReservedByMe) tooltipTitle = "En tu carrito";
+         else if (isSelected) tooltipTitle = "Seleccionado";
+         
          return (
-           <Tooltip title={isReserved ? "Reserved" : isSelected ? "Selected" : "Available"}
-           componentsProps={{
-            tooltip: {
-              sx: {
-                fontSize: "1.2rem", // Adjust the font size as needed,
-              },
-            },
-          }}>
- 
-           <Button
+           <Tooltip 
              key={seat}
-             onClick={() => handleSeatClick(seat)}
-             sx={{
-             //   width: "20px",
-             //   height: "20px",
-              //  padding: "10px",
-               backgroundColor: isReserved ? 
-               "grey" : isSelected
-                 ? "green"
-                 : isVip
-                 ? "#ff0e0e"
-                 : "#3960ba" ,
-               color: "white",
-               border: "1px solid black",
-               borderTopRightRadius: "50%",
-               fontSize: "10px",
-              
-              
-             }}
-             // startIcon={}
-             
+             title={tooltipTitle}
+             componentsProps={{
+              tooltip: {
+                sx: {
+                  fontSize: "1.2rem",
+                },
+              },
+            }}
            >
-            <EventSeat />{seat}
- 
-            
-           </Button>
+             <span> {/* Wrapper necesario para Tooltip con botón disabled */}
+               <Button
+                 onClick={() => handleSeatClick(seat)}
+                 disabled={isPermanentlyReserved || isTempReservedByOthers}
+                 sx={{
+                   backgroundColor: 
+                     isPermanentlyReserved 
+                       ? "grey" 
+                       : isTempReservedByOthers
+                         ? "#888888"
+                         : isSelected
+                           ? "green"
+                           : isVip
+                             ? "#ff0e0e"
+                             : "#3960ba",
+                   color: "white",
+                   border: "1px solid black",
+                   borderTopRightRadius: "50%",
+                   fontSize: "10px",
+                   opacity: (isPermanentlyReserved || isTempReservedByOthers) ? 0.6 : 1,
+                   '&:hover': {
+                     backgroundColor: 
+                       isPermanentlyReserved 
+                         ? "grey" 
+                         : isTempReservedByOthers
+                           ? "#888888"
+                           : isSelected
+                             ? "darkgreen"
+                             : isVip
+                               ? "#cc0000"
+                               : "#2a4a8a",
+                   }
+                 }}
+               >
+                 {isTempReservedByOthers ? (
+                   <AccessTime sx={{ fontSize: 16 }} />
+                 ) : (
+                   <EventSeat />
+                 )}
+                 {seat}
+               </Button>
+             </span>
            </Tooltip>
-           
          );
        })}
      </Box>
@@ -158,6 +262,39 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
          padding: 2, // Optional: Adds spacing to prevent content from sticking to edges
        }}
         >
+
+      {/* Alerta para mensajes */}
+      <Snackbar 
+        open={alert.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseAlert} severity={alert.severity}>
+          {alert.message}
+        </Alert>
+      </Snackbar>
+
+      {/* Indicador de carga */}
+      {loading && (
+        <Box 
+          sx={{ 
+            position: 'fixed', 
+            top: '50%', 
+            left: '50%', 
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999,
+            bgcolor: 'rgba(0,0,0,0.7)',
+            borderRadius: 2,
+            p: 3
+          }}
+        >
+          <CircularProgress color="primary" />
+          <Typography sx={{ mt: 2, color: 'white' }}>
+            Actualizando asientos...
+          </Typography>
+        </Box>
+      )}
 
 <IconButton
        onClick={() => navigate(-1)} // Moves back in history
@@ -317,6 +454,27 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
          </Typography>
          <Typography>{event?.currency}{calculateTotalPrice()}</Typography>
        </Paper>
+
+       {/* Tiempo restante (solo si hay asientos en el carrito) */}
+       {timeRemaining > 0 && (
+         <Paper
+           sx={{
+             padding: "10px",
+             marginTop: "10px",
+             backgroundColor: timeRemaining < 60000 ? "rgba(255, 100, 100, 0.2)" : "rgba(144, 238, 144, 0.3)",
+             textAlign: "center",
+             display: "flex",
+             alignItems: "center",
+             justifyContent: "center",
+             gap: 1
+           }}
+         >
+           <AccessTime color={timeRemaining < 60000 ? "error" : "success"} />
+           <Typography variant="subtitle1">
+             Tiempo restante: <strong>{formatTimeRemaining()}</strong>
+           </Typography>
+         </Paper>
+       )}
  
        <Button
          onClick={handleConfirmBooking}
