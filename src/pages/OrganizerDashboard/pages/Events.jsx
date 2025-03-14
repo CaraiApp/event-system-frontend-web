@@ -160,10 +160,25 @@ const Events = () => {
   // Filter events based on tab and search term
   const filteredEvents = events.filter(event => {
     // Filter by tab (status)
-    if (tabValue === 1 && !(event.published || event.status === 'active')) return false;
-    if (tabValue === 2 && !(event.status === 'finished' || (event.eventDate && new Date(event.eventDate) < new Date()))) return false;
-    if (tabValue === 3 && !(event.status === 'cancelled')) return false;
-    if (tabValue === 4 && (event.published || event.status === 'active' || event.status === 'finished' || event.status === 'cancelled')) return false;
+    // Pestaña 1: Activos (published es true)
+    if (tabValue === 1 && !event.published) return false;
+    
+    // Pestaña 2: Finalizados (fecha del evento es anterior a hoy)
+    if (tabValue === 2 && !(
+      event.eventDate && new Date(event.eventDate) < new Date()
+    )) return false;
+    
+    // Pestaña 3: Cancelados (status es 'cancelled' o published es false y tiene campo status)
+    if (tabValue === 3 && !(
+      event.status === 'cancelled' || 
+      (event.hasOwnProperty('status') && !event.published)
+    )) return false;
+    
+    // Pestaña 4: Borradores (no published y no cancelado)
+    if (tabValue === 4 && (
+      event.published || 
+      event.status === 'cancelled'
+    )) return false;
     
     // Filter by search term
     if (searchTerm) {
@@ -202,19 +217,24 @@ const Events = () => {
     }
   };
   
-  const getStatusChip = (status) => {
-    switch (status) {
-      case 'active':
-        return <Chip label="Activo" color="success" size="small" />;
-      case 'finished':
-        return <Chip label="Finalizado" color="default" size="small" />;
-      case 'draft':
-        return <Chip label="Borrador" color="warning" size="small" />;
-      case 'cancelled':
-        return <Chip label="Cancelado" color="error" size="small" sx={{ fontWeight: 'bold' }} />;
-      default:
-        return <Chip label={status} size="small" />;
+  const getStatusChip = (event) => {
+    // Evento cancelado
+    if (event.status === 'cancelled' || (event.hasOwnProperty('status') && !event.published)) {
+      return <Chip label="Cancelado" color="error" size="small" sx={{ fontWeight: 'bold' }} />;
     }
+    
+    // Evento finalizado (por fecha)
+    if (event.eventDate && new Date(event.eventDate) < new Date()) {
+      return <Chip label="Finalizado" color="default" size="small" />;
+    }
+    
+    // Evento activo (publicado)
+    if (event.published) {
+      return <Chip label="Activo" color="success" size="small" />;
+    }
+    
+    // Borrador (no publicado)
+    return <Chip label="Borrador" color="warning" size="small" />;
   };
   
   if (loading) {
@@ -402,7 +422,7 @@ const Events = () => {
                         </Box>
                       </TableCell>
                       <TableCell align="center">
-                        {getStatusChip(event.published ? 'active' : event.status || 'draft')}
+                        {getStatusChip(event)}
                       </TableCell>
                       <TableCell align="right">
                         <IconButton

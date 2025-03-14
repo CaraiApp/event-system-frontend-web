@@ -142,7 +142,7 @@ export default function EventPage() {
 
         <div className="event-details-container">
           <div className="event-details-wrapper">
-            {eventData?.status === 'cancelled' && (
+            {(eventData?.status === 'cancelled' || (eventData?.hasOwnProperty('status') && !eventData?.published)) && (
               <div style={{
                 position: 'absolute',
                 top: '20px',
@@ -164,13 +164,13 @@ export default function EventPage() {
               src={eventData?.photo}
               alt="Event"
               className="event-image"
-              style={eventData?.status === 'cancelled' ? { opacity: 0.7, filter: 'grayscale(50%)' } : {}}
+              style={(eventData?.status === 'cancelled' || (eventData?.hasOwnProperty('status') && !eventData?.published)) ? { opacity: 0.7, filter: 'grayscale(50%)' } : {}}
             />
             <div className="event-info">
               <div className="event-header">
                 <h1 className="event-heading">
                   {eventData?.name}
-                  {eventData?.status === 'cancelled' && 
+                  {(eventData?.status === 'cancelled' || (eventData?.hasOwnProperty('status') && !eventData?.published)) && 
                     <span style={{ 
                       fontSize: '0.6em', 
                       color: 'red',
@@ -272,13 +272,13 @@ export default function EventPage() {
 
 {(userRole === "user" || !userRole) && 
   eventData?.ticket !== "Walk-in" && 
-  eventData?.status !== "cancelled" && (
+  !(eventData?.status === 'cancelled' || (eventData?.hasOwnProperty('status') && !eventData?.published)) && (
     <button onClick={handleBookNow} className="buy-ticket-btn">
       RESERVAR AHORA
     </button>
   )}
               
-{eventData?.status === "cancelled" && (
+{(eventData?.status === "cancelled" || (eventData?.hasOwnProperty('status') && !eventData?.published)) && (
     <div style={{
       padding: '15px',
       backgroundColor: '#ffebee',
