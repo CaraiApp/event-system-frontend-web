@@ -9,8 +9,9 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import { useParams, useNavigate } from 'react-router-dom';
-import { eventAPI, bookingAPI } from '../../../services/api';
+import { eventAPI } from '../../../services/api';
 import { COMMON_STRINGS } from '../../../utils/strings';
+import axios from 'axios';
 
 const EventStatistics = () => {
   const { id } = useParams();

@@ -140,17 +140,20 @@ const Events = () => {
   };
   
   const handleViewDetails = () => {
-    navigate(`/event-detail/${selectedEventId}`);
+    // Redirección a la página de detalles del evento para clientes
+    window.open(`/event-detail/${selectedEventId}`, '_blank');
     handleMenuClose();
   };
   
   const handleViewAnalytics = () => {
-    navigate(`/organizer/events/${selectedEventId}/statistics`);
+    // La ruta debe funcionar dentro del layout del dashboard
+    navigate(`events/${selectedEventId}/statistics`);
     handleMenuClose();
   };
   
   const handleEditEvent = () => {
-    navigate(`/organizer/events/${selectedEventId}/edit`);
+    // La ruta debe funcionar dentro del layout del dashboard
+    navigate(`events/${selectedEventId}/edit`);
     handleMenuClose();
   };
   
