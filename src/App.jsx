@@ -3,6 +3,9 @@ import Layout from './ComponentsHome/Layout/Layout'
 import React, { useEffect } from 'react'
 import axios from 'axios'
 import { UserContextProvider } from './UserContext'
+import { ThemeProvider } from '@mui/material/styles'
+import CssBaseline from '@mui/material/CssBaseline'
+import theme from './styles/theme'
 
 // Configuración global de axios
 axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
@@ -60,9 +63,12 @@ const App = () => {
   }, []);
 
   return (
-    <UserContextProvider>
-      <Layout/>
-    </UserContextProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <UserContextProvider>
+        <Layout/>
+      </UserContextProvider>
+    </ThemeProvider>
   )
 }
 
