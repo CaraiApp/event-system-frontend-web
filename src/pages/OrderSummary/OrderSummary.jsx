@@ -8,12 +8,12 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import AirlineSeatReclineExtraIcon from "@mui/icons-material/AirlineSeatReclineExtra";
 import './OrderSummary.css';
 import LoadingScreen from '../../components/LoadingScreen/LoadingScreen';
+
 export default function OrderSummary() {
     const location = useLocation();
     const navigate = useNavigate();
     const { payload } = location.state;
-const [user, setUser] = useState(null);
-
+    const [user, setUser] = useState(null);
     const token = localStorage.getItem("token");
     const [isCheckboxChecked, setIsCheckboxChecked] = useState(false);
     const [loading, setLoading] = useState(false); // Loading state
@@ -22,9 +22,7 @@ const [user, setUser] = useState(null);
         setIsCheckboxChecked(e.target.checked);
     };
   
-
     const fetchUser = async () => {
-    
         if (token) {
           try {
             const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/users/getUser`, {
@@ -37,56 +35,91 @@ const [user, setUser] = useState(null);
             console.error('Error fetching user:', error);
           }
         }
-      };
-      useEffect(() => {
+    };
+    
+    useEffect(() => {
         // Scroll to the top of the page when the component mounts
         window.scrollTo(0, 0);
-      }, []);
-      useEffect(() => {
-        fetchUser();
-       
-      }, [token]);
-
-      const handleConfirmBooking = async () => {
-        setLoading(true);
+    }, []);
     
+    useEffect(() => {
+        fetchUser();
+    }, [token]);
+
+    const handleConfirmBooking = async () => {
+        setLoading(true);
+
         const payloadData = {
-          user_id:  user?._id,
-          event_id: payload?.event_id ,
+          user_id: user?._id,
+          event_id: payload?.event_id,
           bookingDate: payload?.bookingDate,
           guestSize: payload?.guestSize,
           seatNumbers: payload?.seatNumbers,
           totalPrice: payload?.totalPrice,
         };
-       console.log(payloadData)
+        
+        console.log(payloadData);
+        
         try {
-          const response = await axios.post(
-            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/stripe`,
-            payloadData
-          );
-            console.log(response)
+          // Verificar si es un evento gratuito
+          const isFreeEvent = payload?.isFree === true || payload?.totalPrice === 0;
+          
+          let response;
+          
+          if (isFreeEvent) {
+            // Usar la ruta para eventos gratuitos
+            console.log("Procesando evento gratuito");
+            response = await axios.post(
+              `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/free`,
+              payloadData
+            );
+            
+            console.log("Respuesta de evento gratuito:", response);
+            
+            // Para eventos gratuitos, redirigir a la página de éxito directamente
+            if (response.data && response.data.status === "success") {
+              navigate('/congrtspaymentsuccess', { 
+                state: { 
+                  bookingId: response.data.data._id,
+                  eventName: payload?.eventName,
+                  qrCodeUrl: response.data.qrCodeUrl,
+                  isFreeEvent: true
+                } 
+              });
+            } else {
+              console.error("Error en la reserva gratuita");
+            }
+          } else {
+            // Proceso normal para eventos de pago usando Stripe
+            response = await axios.post(
+              `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/stripe`,
+              payloadData
+            );
+            
+            console.log("Respuesta de Stripe:", response);
+            
             if (response.data && response.data.stripeUrl) {
-                // Redirect to the Stripe URL after a successful response
-                window.location.href = response.data.stripeUrl;
-              } else {
-                console.error("Stripe URL not found in response");
-              }
+              // Redirect to the Stripe URL after a successful response
+              window.location.href = response.data.stripeUrl;
+            } else {
+              console.error("Stripe URL not found in response");
+            }
+          }
         } catch (err) {
           console.error("Error during booking:", err);
+          alert("Ha ocurrido un error al procesar la reserva. Por favor, inténtelo de nuevo.");
         } finally {
           setLoading(false);
         }
-      };
-      const handleBack = () => {
+    };
+
+    const handleBack = () => {
         navigate(-1);
-      };
+    };
+    
     return (
       <>
-    
-      
         <div style={{ padding: "90px 0px" }}>
-                    
-
             {/* <Link> */}
                 <button 
                     className="inline-flex mt-12 gap-2 p-3 ml-12 bg-gray-100 justify-center items-center text-blue-700 font-bold rounded-md"
@@ -95,7 +128,6 @@ const [user, setUser] = useState(null);
                 >
                     <IoMdArrowBack className="font-bold w-7 h-7 gap-2" /> 
                     Atrás
-
                 </button>
             {/* </Link> */}
             {loading && <LoadingScreen/>} 
@@ -109,7 +141,6 @@ const [user, setUser] = useState(null);
                             className="text-left font-bold"
                         >
                             Términos y condiciones
-
                         </h2>
                         <br />
                         <div>
@@ -122,8 +153,15 @@ const [user, setUser] = useState(null);
                         </div>
                         <div className="mt-5 text-center">
                             {/* <Link to={'/wallet'}> */}
-                            <button onClick={handleConfirmBooking}  className="buy-ticket-btn">Proceed For Payment</button>
-
+                            <button 
+                                onClick={handleConfirmBooking} 
+                                className="buy-ticket-btn"
+                                disabled={!isCheckboxChecked}
+                            >
+                                {payload?.isFree || payload?.totalPrice === 0 
+                                    ? "Registrarse para evento gratuito" 
+                                    : "Proceder al pago"}
+                            </button>
                             {/* </Link> */}
                         </div>
                     </div>
@@ -131,64 +169,70 @@ const [user, setUser] = useState(null);
                     {/* Booking Summary */}
                     <div className="w-full lg:w-1/4 bg-blue-100 p-4">
                     <Box
-      sx={{
-        padding: "20px",
-        backgroundColor: "#f9f9f9",
-        borderRadius: "10px",
-        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-        maxWidth: "400px",
-        margin: "auto",
-      }}
-    >
-      {/* Event Name */}
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <EventIcon color="primary" />
-        <Typography variant="h5" fontWeight="bold">
-        {payload?.eventName}
-        </Typography>
-      </Stack>
+                      sx={{
+                        padding: "20px",
+                        backgroundColor: "#f9f9f9",
+                        borderRadius: "10px",
+                        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                        maxWidth: "400px",
+                        margin: "auto",
+                      }}
+                    >
+                      {/* Event Name */}
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <EventIcon color="primary" />
+                        <Typography variant="h5" fontWeight="bold">
+                        {payload?.eventName}
+                        </Typography>
+                      </Stack>
 
-      {/* Divider */}
-      <Divider sx={{ marginY: "15px" }} />
+                      {/* Divider */}
+                      <Divider sx={{ marginY: "15px" }} />
 
-      {/* Total Price */}
-      <Stack direction="row" alignItems="center" spacing={2} marginBottom="10px">
-        <AttachMoneyIcon color="success" />
-        <Typography sx={{fontSize:14}}>
-        Precio Total
-        :{" "}
-          <span style={{ fontWeight: "bold" }}>{payload?.totalPrice} {payload?.currency}</span>
-        </Typography>
-      </Stack>
+                      {/* Total Price */}
+                      <Stack direction="row" alignItems="center" spacing={2} marginBottom="10px">
+                        <AttachMoneyIcon color={payload?.isFree || payload?.totalPrice === 0 ? "success" : "primary"} />
+                        <Typography sx={{fontSize:14}}>
+                        Precio Total
+                        :{" "}
+                          <span style={{ fontWeight: "bold" }}>
+                            {payload?.isFree || payload?.totalPrice === 0 
+                              ? "Gratis" 
+                              : `${payload?.totalPrice} ${payload?.currency}`}
+                          </span>
+                        </Typography>
+                      </Stack>
 
-      {/* Booked Seats */}
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <AirlineSeatReclineExtraIcon color="secondary" />
-        <Typography sx={{fontSize:14}}>
-        Asientos reservados
-        :{" "}
-          <span style={{ fontWeight: "bold" }}>
-            {/* {bookedSeats?.length > 0 ? bookedSeats.join(", ") : "None"} */}
-          
-            {payload?.seatNumbers.length > 0 ? payload?.seatNumbers.join(', ') : 'No seats selected'}
-          </span>
-        </Typography>
-      </Stack>
-    </Box>
+                      {/* Booked Seats */}
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <AirlineSeatReclineExtraIcon color="secondary" />
+                        <Typography sx={{fontSize:14}}>
+                        Asientos reservados
+                        :{" "}
+                          <span style={{ fontWeight: "bold" }}>
+                            {payload?.seatNumbers && payload?.seatNumbers.length > 0 
+                              ? payload?.seatNumbers.join(', ') 
+                              : 'No se requiere selección de asientos'}
+                          </span>
+                        </Typography>
+                      </Stack>
+                    </Box>
                         
-                        <div className="flex items-center mt-5">
-                            <input className="h-5" type="checkbox" onChange={handleCheckboxChange} />
-                            <div className="px-2 text-lg" style={{ fontSize: 13, lineHeight: 1.5 }}>
-                            He verificado el nombre, la fecha y la hora del evento antes de proceder al pago. Acepto términos y condiciones
-                            . 
-                            </div>
+                    <div className="flex items-center mt-5">
+                        <input 
+                            className="h-5" 
+                            type="checkbox" 
+                            onChange={handleCheckboxChange}
+                            checked={isCheckboxChecked} 
+                        />
+                        <div className="px-2 text-lg" style={{ fontSize: 13, lineHeight: 1.5 }}>
+                            He verificado el nombre, la fecha y la hora del evento antes de proceder. Acepto términos y condiciones.
                         </div>
-  
-
                     </div>
+                  </div>
                 </div>
             </div> 
         </div>
-        </>
+      </>
     );
 }

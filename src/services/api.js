@@ -168,6 +168,11 @@ export const bookingAPI = {
     return axios.post('/api/v1/booking/create', bookingData);
   },
   
+  // Crear una reserva para evento gratuito
+  createFreeBooking: async (bookingData) => {
+    return axios.post('/api/v1/booking/free', bookingData);
+  },
+  
   // Obtener una reserva específica
   getBooking: async (bookingId) => {
     return axios.get(`/api/v1/booking/${bookingId}`);
