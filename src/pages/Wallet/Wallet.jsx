@@ -156,64 +156,134 @@ const Wallet = () => {
     )}
     
     <Grid container spacing={3}>
-    {payments && payments.map((payment, index) => (
-  <Grid item xs={12} sm={6} md={4} key={index}>
-    <Card sx={{ boxShadow: 3 }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-        Nombre del evento
-        : {payment.event_id.name}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Evento:</strong> {payment.event_id.venue} {/* FIX HERE */}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Asientos reservados
-          :</strong> {payment.seatNumbers.join(", ")}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Tamaño del huésped
-          :</strong> {payment.guestSize}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Fecha de reserva
-          :</strong> {new Date(payment.bookingDate).toLocaleDateString()}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Precio Total
-          :</strong> ${payment.totalPrice}
-        </Typography>
-        <Typography variant="body1">
-          <strong>Estado de pago
-:</strong> {payment.paymentStatus}
-        </Typography>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            marginTop: 2,
-          }}
-        >
-          <img
-            src={payment.qrCodeUrl}
-            alt="QR Code"
-            style={{ width: "100px", height: "100px", objectFit: "cover" }}
-          />
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          sx={{ marginTop: 2, width: "100%" }}
-          onClick={() => window.open(payment.qrCodeUrl, "_blank")}
-        >
-          Ver código QR
-
-        </Button>
-      </CardContent>
-    </Card>
-  </Grid>
-))}
+    {payments && payments.map((payment, index) => {
+  // Verificar si event_id existe y si es un objeto
+  const eventName = payment.event_id && typeof payment.event_id === 'object' 
+    ? payment.event_id.name || 'Nombre no disponible'
+    : 'Evento';
+    
+  const eventVenue = payment.event_id && typeof payment.event_id === 'object'
+    ? payment.event_id.venue || 'Lugar no disponible'
+    : 'Lugar no disponible';
+    
+  // Verificar si seatNumbers es un array
+  const seats = Array.isArray(payment.seatNumbers)
+    ? payment.seatNumbers.join(", ")
+    : 'No disponible';
+    
+  return (
+    <Grid item xs={12} sm={6} md={4} key={index}>
+      <Card sx={{ 
+        boxShadow: 3, 
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'transform 0.2s',
+        '&:hover': {
+          transform: 'translateY(-5px)',
+          boxShadow: 6
+        }
+      }}>
+        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            {eventName}
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <strong>Lugar:</strong> {eventVenue}
+          </Typography>
+          
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Asientos:</strong> {seats}
+            </Typography>
+            
+            <Typography variant="body2">
+              <strong>Cantidad:</strong> {payment.guestSize || '1'}
+            </Typography>
+            
+            <Typography variant="body2">
+              <strong>Fecha:</strong> {payment.bookingDate ? new Date(payment.bookingDate).toLocaleDateString() : 'No disponible'}
+            </Typography>
+            
+            <Typography variant="body2">
+              <strong>Precio:</strong> {payment.totalPrice ? `$${payment.totalPrice}` : 'Gratis'}
+            </Typography>
+            
+            <Typography variant="body2" sx={{ 
+              mt: 1, 
+              display: 'inline-block', 
+              bgcolor: payment.paymentStatus === 'paid' ? '#e8f5e9' : '#fff8e1',
+              color: payment.paymentStatus === 'paid' ? '#2e7d32' : '#f57c00',
+              px: 1,
+              py: 0.5,
+              borderRadius: 1,
+              fontSize: '0.75rem',
+              fontWeight: 'bold'
+            }}>
+              {payment.paymentStatus === 'paid' ? '✓ PAGADO' : 'PENDIENTE'}
+            </Typography>
+          </Box>
+          
+          {/* Diseño tipo ticket para el QR */}
+          {payment.qrCodeUrl && (
+            <Box
+              sx={{
+                mt: 'auto',
+                p: 2,
+                border: '2px dashed #ddd',
+                borderRadius: 2,
+                position: 'relative',
+                textAlign: 'center',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '-10px',
+                  left: '50%',
+                  marginLeft: '-10px',
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#fff',
+                  borderRadius: '50%',
+                  border: '2px dashed #ddd',
+                }
+              }}
+            >
+              <Typography variant="caption" display="block" gutterBottom sx={{ color: 'text.secondary' }}>
+                PRESENTA ESTE QR EN LA ENTRADA
+              </Typography>
+              
+              <Box sx={{ position: 'relative', mb: 1 }}>
+                <img
+                  src={payment.qrCodeUrl}
+                  alt="QR Code"
+                  style={{ 
+                    width: "120px", 
+                    height: "120px", 
+                    objectFit: "cover",
+                    borderRadius: '4px',
+                  }}
+                />
+              </Box>
+              
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => window.open(payment.qrCodeUrl, "_blank")}
+                sx={{ 
+                  fontSize: '0.75rem',
+                  textTransform: 'none'
+                }}
+              >
+                Ver QR completo
+              </Button>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+    </Grid>
+  );
+})}
 
     </Grid>
   </Box>

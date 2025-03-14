@@ -225,19 +225,133 @@ const PaymentSuccess = () => {
                   p: 2
                 }}
               >
-                <img 
-                  src={qrCodeUrl} 
-                  alt="Código QR de entrada" 
-                  style={{ 
-                    maxWidth: '100%', 
-                    maxHeight: '250px',
-                    border: '1px solid #eee',
-                    borderRadius: '8px',
-                    padding: '8px'
-                  }} 
-                />
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
-                  Presenta este código QR en la entrada del evento
+                {/* Ticket-styled QR display */}
+                <Box
+                  sx={{
+                    width: '100%',
+                    maxWidth: '280px',
+                    minHeight: '350px',
+                    backgroundColor: '#fff',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                    border: '1px solid #e0e0e0',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  {/* Ticket Header */}
+                  <Box
+                    sx={{
+                      backgroundColor: isFreeEvent ? '#4caf50' : '#1976d2',
+                      color: 'white',
+                      p: 2,
+                      textAlign: 'center',
+                      borderRadius: '8px 8px 0 0'
+                    }}
+                  >
+                    <Typography variant="h6" fontWeight="bold">
+                      {eventName || "EVENTO"}
+                    </Typography>
+                    <Typography variant="caption">
+                      ID: {bookingId?.substring(0, 8) || "00000000"}
+                    </Typography>
+                  </Box>
+
+                  {/* Dotted line separator with circles */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      position: 'relative',
+                      height: '1px',
+                      backgroundColor: '#e0e0e0',
+                      margin: '0 0',
+                      '&::before, &::after': {
+                        content: '""',
+                        position: 'absolute',
+                        width: '20px',
+                        height: '20px',
+                        backgroundColor: '#f5f5f5',
+                        borderRadius: '50%',
+                        top: '-10px',
+                        border: '1px solid #e0e0e0'
+                      },
+                      '&::before': {
+                        left: '-10px'
+                      },
+                      '&::after': {
+                        right: '-10px'
+                      }
+                    }}
+                  />
+
+                  {/* QR Code */}
+                  <Box sx={{ p: 3, textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <Box
+                      sx={{
+                        backgroundColor: 'white',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        display: 'inline-block',
+                        margin: '0 auto',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                        border: '1px solid #f0f0f0',
+                        mb: 2
+                      }}
+                    >
+                      <img 
+                        src={qrCodeUrl} 
+                        alt="Código QR de entrada" 
+                        style={{ 
+                          width: '180px',
+                          height: '180px',
+                          objectFit: 'contain',
+                        }} 
+                      />
+                    </Box>
+                    <Typography 
+                      variant="button" 
+                      sx={{ 
+                        color: '#555',
+                        letterSpacing: '1px', 
+                        fontWeight: 'bold', 
+                        fontSize: '0.7rem',
+                        mb: 1
+                      }}
+                    >
+                      PRESENTA ESTE QR EN LA ENTRADA
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      sx={{ display: 'block', fontSize: '0.65rem' }}
+                    >
+                      Válido para 1 persona
+                    </Typography>
+                  </Box>
+
+                  {/* Ticket Footer */}
+                  <Box
+                    sx={{
+                      borderTop: '1px dashed #ccc',
+                      p: 1.5,
+                      backgroundColor: '#f9f9f9',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                      {isFreeEvent ? "ENTRADA GRATUITA" : "ENTRADA PAGADA"} • {new Date().toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ mt: 3, textAlign: 'center', fontStyle: 'italic' }}
+                >
+                  Guarda este ticket QR o añádelo a tu billetera digital
                 </Typography>
               </Box>
             ) : (
