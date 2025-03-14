@@ -30,43 +30,80 @@ const Overview = () => {
       
       try {
         setLoading(true);
-        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         
-        // URL correcta según la implementación en el backend
-        const dashboardUrl = `${API_BASE_URL}/api/v1/dashboard/organizer/overview`;
-        console.log('Conectando a:', dashboardUrl);
+        // Inicializar datos por defecto en caso de error
+        const emptyData = {
+          totalRevenue: 0,
+          totalTicketsSold: 0,
+          totalEvents: 0,
+          activeEvents: 0,
+          upcomingEvents: [],
+          recentSales: [],
+          salesByEvent: {}
+        };
         
-        const response = await axios.get(dashboardUrl, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        console.log('Respuesta del backend:', response.data);
-        
-        if (response.data && response.data.data) {
-          setStats(response.data.data);
-          console.log('Datos establecidos correctamente');
-        } else {
-          throw new Error('Formato de respuesta inválido');
+        // Intentar obtener datos del backend
+        try {
+          // Definir la URL correcta
+          const response = await axios.get('/api/v1/dashboard/organizer/overview');
+          
+          console.log('Respuesta del backend:', response.data);
+          
+          if (response.data && response.data.data) {
+            setStats(response.data.data);
+            console.log('Datos establecidos correctamente');
+          } else {
+            console.warn('Respuesta con formato incorrecto, usando datos vacíos');
+            setStats(emptyData);
+          }
+        } catch (apiError) {
+          console.error('Error al conectar con el API:', apiError);
+          
+          // Si es un error 404, probablemente el endpoint no existe
+          if (apiError.response && apiError.response.status === 404) {
+            console.warn('El endpoint del dashboard no existe, usando datos vacíos');
+            setStats(emptyData);
+          } else {
+            // Para otros errores, intentar usar datos de eventos directamente
+            try {
+              // Obtener eventos del organizador
+              const eventsResponse = await axios.get('/api/v1/events/getuserEvent');
+              
+              if (eventsResponse.data && eventsResponse.data.data) {
+                const events = eventsResponse.data.data;
+                
+                // Crear estadísticas básicas a partir de los eventos
+                const basicStats = {
+                  totalRevenue: 0, // No podemos calcular esto sin datos de reservas
+                  totalTicketsSold: 0, // No podemos calcular esto sin datos de reservas
+                  totalEvents: events.length,
+                  activeEvents: events.filter(e => e.published).length,
+                  upcomingEvents: events.slice(0, 3).map(e => ({
+                    id: e._id,
+                    name: e.name,
+                    date: e.eventDate,
+                    ticketsSold: 0,
+                    revenue: 0
+                  })),
+                  recentSales: [],
+                  salesByEvent: {}
+                };
+                
+                setStats(basicStats);
+                console.log('Usando datos básicos de eventos');
+              } else {
+                // Si tampoco hay eventos, usar datos vacíos
+                setStats(emptyData);
+              }
+            } catch (eventsError) {
+              console.error('Error al obtener datos de eventos:', eventsError);
+              setStats(emptyData);
+            }
+          }
         }
       } catch (error) {
-        console.error('Error al obtener datos del dashboard:', error);
-        
-        // Mensaje de error más detallado y útil para el usuario
-        let errorMessage = 'Error al cargar datos del dashboard';
-        
-        if (error.response) {
-          // Error de respuesta del servidor
-          errorMessage += `: ${error.response.status} ${error.response.statusText}`;
-          console.error('Detalles del error:', error.response.data);
-        } else if (error.request) {
-          // Error de conexión
-          errorMessage += ': No se pudo conectar con el servidor';
-        } else {
-          // Otro tipo de error
-          errorMessage += `: ${error.message}`;
-        }
-        
-        setError(errorMessage);
+        console.error('Error general:', error);
+        setError('No se pudieron cargar los datos. Por favor, intente más tarde.');
       } finally {
         setLoading(false);
       }
@@ -95,6 +132,13 @@ const Overview = () => {
       </Paper>
     );
   }
+
+  // Comprobar si hay datos vacíos (todos los valores numéricos son 0 y los arrays están vacíos)
+  const hasNoData = stats && 
+    stats.totalEvents === 0 && 
+    stats.totalTicketsSold === 0 && 
+    stats.upcomingEvents.length === 0 && 
+    stats.recentSales.length === 0;
   
   return (
     <>
@@ -102,19 +146,53 @@ const Overview = () => {
         <Typography variant="h4" component="h1" className="dashboard-title-text">
           Panel de Control
         </Typography>
-        <Button 
-          variant="outlined" 
-          startIcon={<DownloadIcon />}
-          onClick={handleExportData}
-        >
-          Exportar Datos
-        </Button>
+        {!hasNoData && (
+          <Button 
+            variant="outlined" 
+            startIcon={<DownloadIcon />}
+            onClick={handleExportData}
+          >
+            Exportar Datos
+          </Button>
+        )}
       </Box>
       
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={6} lg={3}>
-          <Paper elevation={3} className="dashboard-card dashboard-stat-card" sx={{ bgcolor: '#E3F2FD' }}>
+      {/* Mensaje cuando no hay datos */}
+      {hasNoData && (
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 4, 
+            mb: 4, 
+            textAlign: 'center',
+            bgcolor: '#f9f9f9'
+          }}
+        >
+          <Typography variant="h5" gutterBottom color="primary">
+            No hay datos disponibles
+          </Typography>
+          <Typography variant="body1" paragraph>
+            Aún no tienes eventos o reservas para mostrar estadísticas.
+          </Typography>
+          <Typography variant="body1" paragraph>
+            Comienza creando nuevos eventos para ver información detallada en este panel.
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => window.location.href = '/create-event'}
+            sx={{ mt: 2 }}
+          >
+            Crear Nuevo Evento
+          </Button>
+        </Paper>
+      )}
+      
+      {/* Stats Cards - solo mostramos si hay datos */}
+      {!hasNoData && (
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={6} lg={3}>
+            <Paper elevation={3} className="dashboard-card dashboard-stat-card" sx={{ bgcolor: '#E3F2FD' }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Typography color="textSecondary" gutterBottom>
                 Ingresos Totales
@@ -192,70 +270,84 @@ const Overview = () => {
         </Grid>
       </Grid>
       
-      {/* Upcoming Events & Recent Sales */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={6}>
-          <Card className="dashboard-card">
-            <CardHeader title="Pr�ximos Eventos" />
-            <Divider />
-            <CardContent>
-              <TableContainer>
-                <Table size="small" className="dashboard-data-table">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Evento</TableCell>
-                      <TableCell>Fecha</TableCell>
-                      <TableCell align="right">Vendidas</TableCell>
-                      <TableCell align="right">Ingresos</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {stats.upcomingEvents.map((event) => (
-                      <TableRow key={event.id}>
-                        <TableCell>{event.name}</TableCell>
-                        <TableCell>{new Date(event.date).toLocaleDateString()}</TableCell>
-                        <TableCell align="right">{event.ticketsSold}</TableCell>
-                        <TableCell align="right">�{event.revenue.toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
+      {/* Upcoming Events & Recent Sales - solo mostramos si hay datos */}
+      {!hasNoData && (
+        <Grid container spacing={3}>
+          <Grid item xs={12} lg={6}>
+            <Card className="dashboard-card">
+              <CardHeader title="Próximos Eventos" />
+              <Divider />
+              <CardContent>
+                {stats.upcomingEvents && stats.upcomingEvents.length > 0 ? (
+                  <TableContainer>
+                    <Table size="small" className="dashboard-data-table">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Evento</TableCell>
+                          <TableCell>Fecha</TableCell>
+                          <TableCell align="right">Vendidas</TableCell>
+                          <TableCell align="right">Ingresos</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {stats.upcomingEvents.map((event) => (
+                          <TableRow key={event.id}>
+                            <TableCell>{event.name}</TableCell>
+                            <TableCell>{event.date ? new Date(event.date).toLocaleDateString() : 'No definida'}</TableCell>
+                            <TableCell align="right">{event.ticketsSold}</TableCell>
+                            <TableCell align="right">€{(event.revenue || 0).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography color="textSecondary">No hay próximos eventos</Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={12} lg={6}>
+            <Card className="dashboard-card">
+              <CardHeader title="Ventas Recientes" />
+              <Divider />
+              <CardContent>
+                {stats.recentSales && stats.recentSales.length > 0 ? (
+                  <TableContainer>
+                    <Table size="small" className="dashboard-data-table">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>ID</TableCell>
+                          <TableCell>Evento</TableCell>
+                          <TableCell>Cliente</TableCell>
+                          <TableCell align="right">Importe</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {stats.recentSales.map((sale) => (
+                          <TableRow key={sale.id}>
+                            <TableCell>{sale.id}</TableCell>
+                            <TableCell>{sale.event}</TableCell>
+                            <TableCell>{sale.customer}</TableCell>
+                            <TableCell align="right">€{(sale.amount || 0).toFixed(2)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Box sx={{ p: 3, textAlign: 'center' }}>
+                    <Typography color="textSecondary">No hay ventas recientes</Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-        
-        <Grid item xs={12} lg={6}>
-          <Card className="dashboard-card">
-            <CardHeader title="Ventas Recientes" />
-            <Divider />
-            <CardContent>
-              <TableContainer>
-                <Table size="small" className="dashboard-data-table">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>ID</TableCell>
-                      <TableCell>Evento</TableCell>
-                      <TableCell>Cliente</TableCell>
-                      <TableCell align="right">Importe</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {stats.recentSales.map((sale) => (
-                      <TableRow key={sale.id}>
-                        <TableCell>{sale.id}</TableCell>
-                        <TableCell>{sale.event}</TableCell>
-                        <TableCell>{sale.customer}</TableCell>
-                        <TableCell align="right">�{sale.amount.toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      )}
     </>
   );
 };
