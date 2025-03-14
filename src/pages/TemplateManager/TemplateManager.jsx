@@ -365,7 +365,17 @@ const TemplateManager = () => {
     <Container maxWidth="lg" sx={{ mt: 12, mb: 8 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <IconButton 
-          onClick={() => navigate('/home')} 
+          onClick={() => {
+            // Comprobar el rol del usuario para redireccionar al dashboard correspondiente
+            const userRole = localStorage.getItem('role');
+            if (userRole === 'admin') {
+              navigate('/admin');
+            } else if (userRole === 'organizer') {
+              navigate('/organizer');
+            } else {
+              navigate('/home');
+            }
+          }} 
           sx={{ mr: 2 }}
           aria-label="volver"
         >
