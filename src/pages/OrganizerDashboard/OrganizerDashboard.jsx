@@ -9,10 +9,11 @@ import {
   Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon,
   EventNote as EventNoteIcon, BarChart as BarChartIcon, People as PeopleIcon,
   Settings as SettingsIcon, Logout as LogoutIcon, Home as HomeIcon,
-  Person as PersonIcon, AccountCircle as AccountCircleIcon 
+  Person as PersonIcon, AccountCircle as AccountCircleIcon, Map as MapIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import './OrganizerDashboard.css';
+import { COMMON_STRINGS } from '../../utils/strings';
 
 const drawerWidth = 240;
 
@@ -92,11 +93,12 @@ const OrganizerDashboard = () => {
   };
   
   const menuItems = [
-    { text: 'Panel Principal', icon: <DashboardIcon />, path: '/organizer' },
-    { text: 'Mis Eventos', icon: <EventNoteIcon />, path: '/organizer/events' },
-    { text: 'Ventas', icon: <BarChartIcon />, path: '/organizer/sales' },
-    { text: 'Asistentes', icon: <PeopleIcon />, path: '/organizer/attendees' },
-    { text: 'Configuraci�n', icon: <SettingsIcon />, path: '/organizer/settings' },
+    { text: COMMON_STRINGS.panelPrincipal, icon: <DashboardIcon />, path: '/organizer' },
+    { text: COMMON_STRINGS.misEventos, icon: <EventNoteIcon />, path: '/organizer/events' },
+    { text: COMMON_STRINGS.ventas, icon: <BarChartIcon />, path: '/organizer/sales' },
+    { text: COMMON_STRINGS.asistentes, icon: <PeopleIcon />, path: '/organizer/attendees' },
+    { text: COMMON_STRINGS.gestionMapas, icon: <MapIcon />, path: '/organizer/map-manager' },
+    { text: COMMON_STRINGS.configuracion, icon: <SettingsIcon />, path: '/organizer/settings' },
   ];
   
   const handleNavigation = (path) => {
@@ -197,13 +199,13 @@ const OrganizerDashboard = () => {
                 <ListItemIcon>
                   <PersonIcon fontSize="small" />
                 </ListItemIcon>
-                Mi Perfil
+                {COMMON_STRINGS.miPerfil}
               </MenuItem>
               <MenuItem onClick={handleLogout}>
                 <ListItemIcon>
                   <LogoutIcon fontSize="small" />
                 </ListItemIcon>
-                Cerrar Sesión
+                {COMMON_STRINGS.cerrarSesion}
               </MenuItem>
             </Menu>
           </Box>
@@ -308,7 +310,7 @@ const OrganizerDashboard = () => {
                 <LogoutIcon />
               </ListItemIcon>
               <ListItemText 
-                primary="Cerrar Sesi�n" 
+                primary={COMMON_STRINGS.cerrarSesion}
                 sx={{ opacity: open ? 1 : 0 }}
               />
             </ListItemButton>

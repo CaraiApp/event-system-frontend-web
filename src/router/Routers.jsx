@@ -83,6 +83,7 @@ import OrganizerEvents from '../pages/OrganizerDashboard/pages/Events';
 import Sales from '../pages/OrganizerDashboard/pages/Sales';
 import Attendees from '../pages/OrganizerDashboard/pages/Attendees';
 import Settings from '../pages/OrganizerDashboard/pages/Settings';
+import MapManager from '../pages/OrganizerDashboard/pages/MapManager/MapManager';
 
 // Dashboard de Administrador
 import AdminDashboard from '../pages/AdminDashboard/AdminDashboard';
@@ -194,6 +195,7 @@ const Routers = () => {
         <Route path="sales" element={<Sales />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="map-manager" element={<MapManager />} />
       </Route>
 
       {/* Dashboard de Administrador - Ruta independiente */}
