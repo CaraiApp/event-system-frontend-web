@@ -146,14 +146,14 @@ const Events = () => {
   };
   
   const handleViewAnalytics = () => {
-    // La ruta debe funcionar dentro del layout del dashboard
-    navigate(`events/${selectedEventId}/statistics`);
+    // La ruta debe ser absoluta desde organizer
+    navigate(`/organizer/events/${selectedEventId}/statistics`);
     handleMenuClose();
   };
   
   const handleEditEvent = () => {
-    // La ruta debe funcionar dentro del layout del dashboard
-    navigate(`events/${selectedEventId}/edit`);
+    // La ruta debe ser absoluta desde organizer
+    navigate(`/organizer/events/${selectedEventId}/edit`);
     handleMenuClose();
   };
   
