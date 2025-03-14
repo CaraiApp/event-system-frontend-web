@@ -75,12 +75,20 @@ const Dashboard = () => {
       }
       
       try {
-        // Llamada a la API real
-        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/admin/overview`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setStats(response.data.data);
+        // Llamada a la API real - usando los datos simulados en caso de error
+        try {
+          const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+          const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/admin/overview`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setStats(response.data.data);
+          setLoading(false);
+          return; // Salimos para no mostrar datos de prueba
+        } catch (apiError) {
+          console.warn('Error al cargar datos del dashboard admin:', apiError);
+          console.warn('Usando datos de prueba como fallback');
+          // Continuamos con datos de prueba
+        }
         
         // Datos de prueba
         setTimeout(() => {
