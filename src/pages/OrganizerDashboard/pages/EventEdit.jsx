@@ -12,6 +12,9 @@ import axios from 'axios';
 
 const EventEdit = () => {
   const { id } = useParams();
+  
+  // Para debugging
+  console.log("EventEdit - ID del evento:", id);
   const navigate = useNavigate();
   
   const [event, setEvent] = useState(null);
@@ -44,8 +47,10 @@ const EventEdit = () => {
       try {
         setLoading(true);
         
-        // Get event details
-        const eventResponse = await eventAPI.getEvent(id);
+        // Get event details - usando la misma URL que funciona en EventPage
+        const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getsingleEvent?id=${id}`;
+        console.log("Obteniendo evento desde URL:", url);
+        const eventResponse = await axios.get(url);
         
         if (eventResponse.data && eventResponse.data.data) {
           const eventData = eventResponse.data.data;
@@ -125,8 +130,10 @@ const EventEdit = () => {
         vipSize: Number(formData.vipSize),
       };
       
-      // Update the event
-      const response = await eventAPI.updateEvent(id, updateData);
+      // Update the event - usando URL directa para depuración
+      console.log("Actualizando evento con datos:", updateData);
+      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/${id}`;
+      const response = await axios.put(url, updateData);
       
       if (response.data && response.data.success) {
         setSuccess('Evento actualizado con éxito');

@@ -83,7 +83,7 @@ export const eventAPI = {
   
   // Obtener un evento específico
   getEvent: async (eventId) => {
-    return axios.get(`/api/v1/events/${eventId}`);
+    return axios.get(`/api/v1/events/getsingleEvent?id=${eventId}`);
   },
   
   // Crear un evento nuevo

@@ -28,8 +28,10 @@ const EventStatistics = () => {
     const fetchEventData = async () => {
       try {
         setLoading(true);
-        // Get event details
-        const eventResponse = await eventAPI.getEvent(id);
+        // Get event details - usando la misma URL que funciona en EventPage
+        const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getsingleEvent?id=${id}`;
+        console.log("Obteniendo evento desde URL:", url);
+        const eventResponse = await axios.get(url);
         
         if (eventResponse.data && eventResponse.data.data) {
           setEvent(eventResponse.data.data);
