@@ -93,7 +93,11 @@ export const eventAPI = {
   
   // Actualizar un evento
   updateEvent: async (eventId, eventData) => {
-    return axios.put(`/api/v1/events/${eventId}`, eventData);
+    const updatedData = {
+      ...eventData,
+      id: eventId
+    };
+    return axios.put('/api/v1/events/updateEvent', updatedData);
   },
   
   // Eliminar un evento
@@ -103,7 +107,11 @@ export const eventAPI = {
   
   // Cancelar un evento
   cancelEvent: async (eventId) => {
-    return axios.put(`/api/v1/events/${eventId}`, { status: 'cancelled' });
+    return axios.put('/api/v1/events/updateEvent', { 
+      id: eventId,
+      status: 'cancelled',
+      published: false
+    });
   }
 };
 

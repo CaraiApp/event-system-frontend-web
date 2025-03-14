@@ -132,8 +132,13 @@ const EventEdit = () => {
       
       // Update the event - usando URL directa para depuración
       console.log("Actualizando evento con datos:", updateData);
-      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/${id}`;
-      const response = await axios.put(url, updateData);
+      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/updateEvent`;
+      // Añadir el ID en el cuerpo de la solicitud
+      const updatedData = {
+        ...updateData,
+        id: id
+      };
+      const response = await axios.put(url, updatedData);
       
       if (response.data && response.data.success) {
         setSuccess('Evento actualizado con éxito');
@@ -160,9 +165,11 @@ const EventEdit = () => {
       
       // Set event status to cancelled
       console.log("Cancelando evento:", id);
-      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/${id}`;
+      // Usar la URL correcta para actualizar eventos
+      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/updateEvent`;
       // Incluir published: false y añadir campo status para asegurar compatibilidad
       const response = await axios.put(url, { 
+        id: id,
         status: 'cancelled',
         published: false 
       });
