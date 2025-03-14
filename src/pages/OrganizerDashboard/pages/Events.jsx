@@ -168,11 +168,8 @@ const Events = () => {
       event.eventDate && new Date(event.eventDate) < new Date()
     )) return false;
     
-    // Pestaña 3: Cancelados (status es 'cancelled' o published es false y tiene campo status)
-    if (tabValue === 3 && !(
-      event.status === 'cancelled' || 
-      (event.hasOwnProperty('status') && !event.published)
-    )) return false;
+    // Pestaña 3: Cancelados (status es 'cancelled')
+    if (tabValue === 3 && event.status !== 'cancelled') return false;
     
     // Pestaña 4: Borradores (no published y no cancelado)
     if (tabValue === 4 && (
@@ -219,7 +216,7 @@ const Events = () => {
   
   const getStatusChip = (event) => {
     // Evento cancelado
-    if (event.status === 'cancelled' || (event.hasOwnProperty('status') && !event.published)) {
+    if (event.status === 'cancelled') {
       return <Chip label="Cancelado" color="error" size="small" sx={{ fontWeight: 'bold' }} />;
     }
     
