@@ -21,19 +21,57 @@ const Layout = () => {
       setHideUI(true);
       console.log('Ruta de dashboard detectada - ocultando header/footer automáticamente');
       
-      // Intentamos obtener la configuración de UI del backend usando el servicio centralizado
+      // Panel de depuración para mostrar información detallada sobre la configuración UI
       const fetchUIConfig = async () => {
         try {
-          // Usar el servicio dashboardAPI que maneja los reintentos y fallbacks automáticamente
-          const response = await dashboardAPI.getUIConfig(location.pathname);
+          console.group('🔍 DEBUG - Layout.jsx - Configuración UI');
+          console.log('🔷 Ruta actual:', location.pathname);
+          console.log('🔷 API_BASE_URL:', import.meta.env.VITE_REACT_APP_BACKEND_BASEURL);
+          console.log('🔷 Token de autenticación presente:', !!localStorage.getItem('token'));
+          console.log('🔷 Rol de usuario:', localStorage.getItem('role'));
+
+          // Mostrar cabeceras que se enviarán en la solicitud
+          const token = localStorage.getItem('token');
+          console.log('🔷 Cabeceras de solicitud:', {
+            'Authorization': token ? `Bearer ${token}` : 'No hay token',
+            'Content-Type': 'application/json'
+          });
+
+          // Intentar obtener la configuración UI
+          console.log('🔷 Intentando obtener configuración UI desde API...');
+          console.time('⏱️ Tiempo de respuesta');
           
-          if (response.data && response.data.data) {
-            console.log('UI Config recibida:', response.data.data);
-            // Podríamos usar esta configuración para personalizar más el dashboard
-            // Por ejemplo: cambiar colores, mostrar/ocultar elementos específicos, etc.
+          try {
+            // Usar una instancia de axios configurada para mejor depuración
+            const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+            console.log('🔷 URL completa:', `${API_BASE_URL}/api/v1/dashboard/ui-config?route=${encodeURIComponent(location.pathname)}`);
+            
+            // Usar el servicio dashboardAPI para obtener configuración
+            const response = await dashboardAPI.getUIConfig(location.pathname);
+            console.timeEnd('⏱️ Tiempo de respuesta');
+            
+            if (response.data && response.data.data) {
+              console.log('✅ UI Config recibida correctamente:', response.data.data);
+            } else {
+              console.warn('⚠️ Respuesta sin datos válidos:', response);
+            }
+          } catch (apiError) {
+            console.timeEnd('⏱️ Tiempo de respuesta');
+            console.error('❌ Error al obtener configuración UI:', apiError);
+            console.error('❌ Mensaje de error:', apiError.message);
+            
+            if (apiError.response) {
+              console.error('❌ Datos de respuesta de error:', {
+                status: apiError.response.status,
+                statusText: apiError.response.statusText,
+                data: apiError.response.data
+              });
+            }
           }
+          
+          console.groupEnd();
         } catch (error) {
-          console.log('Error general al obtener configuración UI:', error);
+          console.error('Error general en fetchUIConfig:', error);
           // En cualquier caso, mantenemos ocultos los elementos UI para rutas de dashboard
         }
       };

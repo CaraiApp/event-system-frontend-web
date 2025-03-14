@@ -12,7 +12,7 @@ import {
   Edit as EditIcon
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { eventAPI } from '../../../services';
 import { COMMON_STRINGS } from '../../../utils/strings';
 
 const Events = () => {
@@ -39,107 +39,70 @@ const Events = () => {
       }
       
       try {
-        // En producci�n, aqu� se realizar� la petici�n real a la API
-        // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        // const response = await axios.get(`${API_BASE_URL}/api/v1/events/getuserEvent`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
-        // setEvents(response.data.data);
+        console.group('🎭 DEBUG - Events.jsx - Obtención de eventos');
+        console.log('🎭 Intentando obtener eventos del usuario actual...');
         
-        // Datos de prueba
-        setTimeout(() => {
-          const mockEvents = [
-            {
-              _id: '1',
-              title: 'Concierto de Jazz',
-              description: 'Noche de jazz con los mejores artistas locales',
-              date: '2023-09-15T20:00:00.000Z',
-              location: 'Teatro Principal',
-              totalTickets: 150,
-              soldTickets: 120,
-              price: 30.00,
-              status: 'active',
-              createdAt: '2023-07-20T10:00:00.000Z'
-            },
-            {
-              _id: '2',
-              title: 'Teatro Infantil',
-              description: 'Obra de teatro para toda la familia',
-              date: '2023-09-22T18:00:00.000Z',
-              location: 'Centro Cultural',
-              totalTickets: 100,
-              soldTickets: 85,
-              price: 15.00,
-              status: 'active',
-              createdAt: '2023-07-25T11:30:00.000Z'
-            },
-            {
-              _id: '3',
-              title: 'Torneo de Ajedrez',
-              description: COMMON_STRINGS.competicionAbierta,
-              date: '2023-10-05T09:00:00.000Z',
-              location: 'Club de Ajedrez',
-              totalTickets: 50,
-              soldTickets: 40,
-              price: 20.00,
-              status: 'active',
-              createdAt: '2023-08-01T14:45:00.000Z'
-            },
-            {
-              _id: '4',
-              title: 'Festival de Danza',
-              description: COMMON_STRINGS.exhibicionDanzas,
-              date: '2023-10-12T19:30:00.000Z',
-              location: 'Teatro Municipal',
-              totalTickets: 200,
-              soldTickets: 80,
-              price: 25.00,
-              status: 'active',
-              createdAt: '2023-08-05T09:15:00.000Z'
-            },
-            {
-              _id: '5',
-              title: 'Concierto de Rock',
-              description: 'Lo mejor del rock nacional',
-              date: '2023-08-20T21:00:00.000Z',
-              location: 'Estadio Cubierto',
-              totalTickets: 500,
-              soldTickets: 450,
-              price: 35.00,
-              status: 'finished',
-              createdAt: '2023-06-10T16:20:00.000Z'
-            },
-            {
-              _id: '6',
-              title: COMMON_STRINGS.exposicionArte,
-              description: 'Muestra de artistas emergentes',
-              date: '2023-08-05T10:00:00.000Z',
-              location: 'Galer�a Moderna',
-              totalTickets: 300,
-              soldTickets: 275,
-              price: 10.00,
-              status: 'finished',
-              createdAt: '2023-06-15T13:10:00.000Z'
-            },
-            {
-              _id: '7',
-              title: COMMON_STRINGS.conferenciaTecnologica,
-              description: COMMON_STRINGS.ultimasTendencias,
-              date: '2023-11-10T09:00:00.000Z',
-              location: 'Centro de Convenciones',
-              totalTickets: 150,
-              soldTickets: 0,
-              price: 50.00,
-              status: 'draft',
-              createdAt: '2023-08-10T11:05:00.000Z'
-            }
-          ];
+        try {
+          // Hacer la petición real a la API
+          console.time('🎭 Tiempo de respuesta API');
+          const response = await eventAPI.getUserEvents();
+          console.timeEnd('🎭 Tiempo de respuesta API');
           
-          setEvents(mockEvents);
-          setLoading(false);
-        }, 1000);
+          if (response.data && response.data.data) {
+            console.log('🎭 Eventos obtenidos exitosamente:', response.data.data);
+            setEvents(response.data.data);
+          } else {
+            console.warn('🎭 Respuesta sin datos válidos:', response);
+            setEvents([]);
+          }
+        } catch (apiError) {
+          console.error('🎭 Error al obtener eventos desde API:', apiError);
+          
+          // Para desarrollo/pruebas: decidir si usar datos de ejemplo
+          const useMockData = true;
+          
+          if (useMockData) {
+            console.log('🎭 Usando datos de prueba como fallback');
+            // Datos de ejemplo solo para desarrollo
+            const mockEvents = [
+              {
+                _id: '1',
+                title: 'Concierto de Jazz',
+                description: 'Noche de jazz con los mejores artistas locales',
+                date: '2023-09-15T20:00:00.000Z',
+                location: 'Teatro Principal',
+                totalTickets: 150,
+                soldTickets: 120,
+                price: 30.00,
+                status: 'active',
+                createdAt: '2023-07-20T10:00:00.000Z'
+              },
+              {
+                _id: '2',
+                title: 'Teatro Infantil',
+                description: 'Obra de teatro para toda la familia',
+                date: '2023-09-22T18:00:00.000Z',
+                location: 'Centro Cultural',
+                totalTickets: 100,
+                soldTickets: 85,
+                price: 15.00,
+                status: 'active',
+                createdAt: '2023-07-25T11:30:00.000Z'
+              }
+            ];
+            
+            setEvents(mockEvents);
+          } else {
+            // En producción, no mostrar datos falsos
+            setEvents([]);
+            throw apiError; // Propagar el error para el manejo general
+          }
+        }
+        
+        console.groupEnd();
+        setLoading(false);
       } catch (error) {
-        console.error('Error fetching events:', error);
+        console.error('Error general al obtener eventos:', error);
         setError(COMMON_STRINGS.errorCargarEventos);
         setLoading(false);
       }
@@ -263,178 +226,203 @@ const Events = () => {
           component={Link}
           to="/pricing"
         >
-          Crear Nuevo Evento
+          {COMMON_STRINGS.crearEvento}
         </Button>
       </Box>
       
       {/* Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
-          <Card className="dashboard-card">
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Total de Eventos
-              </Typography>
-              <Typography variant="h3" color="primary">
-                {events.length}
-              </Typography>
-            </CardContent>
-          </Card>
+      {events.length > 0 ? (
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12} md={4}>
+            <Card className="dashboard-card">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Total de Eventos
+                </Typography>
+                <Typography variant="h3" color="primary">
+                  {events.length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Card className="dashboard-card">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Eventos Activos
+                </Typography>
+                <Typography variant="h3" color="success.main">
+                  {events.filter(e => e.status === 'active').length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Card className="dashboard-card">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Total Entradas Vendidas
+                </Typography>
+                <Typography variant="h3" color="secondary.main">
+                  {events.reduce((total, event) => total + event.soldTickets, 0)}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Card className="dashboard-card">
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Eventos Activos
-              </Typography>
-              <Typography variant="h3" color="success.main">
-                {events.filter(e => e.status === 'active').length}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card className="dashboard-card">
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Total Entradas Vendidas
-              </Typography>
-              <Typography variant="h3" color="secondary.main">
-                {events.reduce((total, event) => total + event.soldTickets, 0)}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-      
-      {/* Filter Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="event status tabs">
-          <Tab label="Todos" />
-          <Tab label="Activos" />
-          <Tab label="Finalizados" />
-          <Tab label="Borradores" />
-        </Tabs>
-      </Box>
-      
-      {/* Search and Filter Bar */}
-      <Box sx={{ display: 'flex', mb: 2 }}>
-        <Paper
-          component="form"
-          sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', flex: 1, mr: 2 }}
-        >
-          <InputBase
-            sx={{ ml: 1, flex: 1 }}
-            placeholder="Buscar eventos"
-            inputProps={{ 'aria-label': 'buscar eventos' }}
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
-          <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
-            <SearchIcon />
-          </IconButton>
+      ) : (
+        <Paper sx={{ p: 4, textAlign: 'center', mb: 4 }}>
+          <Typography variant="h5" color="primary" gutterBottom>
+            {COMMON_STRINGS.noEventosCreados}
+          </Typography>
+          <Typography variant="body1" paragraph>
+            {COMMON_STRINGS.mensajeCrearPrimerEvento}
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            component={Link}
+            to="/pricing"
+            size="large"
+            sx={{ mt: 2 }}
+          >
+            {COMMON_STRINGS.crearEvento}
+          </Button>
         </Paper>
-        <Button startIcon={<FilterListIcon />} variant="outlined">
-          Filtros
-        </Button>
-      </Box>
+      )}
       
-      {/* Events Table */}
-      <Paper sx={{ width: '100%', mb: 2 }}>
-        <TableContainer>
-          <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size="medium">
-            <TableHead>
-              <TableRow>
-                <TableCell>Evento</TableCell>
-                <TableCell>Fecha</TableCell>
-                <TableCell>{COMMON_STRINGS.ubicacion}</TableCell>
-                <TableCell align="right">Precio</TableCell>
-                <TableCell align="center">Entradas Vendidas</TableCell>
-                <TableCell align="center">Estado</TableCell>
-                <TableCell align="right">Acciones</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedEvents.map((event) => (
-                <TableRow
-                  hover
-                  key={event._id}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    <Typography variant="subtitle2">{event.title}</Typography>
-                    <Typography variant="caption" color="textSecondary">
-                      {event.description.substring(0, 60)}
-                      {event.description.length > 60 ? '...' : ''}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{formatDate(event.date)}</TableCell>
-                  <TableCell>{event.location}</TableCell>
-                  <TableCell align="right">{COMMON_STRINGS.euro}{event.price.toFixed(2)}</TableCell>
-                  <TableCell align="center">
-                    {event.soldTickets}/{event.totalTickets}
-                    <Box sx={{ width: '100%', mt: 1 }}>
-                      <Box
-                        sx={{
-                          width: '100%',
-                          backgroundColor: '#e0e0e0',
-                          borderRadius: 1,
-                          height: 4
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: `${(event.soldTickets / event.totalTickets) * 100}%`,
-                            backgroundColor: 'primary.main',
-                            borderRadius: 1,
-                            height: 4
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell align="center">
-                    {getStatusChip(event.status)}
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      aria-label="more"
-                      id={`event-menu-${event._id}`}
-                      aria-controls={`event-menu-${event._id}`}
-                      aria-haspopup="true"
-                      onClick={(e) => handleMenuClick(e, event._id)}
+      {events.length > 0 && (
+        <>
+          {/* Filter Tabs */}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={tabValue} onChange={handleTabChange} aria-label="event status tabs">
+              <Tab label="Todos" />
+              <Tab label="Activos" />
+              <Tab label="Finalizados" />
+              <Tab label="Borradores" />
+            </Tabs>
+          </Box>
+          
+          {/* Search and Filter Bar */}
+          <Box sx={{ display: 'flex', mb: 2 }}>
+            <Paper
+              component="form"
+              sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', flex: 1, mr: 2 }}
+            >
+              <InputBase
+                sx={{ ml: 1, flex: 1 }}
+                placeholder="Buscar eventos"
+                inputProps={{ 'aria-label': 'buscar eventos' }}
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+              <IconButton type="button" sx={{ p: '10px' }} aria-label="search">
+                <SearchIcon />
+              </IconButton>
+            </Paper>
+            <Button startIcon={<FilterListIcon />} variant="outlined">
+              Filtros
+            </Button>
+          </Box>
+          
+          {/* Events Table */}
+          <Paper sx={{ width: '100%', mb: 2 }}>
+            <TableContainer>
+              <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size="medium">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Evento</TableCell>
+                    <TableCell>Fecha</TableCell>
+                    <TableCell>{COMMON_STRINGS.ubicacion}</TableCell>
+                    <TableCell align="right">Precio</TableCell>
+                    <TableCell align="center">Entradas Vendidas</TableCell>
+                    <TableCell align="center">Estado</TableCell>
+                    <TableCell align="right">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedEvents.map((event) => (
+                    <TableRow
+                      hover
+                      key={event._id}
+                      sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                     >
-                      <MoreVertIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-              
-              {paginatedEvents.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                    <Typography variant="body1">
-                      No se encontraron eventos
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={filteredEvents.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage={COMMON_STRINGS.filasPorPagina}
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-        />
-      </Paper>
+                      <TableCell component="th" scope="row">
+                        <Typography variant="subtitle2">{event.title}</Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {event.description && event.description.substring(0, 60)}
+                          {event.description && event.description.length > 60 ? '...' : ''}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{formatDate(event.date)}</TableCell>
+                      <TableCell>{event.location}</TableCell>
+                      <TableCell align="right">{COMMON_STRINGS.euro}{event.price ? event.price.toFixed(2) : '0.00'}</TableCell>
+                      <TableCell align="center">
+                        {event.soldTickets || 0}/{event.totalTickets || 0}
+                        <Box sx={{ width: '100%', mt: 1 }}>
+                          <Box
+                            sx={{
+                              width: '100%',
+                              backgroundColor: '#e0e0e0',
+                              borderRadius: 1,
+                              height: 4
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: `${event.totalTickets ? ((event.soldTickets || 0) / event.totalTickets) * 100 : 0}%`,
+                                backgroundColor: 'primary.main',
+                                borderRadius: 1,
+                                height: 4
+                              }}
+                            />
+                          </Box>
+                        </Box>
+                      </TableCell>
+                      <TableCell align="center">
+                        {getStatusChip(event.status)}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          aria-label="more"
+                          id={`event-menu-${event._id}`}
+                          aria-controls={`event-menu-${event._id}`}
+                          aria-haspopup="true"
+                          onClick={(e) => handleMenuClick(e, event._id)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  
+                  {paginatedEvents.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                        <Typography variant="body1">
+                          {COMMON_STRINGS.noEventosEncontrados}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={filteredEvents.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              labelRowsPerPage={COMMON_STRINGS.filasPorPagina}
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+            />
+          </Paper>
+        </>
+      )}
       
       {/* Event Actions Menu */}
       <Menu

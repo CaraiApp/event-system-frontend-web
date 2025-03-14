@@ -20,6 +20,10 @@ export const COMMON_STRINGS = {
   verEstadisticas: "Ver Estadísticas",
   verDetalles: "Ver Detalles",
   editarEvento: "Editar Evento",
+  crearEvento: "Crear Nuevo Evento",
+  noEventosEncontrados: "No se encontraron eventos",
+  noEventosCreados: "Aún no has creado ningún evento",
+  mensajeCrearPrimerEvento: "Crea tu primer evento para empezar a vender entradas",
   
   // Textos en eventos
   competicionAbierta: "Competición abierta a todos los niveles",
