@@ -157,17 +157,23 @@ const Events = () => {
   // Filter events based on tab and search term
   const filteredEvents = events.filter(event => {
     // Filter by tab (status)
-    if (tabValue === 1 && event.status !== 'active') return false;
-    if (tabValue === 2 && event.status !== 'finished') return false;
-    if (tabValue === 3 && event.status !== 'draft') return false;
+    if (tabValue === 1 && !(event.published || event.status === 'active')) return false;
+    if (tabValue === 2 && !(event.status === 'finished' || (event.eventDate && new Date(event.eventDate) < new Date()))) return false;
+    if (tabValue === 3 && (event.published || event.status === 'active' || event.status === 'finished')) return false;
     
     // Filter by search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
+      
+      // Support multiple field structures
+      const title = (event.name || event.title || '').toLowerCase();
+      const description = (event.desc || event.description || '').toLowerCase();
+      const location = (event.venue || event.address || event.location || '').toLowerCase();
+      
       return (
-        event.title.toLowerCase().includes(term) ||
-        event.description.toLowerCase().includes(term) ||
-        event.location.toLowerCase().includes(term)
+        title.includes(term) ||
+        description.includes(term) ||
+        location.includes(term)
       );
     }
     
@@ -181,8 +187,15 @@ const Events = () => {
   );
   
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    if (!dateString) return 'Fecha no disponible';
+    
+    try {
+      const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return new Date(dateString).toLocaleDateString(undefined, options);
+    } catch (error) {
+      console.error('Error al formatear fecha:', error);
+      return dateString;
+    }
   };
   
   const getStatusChip = (status) => {
@@ -252,7 +265,7 @@ const Events = () => {
                   Eventos Activos
                 </Typography>
                 <Typography variant="h3" color="success.main">
-                  {events.filter(e => e.status === 'active').length}
+                  {events.filter(e => e.published || e.status === 'active').length}
                 </Typography>
               </CardContent>
             </Card>
@@ -264,7 +277,7 @@ const Events = () => {
                   Total Entradas Vendidas
                 </Typography>
                 <Typography variant="h3" color="secondary.main">
-                  {events.reduce((total, event) => total + event.soldTickets, 0)}
+                  {events.reduce((total, event) => total + (event.reservedSeats ? event.reservedSeats.length : (event.soldTickets || 0)), 0)}
                 </Typography>
               </CardContent>
             </Card>
@@ -348,17 +361,17 @@ const Events = () => {
                       sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                     >
                       <TableCell component="th" scope="row">
-                        <Typography variant="subtitle2">{event.title}</Typography>
+                        <Typography variant="subtitle2">{event.name || event.title}</Typography>
                         <Typography variant="caption" color="textSecondary">
-                          {event.description && event.description.substring(0, 60)}
-                          {event.description && event.description.length > 60 ? '...' : ''}
+                          {event.desc || event.description || ''}
+                          {(event.desc || event.description) && (event.desc || event.description).length > 60 ? '...' : ''}
                         </Typography>
                       </TableCell>
-                      <TableCell>{formatDate(event.date)}</TableCell>
-                      <TableCell>{event.location}</TableCell>
-                      <TableCell align="right">{COMMON_STRINGS.euro}{event.price ? event.price.toFixed(2) : '0.00'}</TableCell>
+                      <TableCell>{formatDate(event.eventDate || event.date)}</TableCell>
+                      <TableCell>{event.venue || event.address || event.location || '-'}</TableCell>
+                      <TableCell align="right">{COMMON_STRINGS.euro}{event.vipprice || event.price ? (event.vipprice || event.price).toFixed(2) : '0.00'}</TableCell>
                       <TableCell align="center">
-                        {event.soldTickets || 0}/{event.totalTickets || 0}
+                        {event.reservedSeats ? event.reservedSeats.length : event.soldTickets || 0}/{event.TotalCapacity || event.totalTickets || 0}
                         <Box sx={{ width: '100%', mt: 1 }}>
                           <Box
                             sx={{
@@ -370,7 +383,9 @@ const Events = () => {
                           >
                             <Box
                               sx={{
-                                width: `${event.totalTickets ? ((event.soldTickets || 0) / event.totalTickets) * 100 : 0}%`,
+                                width: `${(event.TotalCapacity || event.totalTickets) ? 
+                                  ((event.reservedSeats ? event.reservedSeats.length : event.soldTickets || 0) / 
+                                  (event.TotalCapacity || event.totalTickets)) * 100 : 0}%`,
                                 backgroundColor: 'primary.main',
                                 borderRadius: 1,
                                 height: 4
@@ -380,7 +395,7 @@ const Events = () => {
                         </Box>
                       </TableCell>
                       <TableCell align="center">
-                        {getStatusChip(event.status)}
+                        {getStatusChip(event.published ? 'active' : event.status || 'draft')}
                       </TableCell>
                       <TableCell align="right">
                         <IconButton
