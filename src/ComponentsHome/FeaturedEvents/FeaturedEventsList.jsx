@@ -230,16 +230,19 @@ console.log(updatedEvent, 'updated event')
   const filteredEvents = events?.length > 0 
   ? events.filter((event) => {
       if (userRole === "user") {
-        return event.published; // Show only published events for users
+        // Mostrar eventos publicados O eventos cancelados (que estuvieron publicados antes)
+        return event.published || (event.status === 'cancelled' && event.hasOwnProperty('status'));
       }
 
       switch (selectedTab) {
         case 1: // Published
-          return event.published;
+          return event.published && event.status !== 'cancelled';
         case 2: // Pending
-          return !event.published;
+          return !event.published && event.status !== 'cancelled';
         case 3: // Featured
           return event.featured;
+        case 4: // Cancelled
+          return event.status === 'cancelled';
         default: // All
           return true;
       }
@@ -280,6 +283,13 @@ console.log(updatedEvent, 'updated event')
             fontSize: "18px", // Larger font size for laptop screens
           },
         }}/>}
+    <Tab label="Cancelada" sx={{
+          
+          "@media (min-width: 1024px)": {
+            fontWeight: "bold", // Bold font for laptop screens and above
+            fontSize: "18px", // Larger font size for laptop screens
+          },
+        }}/>
   </Tabs>
 )}
 
