@@ -93,11 +93,30 @@ export const eventAPI = {
   
   // Actualizar un evento
   updateEvent: async (eventId, eventData) => {
-    const updatedData = {
-      ...eventData,
-      id: eventId
-    };
-    return axios.put('/api/v1/events/updateEvent', updatedData);
+    // Obtener primero los datos completos del evento
+    try {
+      const eventResponse = await axios.get(`/api/v1/events/getsingleEvent?id=${eventId}`);
+      const currentEvent = eventResponse.data.data;
+      
+      // Combinar datos actuales con las actualizaciones
+      const updatedData = {
+        ...currentEvent,
+        ...eventData,
+        id: eventId
+      };
+      
+      // Eliminar campos que no deberían enviarse
+      delete updatedData._id;
+      delete updatedData.__v;
+      delete updatedData.createdAt;
+      delete updatedData.updatedAt;
+      delete updatedData.user_id;
+      
+      return axios.put('/api/v1/events/updateEvent', updatedData);
+    } catch (error) {
+      console.error('Error al obtener datos del evento para actualización:', error);
+      throw error;
+    }
   },
   
   // Eliminar un evento
@@ -107,11 +126,31 @@ export const eventAPI = {
   
   // Cancelar un evento
   cancelEvent: async (eventId) => {
-    return axios.put('/api/v1/events/updateEvent', { 
-      id: eventId,
-      status: 'cancelled',
-      published: false
-    });
+    // Implementación directa para evitar referencia circular
+    try {
+      const eventResponse = await axios.get(`/api/v1/events/getsingleEvent?id=${eventId}`);
+      const currentEvent = eventResponse.data.data;
+      
+      // Mantener todos los campos y modificar solo los necesarios
+      const updatedData = {
+        ...currentEvent,
+        id: eventId,
+        status: 'cancelled',
+        published: false
+      };
+      
+      // Eliminar campos que no deberían enviarse
+      delete updatedData._id;
+      delete updatedData.__v;
+      delete updatedData.createdAt;
+      delete updatedData.updatedAt;
+      delete updatedData.user_id;
+      
+      return axios.put('/api/v1/events/updateEvent', updatedData);
+    } catch (error) {
+      console.error('Error al cancelar evento:', error);
+      throw error;
+    }
   }
 };
 

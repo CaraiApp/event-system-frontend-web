@@ -133,11 +133,26 @@ const EventEdit = () => {
       // Update the event - usando URL directa para depuración
       console.log("Actualizando evento con datos:", updateData);
       const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/updateEvent`;
-      // Añadir el ID en el cuerpo de la solicitud
+      
+      // Obtener datos actuales del evento para mantener campos no modificados
+      const eventResponse = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getsingleEvent?id=${id}`);
+      const currentEvent = eventResponse.data.data;
+      
+      // Combinar datos actuales con actualizaciones
       const updatedData = {
+        ...currentEvent,
         ...updateData,
-        id: id
+        id: id // Asegurar que el ID esté incluido
       };
+      
+      // Eliminar campos que no deben enviarse al backend
+      delete updatedData._id;
+      delete updatedData.__v;
+      delete updatedData.createdAt;
+      delete updatedData.updatedAt;
+      delete updatedData.user_id;
+      
+      console.log("Datos finales para actualización:", updatedData);
       const response = await axios.put(url, updatedData);
       
       if (response.data && response.data.success) {
@@ -167,12 +182,34 @@ const EventEdit = () => {
       console.log("Cancelando evento:", id);
       // Usar la URL correcta para actualizar eventos
       const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/updateEvent`;
-      // Incluir published: false y añadir campo status para asegurar compatibilidad
-      const response = await axios.put(url, { 
+      
+      // Registrar información detallada para depuración
+      console.log("URL completa:", url);
+      
+      // Leer el evento actual primero
+      const eventResponse = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getsingleEvent?id=${id}`);
+      const currentEvent = eventResponse.data.data;
+      console.log("Evento actual:", currentEvent);
+      
+      // Mantener todos los campos existentes y cambiar solo lo necesario
+      const updateData = {
+        ...currentEvent,
         id: id,
         status: 'cancelled',
-        published: false 
-      });
+        published: false
+      };
+      
+      // Eliminar campos problemáticos que no deberían enviarse
+      delete updateData._id;
+      delete updateData.__v;
+      delete updateData.createdAt;
+      delete updateData.updatedAt;
+      delete updateData.user_id;
+      
+      console.log("Datos de actualización:", updateData);
+      
+      // Incluir published: false y añadir campo status para asegurar compatibilidad  
+      const response = await axios.put(url, updateData);
       
       if (response.data && response.data.success) {
         setSuccess('Evento cancelado con éxito');
