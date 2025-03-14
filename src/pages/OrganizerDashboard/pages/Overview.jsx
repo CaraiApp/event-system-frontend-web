@@ -30,66 +30,44 @@ const Overview = () => {
       
       try {
         setLoading(true);
-        // Usamos el nuevo endpoint implementado
         const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         
-        console.log('Intentando conectar a:', `${API_BASE_URL}/api/v1/dashboard/organizer/overview`);
+        // URL correcta según la implementación en el backend
+        const dashboardUrl = `${API_BASE_URL}/api/v1/dashboard/organizer/overview`;
+        console.log('Conectando a:', dashboardUrl);
         
-        // Intentar obtener datos reales del backend
-        try {
-          const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/organizer/overview`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          console.log('Respuesta exitosa del backend:', response.data);
-          
-          // Utilizamos los datos reales si están disponibles
-          if (response.data && response.data.data) {
-            setStats(response.data.data);
-            console.log('Datos reales establecidos correctamente');
-            setLoading(false);
-            return;
-          } else {
-            console.warn('Respuesta recibida pero con formato inválido');
-            throw new Error('Formato de respuesta inválido');
-          }
-        } catch (apiError) {
-          console.error('Error en la llamada a la API:', apiError);
-          console.log('Usando datos de prueba como fallback');
-          
-          // Usar datos de prueba como fallback
-          const mockData = {
-            totalRevenue: 15750.50,
-            totalTicketsSold: 325,
-            totalEvents: 12,
-            activeEvents: 4,
-            upcomingEvents: [
-              { id: 1, name: 'Concierto de Jazz', date: '2023-09-15', ticketsSold: 120, revenue: 3600 },
-              { id: 2, name: 'Teatro Infantil', date: '2023-09-22', ticketsSold: 85, revenue: 1275 },
-              { id: 3, name: 'Torneo de Ajedrez', date: '2023-10-05', ticketsSold: 40, revenue: 800 }
-            ],
-            recentSales: [
-              { id: 1001, event: 'Concierto de Jazz', date: '2023-08-28', customer: 'Juan Pérez', amount: 60 },
-              { id: 1002, event: 'Teatro Infantil', date: '2023-08-27', customer: 'María García', amount: 45 },
-              { id: 1003, event: 'Concierto de Jazz', date: '2023-08-27', customer: 'Pedro Rodríguez', amount: 60 },
-              { id: 1004, event: 'Torneo de Ajedrez', date: '2023-08-26', customer: 'Ana Martínez', amount: 20 },
-              { id: 1005, event: 'Teatro Infantil', date: '2023-08-25', customer: 'Carlos Sánchez', amount: 45 }
-            ],
-            salesByEvent: {
-              'Concierto de Jazz': { count: 120, revenue: 3600 },
-              'Teatro Infantil': { count: 85, revenue: 1275 },
-              'Torneo de Ajedrez': { count: 40, revenue: 800 },
-              'Festival de Danza': { count: 80, revenue: 10075.50 }
-            }
-          };
-          
-          setStats(mockData);
+        const response = await axios.get(dashboardUrl, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('Respuesta del backend:', response.data);
+        
+        if (response.data && response.data.data) {
+          setStats(response.data.data);
+          console.log('Datos establecidos correctamente');
+        } else {
+          throw new Error('Formato de respuesta inválido');
+        }
+      } catch (error) {
+        console.error('Error al obtener datos del dashboard:', error);
+        
+        // Mensaje de error más detallado y útil para el usuario
+        let errorMessage = 'Error al cargar datos del dashboard';
+        
+        if (error.response) {
+          // Error de respuesta del servidor
+          errorMessage += `: ${error.response.status} ${error.response.statusText}`;
+          console.error('Detalles del error:', error.response.data);
+        } else if (error.request) {
+          // Error de conexión
+          errorMessage += ': No se pudo conectar con el servidor';
+        } else {
+          // Otro tipo de error
+          errorMessage += `: ${error.message}`;
         }
         
-        setLoading(false);
-      } catch (error) {
-        console.error('Error general en fetchDashboardData:', error);
-        setError(`Error al cargar datos del dashboard: ${error.message}`);
+        setError(errorMessage);
+      } finally {
         setLoading(false);
       }
     };
