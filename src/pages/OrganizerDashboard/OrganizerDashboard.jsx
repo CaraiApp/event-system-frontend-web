@@ -33,12 +33,6 @@ const OrganizerDashboard = () => {
     setAnchorEl(null);
   };
   
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login');
-  };
-  
   const handleProfile = () => {
     navigate('/profile');
     handleMenuClose();
@@ -91,8 +85,10 @@ const OrganizerDashboard = () => {
   };
   
   const handleLogout = () => {
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
     navigate('/login');
+    handleMenuClose();
   };
   
   const menuItems = [
