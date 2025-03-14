@@ -16,29 +16,51 @@ const Layout = () => {
 
   // Verificar configuración UI desde el backend cuando cambia la ruta
   useEffect(() => {
-    const checkUIConfig = async () => {
-      if (isDashboardRoute) {
+    // Para rutas de dashboard, ocultar automáticamente header y footer
+    if (isDashboardRoute) {
+      setHideUI(true);
+      console.log('Ruta de dashboard detectada - ocultando header/footer automáticamente');
+      
+      // Intentamos obtener la configuración de UI del backend, pero no bloqueamos la UI si falla
+      const fetchUIConfig = async () => {
         try {
           const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-          const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/ui-config`, {
-            params: { route: location.pathname }
-          });
           
-          if (response.data && response.data.data) {
-            setHideUI(response.data.data.hideHeader);
-            console.log('UI Config recibida:', response.data.data);
+          // Intentar primero con la nueva ruta
+          try {
+            const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/ui-config`, {
+              params: { route: location.pathname }
+            });
+            
+            if (response.data && response.data.data) {
+              console.log('UI Config recibida de nueva ruta:', response.data.data);
+              return;
+            }
+          } catch (newRouteError) {
+            console.log('Error en nueva ruta de UI config, intentando ruta alternativa...', newRouteError.message);
+            
+            // Si falla, intentar con la ruta original que usábamos en TemplateManager
+            try {
+              // Esta es la ruta que funcionaba anteriormente en TemplateManager
+              const alternativeResponse = await axios.get(`${API_BASE_URL}/api/templates/ui-config`);
+              
+              if (alternativeResponse.data) {
+                console.log('UI Config recibida de ruta alternativa:', alternativeResponse.data);
+              }
+            } catch (altError) {
+              console.log('Error también en ruta alternativa:', altError.message);
+            }
           }
         } catch (error) {
-          console.log('Error al obtener configuración UI:', error);
-          // Si hay error, ocultamos por defecto el encabezado y el pie para las rutas de dashboard
-          setHideUI(true);
+          console.log('Error general al obtener configuración UI:', error);
+          // En cualquier caso, mantenemos ocultos los elementos UI para rutas de dashboard
         }
-      } else {
-        setHideUI(false);
-      }
-    };
-
-    checkUIConfig();
+      };
+      
+      fetchUIConfig();
+    } else {
+      setHideUI(false);
+    }
   }, [location.pathname, isDashboardRoute]);
 
   // Determinar si debemos ocultar los elementos UI
