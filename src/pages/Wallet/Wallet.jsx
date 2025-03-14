@@ -135,6 +135,17 @@ const Wallet = () => {
   // Add debug information to check what's happening
   console.log("Rendering Wallet component with user:", user);
   console.log("Payments available:", payments);
+  
+  // Verificar si hay algún pago con QR code URL mal formado
+  useEffect(() => {
+    if (payments && payments.length > 0) {
+      payments.forEach(payment => {
+        if (payment.qrCodeUrl && payment.qrCodeUrl.includes('%5Bobject%20Object%5D')) {
+          console.error("Se encontró QR malformado:", payment.qrCodeUrl);
+        }
+      });
+    }
+  }, [payments]);
 
   return (
     <Box sx={{ padding: 3, marginTop: 10 }}>
@@ -254,29 +265,50 @@ const Wallet = () => {
               </Typography>
               
               <Box sx={{ position: 'relative', mb: 1 }}>
-                <img
-                  src={payment.qrCodeUrl}
-                  alt="QR Code"
-                  style={{ 
-                    width: "120px", 
-                    height: "120px", 
-                    objectFit: "cover",
-                    borderRadius: '4px',
-                  }}
-                />
+                {payment.qrCodeUrl && !payment.qrCodeUrl.includes('%5Bobject%20Object%5D') ? (
+                  <img
+                    src={payment.qrCodeUrl}
+                    alt="QR Code"
+                    style={{ 
+                      width: "120px", 
+                      height: "120px", 
+                      objectFit: "cover",
+                      borderRadius: '4px',
+                    }}
+                  />
+                ) : (
+                  <Typography variant="body2" color="error">
+                    QR no disponible. Contacta al soporte.
+                  </Typography>
+                )}
               </Box>
               
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => window.open(payment.qrCodeUrl, "_blank")}
-                sx={{ 
-                  fontSize: '0.75rem',
-                  textTransform: 'none'
-                }}
-              >
-                Ver QR completo
-              </Button>
+              {payment.qrCodeUrl && !payment.qrCodeUrl.includes('%5Bobject%20Object%5D') ? (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => window.open(payment.qrCodeUrl, "_blank")}
+                  sx={{ 
+                    fontSize: '0.75rem',
+                    textTransform: 'none'
+                  }}
+                >
+                  Ver QR completo
+                </Button>
+              ) : (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  color="error"
+                  disabled
+                  sx={{ 
+                    fontSize: '0.75rem',
+                    textTransform: 'none'
+                  }}
+                >
+                  QR no disponible
+                </Button>
+              )}
             </Box>
           )}
         </CardContent>

@@ -232,7 +232,76 @@ const QRScanner = () => {
     if (scanner) {
       scanner.render(
         async (decodedText) => {
-          // Lógica de éxito (la misma que arriba)
+          try {
+            setLoading(true);
+            setScanError(null);
+            
+            console.log("QR escaneado:", decodedText);
+            
+            // Verificar el formato del QR
+            let qrData;
+            try {
+              qrData = JSON.parse(decodedText);
+            } catch (error) {
+              console.error("Error al parsear el QR:", error);
+              setScanError("Formato de QR inválido");
+              setLoading(false);
+              return;
+            }
+            
+            // Verificar la entrada con el backend
+            const token = localStorage.getItem('token');
+            if (!token) {
+              setScanError("No autorizado. Inicia sesión de nuevo.");
+              setLoading(false);
+              return;
+            }
+            
+            const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+            const response = await axios.post(
+              `${API_BASE_URL}/api/v1/booking/scan-qr`,
+              { 
+                qrData: qrData,
+                eventId: selectedEvent
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            setScanResult(response.data);
+            
+            // Actualizar estadísticas
+            setStats(prev => ({
+              ...prev,
+              scanned: prev.scanned + 1,
+              remaining: prev.total > 0 ? prev.total - prev.scanned - 1 : 0
+            }));
+            
+            // Mostrar mensaje según resultado
+            if (response.data.success === true) {
+              showAlert('¡Entrada validada correctamente!', 'success');
+            } else {
+              showAlert(response.data.message || 'Error al validar entrada', 'error');
+            }
+            
+          } catch (error) {
+            console.error("Error al verificar QR:", error);
+            
+            let errorMessage = "Error al verificar QR";
+            if (error.response) {
+              errorMessage = error.response.data.message || "Error en la verificación";
+              if (error.response.status === 401) {
+                errorMessage = "No autorizado. Inicia sesión de nuevo.";
+              } else if (error.response.status === 400) {
+                errorMessage = error.response.data.message || "Entrada no válida";
+              }
+            }
+            
+            setScanError(errorMessage);
+            showAlert(errorMessage, 'error');
+            
+          } finally {
+            setLoading(false);
+          }
         },
         (error) => {
           console.warn(`Error al escanear QR: ${error}`);
