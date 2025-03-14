@@ -69,7 +69,7 @@ import Events from '../pages/Events';
 import EventPage from "../pages/EventPage/EventPage";
 import OrderSummary from "../pages/OrderSummary/OrderSummary";
 import Wallet from "../pages/Wallet/Wallet";
-import PrivateRoute, { AdminRoute } from "./PrivateRoute";
+import PrivateRoute, { AdminRoute, OrganizerRoute } from "./PrivateRoute";
 import SeatMapPage from '../pages/SeatMapPage/SeatMapPage'
 import AboutUs from '../pages/AboutUs'
 import ContactUs from '../pages/ContactUs'
@@ -187,8 +187,8 @@ const Routers = () => {
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/congrtspaymentsuccess" element={<PaymentSuccess />} />
 
-      {/* Dashboard de Organizador */}
-      <Route path="/organizer" element={<PrivateRoute element={<OrganizerDashboard />} />}>
+      {/* Dashboard de Organizador - Ruta independiente */}
+      <Route path="/organizer" element={<OrganizerRoute element={<OrganizerDashboard />} />}>
         <Route index element={<Overview />} />
         <Route path="events" element={<OrganizerEvents />} />
         <Route path="sales" element={<Sales />} />
@@ -196,7 +196,7 @@ const Routers = () => {
         <Route path="settings" element={<Settings />} />
       </Route>
 
-      {/* Dashboard de Administrador */}
+      {/* Dashboard de Administrador - Ruta independiente */}
       <Route path="/admin" element={<AdminRoute element={<AdminDashboard />} />}>
         <Route index element={<AdminHome />} />
         <Route path="users" element={<UserManagement />} />
@@ -204,6 +204,9 @@ const Routers = () => {
         <Route path="reports" element={<Reports />} />
         <Route path="categories" element={<CategoryManagement />} />
         <Route path="settings" element={<SystemSettings />} />
+        <Route path="communications" element={<Reports />} /> {/* Falta implementar */}
+        <Route path="templates" element={<CategoryManagement />} /> {/* Falta implementar */}
+        <Route path="organizers" element={<UserManagement />} /> {/* Filtro especial para organizadores */}
       </Route>
 
       {/* Admin Routes */}

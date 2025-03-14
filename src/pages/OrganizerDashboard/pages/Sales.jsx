@@ -45,17 +45,38 @@ const Sales = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontró token de autenticación');
+        setError('No se encontrÃ³ token de autenticaciÃ³n');
         setLoading(false);
         return;
       }
       
       try {
-        // Este endpoint se implementará en el backend
-        // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        // const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/sales`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
+        // Usamos el nuevo endpoint del backend
+        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+        // Llamada real al endpoint para obtener los datos de ventas
+        const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/organizer/sales-report`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            startDate: filterDateFrom ? filterDateFrom.toISOString() : undefined,
+            endDate: filterDateTo ? filterDateTo.toISOString() : undefined,
+            eventId: filterEvent || undefined
+          }
+        });
+        
+        if (response.data && response.data.data) {
+          setSales(response.data.data.detailedSales || []);
+          setSummary({
+            totalSales: response.data.data.summary.totalBookings || 0,
+            totalRevenue: response.data.data.summary.totalRevenue || 0,
+            averageTicketValue: response.data.data.summary.totalRevenue / response.data.data.summary.totalBookings || 0,
+            commissionPaid: response.data.data.summary.commissionPaid || 0
+          });
+          // Extraer eventos Ãºnicos de las ventas para el filtro
+          const eventOptions = [...new Set(response.data.data.salesByEvent.map(event => event.id))];
+          setEvents(eventOptions);
+          setLoading(false);
+          return;
+        }
         
         // Datos de prueba
         setTimeout(() => {
@@ -72,7 +93,7 @@ const Sales = () => {
               id: 1001, 
               event: 'Concierto de Jazz', 
               eventId: 1,
-              customer: 'Juan Pérez', 
+              customer: 'Juan Pï¿½rez', 
               email: 'juan@example.com',
               date: '2023-08-28T14:30:00', 
               tickets: 2, 
@@ -86,7 +107,7 @@ const Sales = () => {
               id: 1002, 
               event: 'Teatro Infantil', 
               eventId: 2,
-              customer: 'María García', 
+              customer: 'Marï¿½a Garcï¿½a', 
               email: 'maria@example.com',
               date: '2023-08-27T10:15:00', 
               tickets: 3, 
@@ -100,7 +121,7 @@ const Sales = () => {
               id: 1003, 
               event: 'Concierto de Jazz', 
               eventId: 1,
-              customer: 'Pedro Rodríguez', 
+              customer: 'Pedro Rodrï¿½guez', 
               email: 'pedro@example.com',
               date: '2023-08-27T16:45:00', 
               tickets: 1, 
@@ -114,7 +135,7 @@ const Sales = () => {
               id: 1004, 
               event: 'Torneo de Ajedrez', 
               eventId: 3,
-              customer: 'Ana Martínez', 
+              customer: 'Ana Martï¿½nez', 
               email: 'ana@example.com',
               date: '2023-08-26T09:20:00', 
               tickets: 1, 
@@ -128,7 +149,7 @@ const Sales = () => {
               id: 1005, 
               event: 'Teatro Infantil', 
               eventId: 2,
-              customer: 'Carlos Sánchez', 
+              customer: 'Carlos Sï¿½nchez', 
               email: 'carlos@example.com',
               date: '2023-08-25T13:10:00', 
               tickets: 2, 
@@ -142,7 +163,7 @@ const Sales = () => {
               id: 1006, 
               event: 'Festival de Danza', 
               eventId: 4,
-              customer: 'Laura Gómez', 
+              customer: 'Laura Gï¿½mez', 
               email: 'laura@example.com',
               date: '2023-08-24T18:30:00', 
               tickets: 4, 
@@ -156,7 +177,7 @@ const Sales = () => {
               id: 1007, 
               event: 'Concierto de Rock', 
               eventId: 5,
-              customer: 'Roberto Fernández', 
+              customer: 'Roberto Fernï¿½ndez', 
               email: 'roberto@example.com',
               date: '2023-08-23T20:00:00', 
               tickets: 2, 
@@ -184,7 +205,7 @@ const Sales = () => {
               id: 1009, 
               event: 'Torneo de Ajedrez', 
               eventId: 3,
-              customer: 'Javier López', 
+              customer: 'Javier Lï¿½pez', 
               email: 'javier@example.com',
               date: '2023-08-21T10:45:00', 
               tickets: 2, 
@@ -258,7 +279,7 @@ const Sales = () => {
   };
   
   const handleExportData = () => {
-    alert('Función de exportación de datos a implementar');
+    alert('Funciï¿½n de exportaciï¿½n de datos a implementar');
   };
   
   const handleMenuClick = (event, bookingId) => {
@@ -300,14 +321,14 @@ const Sales = () => {
     // Filtrar por fecha hasta
     if (filterDateTo) {
       const dateTo = new Date(filterDateTo);
-      dateTo.setHours(23, 59, 59, 999); // Establecer al final del día
+      dateTo.setHours(23, 59, 59, 999); // Establecer al final del dï¿½a
       if (new Date(sale.date) > dateTo) return false;
     }
     
     return true;
   });
   
-  // Calcular paginación
+  // Calcular paginaciï¿½n
   const paginatedSales = filteredSales.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -334,7 +355,7 @@ const Sales = () => {
   const getPaymentMethodText = (method) => {
     switch (method) {
       case 'credit_card':
-        return 'Tarjeta de crédito';
+        return 'Tarjeta de crï¿½dito';
       case 'paypal':
         return 'PayPal';
       case 'bank_transfer':
@@ -399,7 +420,7 @@ const Sales = () => {
                 Ingresos Totales
               </Typography>
               <Typography variant="h3" color="success.main" sx={{ fontWeight: 'bold' }}>
-                ¬{summary.totalRevenue.toFixed(2)}
+                ï¿½{summary.totalRevenue.toFixed(2)}
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 Antes de comisiones
@@ -414,7 +435,7 @@ const Sales = () => {
                 Valor Medio
               </Typography>
               <Typography variant="h3" sx={{ fontWeight: 'bold' }}>
-                ¬{summary.averageTicketValue.toFixed(2)}
+                ï¿½{summary.averageTicketValue.toFixed(2)}
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 Por venta
@@ -426,10 +447,10 @@ const Sales = () => {
           <Card className="dashboard-card">
             <CardContent>
               <Typography variant="h6" gutterBottom color="textSecondary">
-                Comisión Pagada
+                Comisiï¿½n Pagada
               </Typography>
               <Typography variant="h3" color="warning.main" sx={{ fontWeight: 'bold' }}>
-                ¬{summary.commissionPaid.toFixed(2)}
+                ï¿½{summary.commissionPaid.toFixed(2)}
               </Typography>
               <Typography variant="body2" color="textSecondary">
                 5% sobre ventas
@@ -552,9 +573,9 @@ const Sales = () => {
                 <TableCell>Cliente</TableCell>
                 <TableCell align="center">Entradas</TableCell>
                 <TableCell align="right">Importe</TableCell>
-                <TableCell align="right">Comisión</TableCell>
+                <TableCell align="right">Comisiï¿½n</TableCell>
                 <TableCell align="center">Estado</TableCell>
-                <TableCell align="center">Método Pago</TableCell>
+                <TableCell align="center">Mï¿½todo Pago</TableCell>
                 <TableCell align="right">Acciones</TableCell>
               </TableRow>
             </TableHead>
@@ -577,8 +598,8 @@ const Sales = () => {
                     </Typography>
                   </TableCell>
                   <TableCell align="center">{sale.tickets}</TableCell>
-                  <TableCell align="right">¬{sale.amount.toFixed(2)}</TableCell>
-                  <TableCell align="right">¬{sale.commission.toFixed(2)}</TableCell>
+                  <TableCell align="right">ï¿½{sale.amount.toFixed(2)}</TableCell>
+                  <TableCell align="right">ï¿½{sale.commission.toFixed(2)}</TableCell>
                   <TableCell align="center">
                     {getStatusChip(sale.status)}
                   </TableCell>
@@ -627,7 +648,7 @@ const Sales = () => {
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por página:"
+            labelRowsPerPage="Filas por pï¿½gina:"
             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
           />
         </Box>

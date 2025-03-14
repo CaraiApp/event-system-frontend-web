@@ -4,7 +4,7 @@ import { Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton,
         ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Container } from '@mui/material';
 import { Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon,
         EventNote as EventNoteIcon, BarChart as BarChartIcon, People as PeopleIcon,
-        Settings as SettingsIcon, Logout as LogoutIcon } from '@mui/icons-material';
+        Settings as SettingsIcon, Logout as LogoutIcon, Home as HomeIcon } from '@mui/icons-material';
 import axios from 'axios';
 import './OrganizerDashboard.css';
 
@@ -17,7 +17,7 @@ const OrganizerDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Verificar autenticación y rol de usuario
+  // Verificar autenticaciï¿½n y rol de usuario
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
@@ -73,7 +73,7 @@ const OrganizerDashboard = () => {
     { text: 'Mis Eventos', icon: <EventNoteIcon />, path: '/organizer/events' },
     { text: 'Ventas', icon: <BarChartIcon />, path: '/organizer/sales' },
     { text: 'Asistentes', icon: <PeopleIcon />, path: '/organizer/attendees' },
-    { text: 'Configuración', icon: <SettingsIcon />, path: '/organizer/settings' },
+    { text: 'Configuraciï¿½n', icon: <SettingsIcon />, path: '/organizer/settings' },
   ];
   
   const handleNavigation = (path) => {
@@ -126,6 +126,17 @@ const OrganizerDashboard = () => {
             Panel de Organizador
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Home button to return to main site */}
+            <IconButton
+              color="inherit"
+              aria-label="go to home page"
+              onClick={() => navigate('/')}
+              sx={{ mr: 2 }}
+              title="Volver a la pÃ¡gina principal"
+            >
+              <HomeIcon />
+            </IconButton>
+            
             <Typography variant="body2" sx={{ mr: 2 }}>
               {user?.username || 'Usuario'}
             </Typography>
@@ -238,7 +249,7 @@ const OrganizerDashboard = () => {
                 <LogoutIcon />
               </ListItemIcon>
               <ListItemText 
-                primary="Cerrar Sesión" 
+                primary="Cerrar Sesiï¿½n" 
                 sx={{ opacity: open ? 1 : 0 }}
               />
             </ListItemButton>

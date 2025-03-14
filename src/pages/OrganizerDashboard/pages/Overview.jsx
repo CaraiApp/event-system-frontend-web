@@ -23,20 +23,25 @@ const Overview = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontró token de autenticación');
+        setError('No se encontrï¿½ token de autenticaciï¿½n');
         setLoading(false);
         return;
       }
       
       try {
         setLoading(true);
-        // Este endpoint se implementará más adelante
+        // Usamos el nuevo endpoint implementado
         const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         
-        // Simulamos datos para desarrollo. Esto se reemplazará con una llamada real a la API
-        // const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/overview`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
+        // Llamada real a la API
+        const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/organizer/overview`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Utilizamos los datos reales en lugar de los simulados
+        setStats(response.data.data);
+        setLoading(false);
+        return; // Salimos para no ejecutar el mock
         
         // Datos de prueba
         setTimeout(() => {
@@ -51,11 +56,11 @@ const Overview = () => {
               { id: 3, name: 'Torneo de Ajedrez', date: '2023-10-05', ticketsSold: 40, revenue: 800 }
             ],
             recentSales: [
-              { id: 1001, event: 'Concierto de Jazz', date: '2023-08-28', customer: 'Juan Pérez', amount: 60 },
-              { id: 1002, event: 'Teatro Infantil', date: '2023-08-27', customer: 'María García', amount: 45 },
-              { id: 1003, event: 'Concierto de Jazz', date: '2023-08-27', customer: 'Pedro Rodríguez', amount: 60 },
-              { id: 1004, event: 'Torneo de Ajedrez', date: '2023-08-26', customer: 'Ana Martínez', amount: 20 },
-              { id: 1005, event: 'Teatro Infantil', date: '2023-08-25', customer: 'Carlos Sánchez', amount: 45 }
+              { id: 1001, event: 'Concierto de Jazz', date: '2023-08-28', customer: 'Juan Pï¿½rez', amount: 60 },
+              { id: 1002, event: 'Teatro Infantil', date: '2023-08-27', customer: 'Marï¿½a Garcï¿½a', amount: 45 },
+              { id: 1003, event: 'Concierto de Jazz', date: '2023-08-27', customer: 'Pedro Rodrï¿½guez', amount: 60 },
+              { id: 1004, event: 'Torneo de Ajedrez', date: '2023-08-26', customer: 'Ana Martï¿½nez', amount: 20 },
+              { id: 1005, event: 'Teatro Infantil', date: '2023-08-25', customer: 'Carlos Sï¿½nchez', amount: 45 }
             ],
             salesByEvent: {
               'Concierto de Jazz': { count: 120, revenue: 3600 },
@@ -79,8 +84,8 @@ const Overview = () => {
   }, []);
   
   const handleExportData = () => {
-    // Implementar lógica para exportar datos
-    alert('Función de exportación a implementar');
+    // Implementar lï¿½gica para exportar datos
+    alert('Funciï¿½n de exportaciï¿½n a implementar');
   };
   
   if (loading) {
@@ -123,7 +128,7 @@ const Overview = () => {
                 Ingresos Totales
               </Typography>
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                ¬{stats.totalRevenue.toFixed(2)}
+                ï¿½{stats.totalRevenue.toFixed(2)}
               </Typography>
               <Typography color="textSecondary" sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
                 <TrendingUpIcon sx={{ fontSize: 16, mr: 0.5 }} color="success" />
@@ -179,7 +184,7 @@ const Overview = () => {
           <Paper elevation={3} className="dashboard-card dashboard-stat-card" sx={{ bgcolor: '#F3E5F5' }}>
             <Box sx={{ position: 'relative', zIndex: 1 }}>
               <Typography color="textSecondary" gutterBottom>
-                Ocupación Promedio
+                Ocupaciï¿½n Promedio
               </Typography>
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
                 75%
@@ -199,7 +204,7 @@ const Overview = () => {
       <Grid container spacing={3}>
         <Grid item xs={12} lg={6}>
           <Card className="dashboard-card">
-            <CardHeader title="Próximos Eventos" />
+            <CardHeader title="Prï¿½ximos Eventos" />
             <Divider />
             <CardContent>
               <TableContainer>
@@ -218,7 +223,7 @@ const Overview = () => {
                         <TableCell>{event.name}</TableCell>
                         <TableCell>{new Date(event.date).toLocaleDateString()}</TableCell>
                         <TableCell align="right">{event.ticketsSold}</TableCell>
-                        <TableCell align="right">¬{event.revenue.toFixed(2)}</TableCell>
+                        <TableCell align="right">ï¿½{event.revenue.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -249,7 +254,7 @@ const Overview = () => {
                         <TableCell>{sale.id}</TableCell>
                         <TableCell>{sale.event}</TableCell>
                         <TableCell>{sale.customer}</TableCell>
-                        <TableCell align="right">¬{sale.amount.toFixed(2)}</TableCell>
+                        <TableCell align="right">ï¿½{sale.amount.toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

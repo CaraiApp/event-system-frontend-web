@@ -33,7 +33,7 @@ const SalesChart = () => (
     }}
   >
     <Typography variant="body2" color="text.secondary">
-      Aquí se mostraría un gráfico de ventas
+      Aquï¿½ se mostrarï¿½a un grï¿½fico de ventas
     </Typography>
   </Box>
 );
@@ -52,7 +52,7 @@ const UserActivityChart = () => (
     }}
   >
     <Typography variant="body2" color="text.secondary">
-      Aquí se mostraría un gráfico de actividad de usuarios
+      Aquï¿½ se mostrarï¿½a un grï¿½fico de actividad de usuarios
     </Typography>
   </Box>
 );
@@ -69,18 +69,18 @@ const Dashboard = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontró token de autenticación');
+        setError('No se encontrï¿½ token de autenticaciï¿½n');
         setLoading(false);
         return;
       }
       
       try {
-        // En producción, aquí se realizará la petición real a la API
-        // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        // const response = await axios.get(`${API_BASE_URL}/api/v1/admin/dashboard`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
-        // setStats(response.data.data);
+        // Llamada a la API real
+        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+        const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/admin/overview`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setStats(response.data.data);
         
         // Datos de prueba
         setTimeout(() => {
@@ -94,7 +94,7 @@ const Dashboard = () => {
             pendingOrganizers: 3,
             systemHealth: 98, // percentage
             popularCategories: [
-              { name: 'Música', count: 32 },
+              { name: 'Mï¿½sica', count: 32 },
               { name: 'Deportes', count: 18 },
               { name: 'Teatro', count: 15 },
               { name: 'Conferencias', count: 8 },
@@ -135,7 +135,7 @@ const Dashboard = () => {
             {
               id: 'e2',
               title: 'Torneo de Ajedrez',
-              organizer: 'María López',
+              organizer: 'Marï¿½a Lï¿½pez',
               date: '2023-09-25T10:00:00',
               status: 'active',
               attendees: 40,
@@ -143,8 +143,8 @@ const Dashboard = () => {
             },
             {
               id: 'e3',
-              title: 'Exposición de Arte',
-              organizer: 'Juan García',
+              title: 'Exposiciï¿½n de Arte',
+              organizer: 'Juan Garcï¿½a',
               date: '2023-10-05T11:00:00',
               status: 'pending',
               attendees: 0,
@@ -153,7 +153,7 @@ const Dashboard = () => {
             {
               id: 'e4',
               title: 'Conferencia Tech',
-              organizer: 'Ana Martínez',
+              organizer: 'Ana Martï¿½nez',
               date: '2023-10-10T09:00:00',
               status: 'active',
               attendees: 75,
@@ -164,7 +164,7 @@ const Dashboard = () => {
           const mockRecentUsers = [
             {
               id: 'u1',
-              name: 'Laura Gómez',
+              name: 'Laura Gï¿½mez',
               email: 'laura@example.com',
               role: 'user',
               status: 'active',
@@ -182,7 +182,7 @@ const Dashboard = () => {
             },
             {
               id: 'u3',
-              name: 'Sofía Navarro',
+              name: 'Sofï¿½a Navarro',
               email: 'sofia@example.com',
               role: 'user',
               status: 'active',
@@ -191,7 +191,7 @@ const Dashboard = () => {
             },
             {
               id: 'u4',
-              name: 'David Fernández',
+              name: 'David Fernï¿½ndez',
               email: 'david@example.com',
               role: 'organizer',
               status: 'active',
@@ -283,7 +283,7 @@ const Dashboard = () => {
             component={Link}
             to="/admin/settings"
           >
-            Configuración
+            Configuraciï¿½n
           </Button>
         </Box>
       </Box>
@@ -336,7 +336,7 @@ const Dashboard = () => {
                 Ingresos Totales
               </Typography>
               <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                ¬{stats.totalRevenue.toFixed(2)}
+                ï¿½{stats.totalRevenue.toFixed(2)}
               </Typography>
               <Typography variant="body2" color="textSecondary" sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                 <TrendingUpIcon sx={{ fontSize: 16, mr: 0.5 }} color="success" />
@@ -421,7 +421,7 @@ const Dashboard = () => {
             <CardHeader
               title={
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="h6">Últimos Eventos</Typography>
+                  <Typography variant="h6">ï¿½ltimos Eventos</Typography>
                   <Chip 
                     label={`${stats.pendingEvents} pendientes`} 
                     color="warning" 
@@ -564,7 +564,7 @@ const Dashboard = () => {
         <Grid item xs={12}>
           <Card>
             <CardHeader
-              title="Categorías Populares"
+              title="Categorï¿½as Populares"
               action={
                 <Button 
                   color="primary" 
@@ -635,10 +635,10 @@ const Dashboard = () => {
           <InfoIcon sx={{ mr: 2 }} />
           <Box sx={{ flex: 1 }}>
             <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-              Próximamente: Actualización de la plataforma
+              Prï¿½ximamente: Actualizaciï¿½n de la plataforma
             </Typography>
             <Typography variant="body2">
-              Se lanzará una nueva versión del sistema con mejoras en rendimiento y seguridad. Esté atento a los próximos anuncios.
+              Se lanzarï¿½ una nueva versiï¿½n del sistema con mejoras en rendimiento y seguridad. Estï¿½ atento a los prï¿½ximos anuncios.
             </Typography>
           </Box>
           <Button 
@@ -653,7 +653,7 @@ const Dashboard = () => {
               }
             }}
           >
-            Más información
+            Mï¿½s informaciï¿½n
           </Button>
         </Paper>
       </Box>

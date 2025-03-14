@@ -21,7 +21,8 @@ import {
   CreditCard as CreditCardIcon,
   Email as EmailIcon,
   Apartment as ApartmentIcon,
-  ContactSupport as ContactSupportIcon
+  ContactSupport as ContactSupportIcon,
+  Home as HomeIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import './AdminDashboard.css';
@@ -42,7 +43,7 @@ const AdminDashboard = () => {
   const isMenuOpen = Boolean(anchorEl);
   const isNotificationsOpen = Boolean(notificationAnchorEl);
   
-  // Verificar autenticación y rol de usuario
+  // Verificar autenticaciï¿½n y rol de usuario
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
@@ -117,7 +118,7 @@ const AdminDashboard = () => {
   const navigationItems = [
     { text: 'Panel Principal', icon: <DashboardIcon />, path: '/admin' },
     { 
-      subheader: 'Gestión de Usuarios',
+      subheader: 'GestiÃ³n de Usuarios',
       items: [
         { text: 'Todos los Usuarios', icon: <PeopleIcon />, path: '/admin/users' },
         { text: 'Organizadores', icon: <ApartmentIcon />, path: '/admin/organizers' }
@@ -127,31 +128,31 @@ const AdminDashboard = () => {
       subheader: 'Contenido',
       items: [
         { text: 'Eventos', icon: <EventIcon />, path: '/admin/events' },
-        { text: 'Categorías', icon: <CategoryIcon />, path: '/admin/categories' },
+        { text: 'CategorÃ­as', icon: <CategoryIcon />, path: '/admin/categories' },
         { text: 'Plantillas', icon: <ExtensionIcon />, path: '/admin/templates' }
       ]
     },
     { 
       subheader: 'Finanzas',
       items: [
-        { text: 'Transacciones', icon: <ReceiptIcon />, path: '/admin/transactions' },
-        { text: 'Pagos', icon: <CreditCardIcon />, path: '/admin/payments' }
+        { text: 'Informes', icon: <ReceiptIcon />, path: '/admin/reports' },
+        { text: 'Comisiones', icon: <CreditCardIcon />, path: '/admin/reports' }
       ]
     },
     { 
       subheader: 'Sistema',
       items: [
-        { text: 'Configuración', icon: <SettingsIcon />, path: '/admin/settings' },
+        { text: 'ConfiguraciÃ³n', icon: <SettingsIcon />, path: '/admin/settings' },
         { text: 'Comunicaciones', icon: <EmailIcon />, path: '/admin/communications' },
-        { text: 'Soporte', icon: <ContactSupportIcon />, path: '/admin/support' }
+        { text: 'Soporte', icon: <ContactSupportIcon />, path: '/admin/settings' }
       ]
     }
   ];
   
   const mockNotifications = [
-    { id: 1, title: 'Nuevo organizador', message: 'Luis Rodríguez ha solicitado ser organizador', time: '10 min' },
+    { id: 1, title: 'Nuevo organizador', message: 'Luis RodrÃ­guez ha solicitado ser organizador', time: '10 min' },
     { id: 2, title: 'Evento reportado', message: 'El evento "Concierto de Jazz" ha sido reportado', time: '30 min' },
-    { id: 3, title: 'Actualización del sistema', message: 'Nueva versión disponible', time: '1 hora' },
+    { id: 3, title: 'ActualizaciÃ³n del sistema', message: 'Nueva versiÃ³n disponible', time: '1 hora' },
   ];
   
   if (loading) {
@@ -208,8 +209,19 @@ const AdminDashboard = () => {
               flexGrow: 1
             }}
           >
-            Panel de Administración
+            Panel de AdministraciÃ³n
           </Typography>
+          
+          {/* Home button to return to main site */}
+          <IconButton
+            color="inherit"
+            aria-label="go to home page"
+            onClick={() => navigate('/')}
+            sx={{ mr: 2 }}
+            title="Volver a la pÃ¡gina principal"
+          >
+            <HomeIcon />
+          </IconButton>
           
           {/* Notifications icon */}
           <IconButton
@@ -423,7 +435,7 @@ const AdminDashboard = () => {
                 <LogoutIcon />
               </ListItemIcon>
               <ListItemText 
-                primary="Cerrar Sesión" 
+                primary="Cerrar Sesiï¿½n" 
                 sx={{ opacity: open ? 1 : 0, color: 'rgba(255, 255, 255, 0.7)' }}
               />
             </ListItemButton>
@@ -476,14 +488,14 @@ const AdminDashboard = () => {
           <ListItemIcon>
             <SettingsIcon fontSize="small" />
           </ListItemIcon>
-          Configuración
+          Configuraciï¿½n
         </MenuItem>
         <Divider />
         <MenuItem onClick={handleLogout}>
           <ListItemIcon>
             <LogoutIcon fontSize="small" />
           </ListItemIcon>
-          Cerrar Sesión
+          Cerrar Sesiï¿½n
         </MenuItem>
       </Menu>
       
@@ -515,7 +527,7 @@ const AdminDashboard = () => {
               handleNotificationsClose();
             }}
           >
-            Marcar todas como leídas
+            Marcar todas como leï¿½das
           </Typography>
         </Box>
         <Divider />

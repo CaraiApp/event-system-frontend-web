@@ -19,6 +19,24 @@ export const AdminRoute = ({ element }) => {
     return <Navigate to="/login" />;
   }
   
+  // If user is not an admin, redirect to home
+  if (role !== 'admin') {
+    return <Navigate to="/home" />;
+  }
+  
+  // If token is present and user is an admin, allow access to the route
+  return element;
+};
+
+export const OrganizerRoute = ({ element }) => {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  
+  // If no token is found, redirect to login
+  if (!token) {
+    return <Navigate to="/login" />;
+  }
+  
   // If user is not an organizer or admin, redirect to home
   if (role !== 'organizer' && role !== 'admin') {
     return <Navigate to="/home" />;
