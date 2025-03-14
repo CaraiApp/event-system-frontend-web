@@ -39,10 +39,12 @@ category,
             "https://cdn.pixabay.com/photo/2021/01/01/12/44/concert-5878452_960_720.jpg"
           }
           alt="event-img"
+          style={event.status === 'cancelled' ? { opacity: 0.7, filter: 'grayscale(50%)' } : {}}
         />
-        {ticket === "Walk-in" &&  <span style={{ background: "#D6375D" }}>Sin cita previa</span>}
-        {featured &&  <span style={{ background: "#D6375D" }}>Presentada</span>}
-        {!published && userRole !== "user" &&  ticket !== "Walk-in" && <span style={{ background: "yellow",  color: "black", fontWeight: "bold" }}>Pendiente</span>}
+        {event.status === 'cancelled' && <span style={{ background: "red", color: "white", fontWeight: "bold" }}>Cancelado</span>}
+        {ticket === "Walk-in" && event.status !== 'cancelled' && <span style={{ background: "#D6375D" }}>Sin cita previa</span>}
+        {featured && event.status !== 'cancelled' && <span style={{ background: "#D6375D" }}>Presentada</span>}
+        {!published && userRole !== "user" && ticket !== "Walk-in" && event.status !== 'cancelled' && <span style={{ background: "yellow",  color: "black", fontWeight: "bold" }}>Pendiente</span>}
         
         
       </div>
@@ -65,7 +67,20 @@ category,
           </span>
 
           <h5 className="event__title">
-            <Link to={`/events/${_id}`}>{name}</Link>
+            <Link to={`/events/${_id}`}>
+              {name}
+              {event.status === 'cancelled' && 
+                <span style={{ 
+                  fontSize: '0.7em', 
+                  color: 'red',
+                  marginLeft: '5px',
+                  fontWeight: 'normal',
+                  verticalAlign: 'middle'
+                }}>
+                  (CANCELADO)
+                </span>
+              }
+            </Link>
           </h5>
 
           <span
@@ -161,19 +176,26 @@ category,
  
 <div className="card__bottom" style={{display:'flex', justifyContent: 'flex-end'}}>
                   
-                    <button className="btn booking__btn" style={{background: '#3795d6', color: 'white'}}
-                    
-                    onClick={ () => {
-                      navigate(`/event-detail/${_id}`);
-                      
-                      setTimeout(() => {
-                        window.location.reload();
-                      }, 0); 
-                    }}>
-                        {/* <Link to={`/event-detail/${_id}`}>  */}
-                       {userRole === "user" ? 'Reserva ahora' : 'Ver detalle'} 
-                        {/* </Link> */}
-
+                    <button 
+                      className="btn booking__btn" 
+                      style={{
+                        background: event.status === 'cancelled' ? '#888' : '#3795d6', 
+                        color: 'white'
+                      }}
+                      onClick={ () => {
+                        navigate(`/event-detail/${_id}`);
+                        
+                        setTimeout(() => {
+                          window.location.reload();
+                        }, 0); 
+                      }}
+                    >
+                      {/* <Link to={`/event-detail/${_id}`}>  */}
+                      {event.status === 'cancelled' 
+                        ? 'Ver detalles' 
+                        : userRole === "user" ? 'Reserva ahora' : 'Ver detalle'
+                      } 
+                      {/* </Link> */}
                     </button>
                 </div>
       
