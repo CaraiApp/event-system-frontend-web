@@ -3,13 +3,14 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, Drawer, AppBar, Toolbar, List, Typography, Divider, IconButton, 
   ListItem, ListItemButton, ListItemIcon, ListItemText, Avatar, Container,
-  Menu, MenuItem, ListItemAvatar, Tooltip
+  Menu, MenuItem, ListItemAvatar, Tooltip, Paper, Button
 } from '@mui/material';
 import { 
   Menu as MenuIcon, ChevronLeft as ChevronLeftIcon, Dashboard as DashboardIcon,
   EventNote as EventNoteIcon, BarChart as BarChartIcon, People as PeopleIcon,
   Settings as SettingsIcon, Logout as LogoutIcon, Home as HomeIcon,
-  Person as PersonIcon, AccountCircle as AccountCircleIcon, Map as MapIcon
+  Person as PersonIcon, AccountCircle as AccountCircleIcon, Map as MapIcon,
+  BugReport as BugIcon, Close
 } from '@mui/icons-material';
 import axios from 'axios';
 import './OrganizerDashboard.css';
@@ -22,6 +23,12 @@ const OrganizerDashboard = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null); // Para el menú desplegable de usuario
+  const [showDebug, setShowDebug] = useState(false); // Para mostrar/ocultar panel de depuración
+  const [debugInfo, setDebugInfo] = useState({
+    user: null,
+    apiCalls: [],
+    errors: []
+  });
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -57,18 +64,81 @@ const OrganizerDashboard = () => {
     
     const fetchUserData = async () => {
       try {
+        // Añadir información de depuración
+        const startTime = performance.now();
         const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+        
+        // Guardar información de la solicitud
+        const requestInfo = {
+          type: 'GET',
+          url: `${API_BASE_URL}/api/v1/users/getSingleUser`,
+          headers: { Authorization: `Bearer ${token && token.length > 10 ? token.substring(0, 10) + '...' : 'token-inválido'}` },
+          timestamp: new Date().toISOString(),
+          pathname: location.pathname
+        };
+        
+        console.group('🔍 DEBUG - OrganizerDashboard - fetchUserData');
+        console.log('🔷 Realizando solicitud:', requestInfo);
+        
         const response = await axios.get(`${API_BASE_URL}/api/v1/users/getSingleUser`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
+        const endTime = performance.now();
+        console.log(`⏱️ Tiempo de respuesta: ${(endTime - startTime).toFixed(2)}ms`);
+        console.log('✅ Respuesta exitosa:', {
+          status: response.status,
+          statusText: response.statusText,
+          data: response.data ? 'Datos recibidos' : 'Sin datos'
+        });
+        
+        // Actualizar datos de depuración
+        setDebugInfo(prev => ({
+          ...prev,
+          user: response.data.data,
+          apiCalls: [...prev.apiCalls, {
+            ...requestInfo,
+            status: response.status,
+            duration: (endTime - startTime).toFixed(2),
+            success: true
+          }]
+        }));
+        
         setUser(response.data.data);
+        console.groupEnd();
       } catch (error) {
+        console.group('❌ ERROR - OrganizerDashboard - fetchUserData');
         console.error('Error fetching user data:', error);
+        console.error('Mensaje:', error.message);
+        
+        if (error.response) {
+          console.error('Detalles de respuesta:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data
+          });
+        }
+        
+        // Actualizar errores en el panel de depuración
+        setDebugInfo(prev => ({
+          ...prev,
+          errors: [...prev.errors, {
+            type: 'API_ERROR',
+            message: error.message,
+            response: error.response ? {
+              status: error.response.status,
+              statusText: error.response.statusText
+            } : null,
+            timestamp: new Date().toISOString(),
+            pathname: location.pathname
+          }]
+        }));
+        
         if (error.response && error.response.status === 401) {
           localStorage.removeItem('token');
           navigate('/login');
         }
+        console.groupEnd();
       } finally {
         setLoading(false);
       }
@@ -90,6 +160,11 @@ const OrganizerDashboard = () => {
     localStorage.removeItem('role');
     navigate('/login');
     handleMenuClose();
+  };
+  
+  // Alternar la visualización del panel de depuración
+  const toggleDebugPanel = () => {
+    setShowDebug(prev => !prev);
   };
   
   const menuItems = [
@@ -161,6 +236,17 @@ const OrganizerDashboard = () => {
             >
               <HomeIcon />
             </IconButton>
+            
+            {/* Botón de depuración */}
+            <Tooltip title="Panel de depuración">
+              <IconButton
+                color="inherit"
+                onClick={toggleDebugPanel}
+                sx={{ mr: 1 }}
+              >
+                <BugIcon />
+              </IconButton>
+            </Tooltip>
             
             <Tooltip title="Ajustes de cuenta">
               <IconButton
@@ -330,6 +416,117 @@ const OrganizerDashboard = () => {
         }}
       >
         <Toolbar /> {/* Spacer for AppBar */}
+        {/* Panel de depuración */}
+        {showDebug && (
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              p: 2, 
+              mb: 3,
+              bgcolor: 'rgba(0, 0, 0, 0.03)',
+              border: '1px solid #ccc',
+              borderRadius: 2
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h6" fontWeight="bold" color="primary">
+                Panel de Depuración
+              </Typography>
+              <IconButton onClick={toggleDebugPanel} size="small">
+                <Close />
+              </IconButton>
+            </Box>
+            
+            <Divider sx={{ mb: 2 }} />
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight="bold">Información Básica</Typography>
+              <Box component="pre" sx={{ 
+                p: 1, 
+                bgcolor: '#f5f5f5', 
+                borderRadius: 1,
+                overflow: 'auto',
+                fontSize: '0.75rem'
+              }}>
+                {JSON.stringify({
+                  url: window.location.href,
+                  path: location.pathname,
+                  apiBaseUrl: import.meta.env.VITE_REACT_APP_BACKEND_BASEURL,
+                  token: localStorage.getItem('token') ? 'Presente (truncado): ' + localStorage.getItem('token').substring(0, 15) + '...' : 'No hay token',
+                  role: localStorage.getItem('role') || 'No definido',
+                  user: user ? `${user.username} (${user.email})` : 'No hay datos de usuario'
+                }, null, 2)}
+              </Box>
+            </Box>
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" fontWeight="bold">Llamadas a API Recientes</Typography>
+              {debugInfo.apiCalls.length > 0 ? (
+                <Box component="pre" sx={{ 
+                  p: 1, 
+                  bgcolor: '#f5f5f5', 
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  maxHeight: '150px',
+                  fontSize: '0.75rem'
+                }}>
+                  {JSON.stringify(debugInfo.apiCalls.slice(-5), null, 2)}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">No hay llamadas a API registradas</Typography>
+              )}
+            </Box>
+            
+            <Box>
+              <Typography variant="subtitle1" fontWeight="bold" color="error">Errores</Typography>
+              {debugInfo.errors.length > 0 ? (
+                <Box component="pre" sx={{ 
+                  p: 1, 
+                  bgcolor: '#fee', 
+                  borderRadius: 1,
+                  overflow: 'auto',
+                  maxHeight: '150px',
+                  fontSize: '0.75rem'
+                }}>
+                  {JSON.stringify(debugInfo.errors, null, 2)}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">No hay errores registrados</Typography>
+              )}
+            </Box>
+            
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" fontWeight="bold">Instrucciones de Uso</Typography>
+              <Typography variant="body2">
+                1. Observa la consola del navegador para información detallada de las peticiones.<br />
+                2. Si una petición falla con 404, verifica que la ruta URL sea correcta y que el backend esté ejecutándose.<br />
+                3. Si hay errores de autenticación (401), asegúrate de que el token sea válido y no haya expirado.<br />
+                4. Comprueba los encabezados enviados en cada petición.
+              </Typography>
+              
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                size="small" 
+                onClick={() => console.clear()} 
+                sx={{ mt: 1, mr: 1 }}
+              >
+                Limpiar Consola
+              </Button>
+              
+              <Button 
+                variant="outlined" 
+                color="warning" 
+                size="small" 
+                onClick={() => setDebugInfo({user: null, apiCalls: [], errors: []})} 
+                sx={{ mt: 1 }}
+              >
+                Reiniciar Datos de Depuración
+              </Button>
+            </Box>
+          </Paper>
+        )}
+        
         <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }}>
           <Outlet /> {/* Renders child routes */}
         </Container>
