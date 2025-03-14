@@ -10,7 +10,7 @@ import {
   EventNote as EventNoteIcon, BarChart as BarChartIcon, People as PeopleIcon,
   Settings as SettingsIcon, Logout as LogoutIcon, Home as HomeIcon,
   Person as PersonIcon, AccountCircle as AccountCircleIcon, Map as MapIcon,
-  BugReport as BugIcon, Close
+  BugReport as BugIcon, Close, QrCodeScanner as QrCodeScannerIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import './OrganizerDashboard.css';
@@ -173,6 +173,7 @@ const OrganizerDashboard = () => {
     { text: COMMON_STRINGS.ventas, icon: <BarChartIcon />, path: '/organizer/sales' },
     { text: COMMON_STRINGS.asistentes, icon: <PeopleIcon />, path: '/organizer/attendees' },
     { text: COMMON_STRINGS.gestionMapas, icon: <MapIcon />, path: '/template-manager' },
+    { text: "Escanear QR", icon: <QrCodeScannerIcon />, path: '/qr-scanner' },
     { text: COMMON_STRINGS.configuracion, icon: <SettingsIcon />, path: '/organizer/settings' },
   ];
   

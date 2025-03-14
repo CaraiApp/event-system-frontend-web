@@ -57,7 +57,7 @@
 // export default Routers
 
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import {Routes, Route, Navigate} from 'react-router-dom'
 import Login from "../pages/LoginPage"
 import Register from "../pages/RegisterPage"
@@ -217,6 +217,9 @@ const Routers = () => {
       {/* Template Manager (accesible por admin y organizador) */}
       <Route path="/template-manager" element={<PrivateRoute element={<TemplateManager />} />} />
       <Route path="/template-editor" element={<PrivateRoute element={<TemplateEditor />} />} />
+      
+      {/* QR Scanner para validación de entradas */}
+      <Route path="/qr-scanner" element={<OrganizerRoute element={React.lazy(() => import('../pages/QRScanner/QRScanner'))} />} />
 
       <Route path="/team" element={<PrivateRoute element={<Team />} />} />
       <Route path="/gallery" element={<PrivateRoute element={<Gallery />} />} />
