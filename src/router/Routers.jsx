@@ -182,6 +182,7 @@ const Routers = () => {
       <Route path="/events"  element={<Events />}  />
       <Route path="/event-detail/:id" element={<EventPage />} />
       <Route path="/seatMap" element={<PrivateRoute element={<SeatMapPage />} />} />
+      <Route path="/seatMap/:id" element={<PrivateRoute element={<SeatMapPage />} />} />
       <Route path="/pricing" element={<PrivateRoute element={<Pricing />} />} />
       <Route path="/pricingg" element={<Pricingg />} />
       <Route path="/event/ordersummary" element={<PrivateRoute element={<OrderSummary />} />} />
