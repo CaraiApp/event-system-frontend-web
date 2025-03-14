@@ -1,0 +1,37 @@
+--- src/pages/AdminDashboard/pages/UserManagement.jsx	2023-07-13 10:00:00
++++ src/pages/AdminDashboard/pages/UserManagement.jsx	2023-07-14 10:00:00
+@@ -93,13 +93,30 @@
+       try {
+         // Llamada a la API real - usando los datos simulados en caso de error
+         try {
++          // Determinar si estamos en la página de organizadores
++          const isOrganizersPage = window.location.pathname.includes('/admin/organizers');
++          
+           const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+-          const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/admin/users`, {
++          
++          // Usar la ruta específica para organizadores si estamos en esa página
++          const endpoint = isOrganizersPage 
++            ? `${API_BASE_URL}/api/v1/dashboard/admin/organizers` 
++            : `${API_BASE_URL}/api/v1/dashboard/admin/users`;
++            
++          console.log(`Fetching from endpoint: ${endpoint}`);
++          
++          const response = await axios.get(endpoint, {
+             headers: { Authorization: `Bearer ${token}` },
+             params: {
+-              role: filterRole || undefined,
++              role: \!isOrganizersPage ? (filterRole || undefined) : undefined, // No enviar role si ya estamos en organizadores
+               status: filterStatus || undefined,
+               search: searchTerm || undefined,
+               page: page + 1,
+               limit: rowsPerPage
+             }
+           });
+-          setUsers(response.data.data.users);
++          
++          // Si estamos en la página de organizadores, la respuesta tiene una estructura diferente
++          const userData = isOrganizersPage ? response.data.data.organizers : response.data.data.users;
++          setUsers(userData);
+           setLoading(false);
+           return; // Salimos para no mostrar datos de prueba
