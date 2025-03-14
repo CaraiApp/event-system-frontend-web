@@ -11,6 +11,22 @@ export const COMMON_STRINGS = {
   ventas: "Ventas",
   asistentes: "Asistentes",
   miPerfil: "Mi Perfil",
+  ubicacion: "Ubicación",
+  filasPorPagina: "Filas por página:",
+  
+  // Errores y mensajes
+  noToken: "No se encontró token de autenticación",
+  errorCargarEventos: "Error al cargar los eventos",
+  verEstadisticas: "Ver Estadísticas",
+  verDetalles: "Ver Detalles",
+  editarEvento: "Editar Evento",
+  
+  // Textos en eventos
+  competicionAbierta: "Competición abierta a todos los niveles",
+  exhibicionDanzas: "Exhibición de danzas tradicionales y modernas",
+  exposicionArte: "Exposición de Arte",
+  ultimasTendencias: "Últimas tendencias en desarrollo web",
+  conferenciaTecnologica: "Conferencia Tecnológica",
   
   // Elementos comunes
   funcion: "Función",

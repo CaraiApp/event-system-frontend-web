@@ -1,10 +1,11 @@
-import api, { authAPI, eventAPI, bookingAPI, templateAPI } from './api';
+import api, { authAPI, eventAPI, bookingAPI, templateAPI, dashboardAPI } from './api';
 
 export {
   authAPI,
   eventAPI,
   bookingAPI,
-  templateAPI
+  templateAPI,
+  dashboardAPI
 };
 
 export default api;

@@ -125,10 +125,47 @@ export const templateAPI = {
   }
 };
 
+/**
+ * Funciones relacionadas con el dashboard y la configuración de UI
+ */
+export const dashboardAPI = {
+  // Obtener configuración de UI para dashboards
+  getUIConfig: async (route) => {
+    try {
+      return await axios.get('/api/v1/dashboard/ui-config', { params: { route } });
+    } catch (error) {
+      // Si falla, intentar con la ruta alternativa
+      console.log(`Error al obtener configuración UI para ${route}:`, error.message);
+      
+      // Intentar ruta alternativa
+      try {
+        return await axios.get('/api/templates/ui-config');
+      } catch (altError) {
+        console.log('Error también en ruta alternativa:', altError.message);
+        
+        // Devolver una configuración por defecto como último recurso
+        return {
+          data: {
+            success: true,
+            data: {
+              hideHeader: true,
+              hideFooter: true,
+              dashboardConfig: {
+                navItems: [] // Puedes definir elementos de navegación por defecto aquí
+              }
+            }
+          }
+        };
+      }
+    }
+  }
+};
+
 // Exportar un objeto API con todas las funciones
 export default {
   auth: authAPI,
   events: eventAPI,
   bookings: bookingAPI,
-  templates: templateAPI
+  templates: templateAPI,
+  dashboard: dashboardAPI
 };

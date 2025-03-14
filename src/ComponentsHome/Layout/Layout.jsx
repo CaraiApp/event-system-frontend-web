@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import axios from 'axios'
 import Header from '../Header/Header'
 import Routers from '../../router/Routers'
 import Footer from '../Footer/Footer'
 import { useLocation } from 'react-router-dom'
+import { dashboardAPI } from '../../services'
 
 const Layout = () => {
   const location = useLocation();
@@ -21,35 +21,16 @@ const Layout = () => {
       setHideUI(true);
       console.log('Ruta de dashboard detectada - ocultando header/footer automáticamente');
       
-      // Intentamos obtener la configuración de UI del backend, pero no bloqueamos la UI si falla
+      // Intentamos obtener la configuración de UI del backend usando el servicio centralizado
       const fetchUIConfig = async () => {
         try {
-          const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+          // Usar el servicio dashboardAPI que maneja los reintentos y fallbacks automáticamente
+          const response = await dashboardAPI.getUIConfig(location.pathname);
           
-          // Intentar primero con la nueva ruta
-          try {
-            const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/ui-config`, {
-              params: { route: location.pathname }
-            });
-            
-            if (response.data && response.data.data) {
-              console.log('UI Config recibida de nueva ruta:', response.data.data);
-              return;
-            }
-          } catch (newRouteError) {
-            console.log('Error en nueva ruta de UI config, intentando ruta alternativa...', newRouteError.message);
-            
-            // Si falla, intentar con la ruta original que usábamos en TemplateManager
-            try {
-              // Esta es la ruta que funcionaba anteriormente en TemplateManager
-              const alternativeResponse = await axios.get(`${API_BASE_URL}/api/templates/ui-config`);
-              
-              if (alternativeResponse.data) {
-                console.log('UI Config recibida de ruta alternativa:', alternativeResponse.data);
-              }
-            } catch (altError) {
-              console.log('Error también en ruta alternativa:', altError.message);
-            }
+          if (response.data && response.data.data) {
+            console.log('UI Config recibida:', response.data.data);
+            // Podríamos usar esta configuración para personalizar más el dashboard
+            // Por ejemplo: cambiar colores, mostrar/ocultar elementos específicos, etc.
           }
         } catch (error) {
           console.log('Error general al obtener configuración UI:', error);

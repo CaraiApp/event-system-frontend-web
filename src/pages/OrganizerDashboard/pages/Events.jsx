@@ -13,6 +13,7 @@ import {
 } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { COMMON_STRINGS } from '../../../utils/strings';
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -32,13 +33,13 @@ const Events = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontró token de autenticación');
+        setError(COMMON_STRINGS.noToken);
         setLoading(false);
         return;
       }
       
       try {
-        // En producción, aquí se realizará la petición real a la API
+        // En producciï¿½n, aquï¿½ se realizarï¿½ la peticiï¿½n real a la API
         // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         // const response = await axios.get(`${API_BASE_URL}/api/v1/events/getuserEvent`, {
         //   headers: { Authorization: `Bearer ${token}` }
@@ -75,7 +76,7 @@ const Events = () => {
             {
               _id: '3',
               title: 'Torneo de Ajedrez',
-              description: 'Competición abierta a todos los niveles',
+              description: COMMON_STRINGS.competicionAbierta,
               date: '2023-10-05T09:00:00.000Z',
               location: 'Club de Ajedrez',
               totalTickets: 50,
@@ -87,7 +88,7 @@ const Events = () => {
             {
               _id: '4',
               title: 'Festival de Danza',
-              description: 'Exhibición de danzas tradicionales y modernas',
+              description: COMMON_STRINGS.exhibicionDanzas,
               date: '2023-10-12T19:30:00.000Z',
               location: 'Teatro Municipal',
               totalTickets: 200,
@@ -110,10 +111,10 @@ const Events = () => {
             },
             {
               _id: '6',
-              title: 'Exposición de Arte',
+              title: COMMON_STRINGS.exposicionArte,
               description: 'Muestra de artistas emergentes',
               date: '2023-08-05T10:00:00.000Z',
-              location: 'Galería Moderna',
+              location: 'Galerï¿½a Moderna',
               totalTickets: 300,
               soldTickets: 275,
               price: 10.00,
@@ -122,8 +123,8 @@ const Events = () => {
             },
             {
               _id: '7',
-              title: 'Conferencia Tecnológica',
-              description: 'Últimas tendencias en desarrollo web',
+              title: COMMON_STRINGS.conferenciaTecnologica,
+              description: COMMON_STRINGS.ultimasTendencias,
               date: '2023-11-10T09:00:00.000Z',
               location: 'Centro de Convenciones',
               totalTickets: 150,
@@ -139,7 +140,7 @@ const Events = () => {
         }, 1000);
       } catch (error) {
         console.error('Error fetching events:', error);
-        setError('Error al cargar los eventos');
+        setError(COMMON_STRINGS.errorCargarEventos);
         setLoading(false);
       }
     };
@@ -346,7 +347,7 @@ const Events = () => {
               <TableRow>
                 <TableCell>Evento</TableCell>
                 <TableCell>Fecha</TableCell>
-                <TableCell>Ubicación</TableCell>
+                <TableCell>{COMMON_STRINGS.ubicacion}</TableCell>
                 <TableCell align="right">Precio</TableCell>
                 <TableCell align="center">Entradas Vendidas</TableCell>
                 <TableCell align="center">Estado</TableCell>
@@ -369,7 +370,7 @@ const Events = () => {
                   </TableCell>
                   <TableCell>{formatDate(event.date)}</TableCell>
                   <TableCell>{event.location}</TableCell>
-                  <TableCell align="right">¬{event.price.toFixed(2)}</TableCell>
+                  <TableCell align="right">{COMMON_STRINGS.euro}{event.price.toFixed(2)}</TableCell>
                   <TableCell align="center">
                     {event.soldTickets}/{event.totalTickets}
                     <Box sx={{ width: '100%', mt: 1 }}>
@@ -430,7 +431,7 @@ const Events = () => {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          labelRowsPerPage="Filas por página:"
+          labelRowsPerPage={COMMON_STRINGS.filasPorPagina}
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
         />
       </Paper>
@@ -445,15 +446,15 @@ const Events = () => {
       >
         <MenuItem onClick={handleViewDetails}>
           <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
-          Ver Detalles
+          {COMMON_STRINGS.verDetalles}
         </MenuItem>
         <MenuItem onClick={handleViewAnalytics}>
           <BarChartIcon fontSize="small" sx={{ mr: 1 }} />
-          Ver Estadísticas
+          {COMMON_STRINGS.verEstadisticas}
         </MenuItem>
         <MenuItem onClick={handleEditEvent}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
-          Editar Evento
+          {COMMON_STRINGS.editarEvento}
         </MenuItem>
       </Menu>
     </>
