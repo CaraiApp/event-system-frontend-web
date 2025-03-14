@@ -282,6 +282,11 @@ const Header = () => {
                     Dashboard de Organizador
                   </Link>
                  )}
+                 {user?.role === "admin" && (
+                  <Link to="/admin" className="dropdown-item">
+                    Panel de Administración
+                  </Link>
+                 )}
                   <div className="dropdown-item" onClick={handleLogout}>
                     <RxExit />
                     Finalizar la sesión

@@ -84,6 +84,15 @@ import Sales from '../pages/OrganizerDashboard/pages/Sales';
 import Attendees from '../pages/OrganizerDashboard/pages/Attendees';
 import Settings from '../pages/OrganizerDashboard/pages/Settings';
 
+// Dashboard de Administrador
+import AdminDashboard from '../pages/AdminDashboard/AdminDashboard';
+import AdminHome from '../pages/AdminDashboard/pages/Dashboard';
+import UserManagement from '../pages/AdminDashboard/pages/UserManagement';
+import EventManagement from '../pages/AdminDashboard/pages/EventManagement';
+import Reports from '../pages/AdminDashboard/pages/Reports';
+import CategoryManagement from '../pages/AdminDashboard/pages/CategoryManagement';
+import SystemSettings from '../pages/AdminDashboard/pages/SystemSettings';
+
 import WalkIn from '../pages/WalkIn'
 import SeatMapModal from '../pages/SeatMapPage/SeatMapPage'
 import OrganizorMapPage from '../pages/OrganizerMap/OrganizorMapPage'
@@ -185,6 +194,16 @@ const Routers = () => {
         <Route path="sales" element={<Sales />} />
         <Route path="attendees" element={<Attendees />} />
         <Route path="settings" element={<Settings />} />
+      </Route>
+
+      {/* Dashboard de Administrador */}
+      <Route path="/admin" element={<AdminRoute element={<AdminDashboard />} />}>
+        <Route index element={<AdminHome />} />
+        <Route path="users" element={<UserManagement />} />
+        <Route path="events" element={<EventManagement />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="categories" element={<CategoryManagement />} />
+        <Route path="settings" element={<SystemSettings />} />
       </Route>
 
       {/* Admin Routes */}

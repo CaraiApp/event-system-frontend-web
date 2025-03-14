@@ -1,0 +1,147 @@
+.admin-dashboard-card {
+  transition: transform 0.3s, box-shadow 0.3s;
+  height: 100%;
+}
+
+.admin-dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-stat-card {
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  height: 100%;
+}
+
+.admin-stat-card .stat-icon {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  opacity: 0.1;
+  font-size: 64px;
+  transform: rotate(-15deg);
+}
+
+.admin-data-table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.775rem;
+}
+
+.admin-chart-container {
+  height: 300px;
+  width: 100%;
+}
+
+.admin-title {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-title-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.admin-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  width: 100%;
+}
+
+.admin-user-avatar {
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+}
+
+.admin-status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.admin-status-active {
+  background-color: #4caf50;
+}
+
+.admin-status-inactive {
+  background-color: #f44336;
+}
+
+.admin-status-pending {
+  background-color: #ff9800;
+}
+
+.admin-search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 8px 16px;
+  transition: background-color 0.3s;
+}
+
+.admin-search-bar:hover {
+  background-color: #eeeeee;
+}
+
+.admin-search-bar:focus-within {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.25);
+}
+
+.admin-section {
+  margin-bottom: 32px;
+}
+
+.admin-card-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive admin dashboard */
+@media (max-width: 1200px) {
+  .admin-chart-container {
+    height: 250px;
+  }
+}
+
+@media (max-width: 960px) {
+  .admin-chart-container {
+    height: 220px;
+  }
+  
+  .admin-title {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .admin-title-actions {
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-chart-container {
+    height: 200px;
+  }
+}
