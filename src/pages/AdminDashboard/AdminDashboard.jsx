@@ -6,7 +6,7 @@ import Overview from './pages/Overview';
 import UserManagement from './pages/UserManagement';
 import EventManagement from './pages/EventManagement';
 import SystemSettings from './pages/SystemSettings';
-import { AdminDashboardProvider, useAdminDashboard } from './hooks/AdminDashboardContext';
+import { AdminDashboardProvider, useAdminDashboard } from './hooks/AdminDashboardContext.jsx';
 import adminApi from './services/api';
 
 // Componente de protección de rutas admin

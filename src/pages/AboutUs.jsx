@@ -3,7 +3,7 @@ import { Box, Typography, Grid, Container } from "@mui/material";
 
 const AboutUs = () => {
   return (
-    <Container maxWidth="lg" sx={{ padding: "2rem 0",marginTop: 10, padding: "20px 30px"}}>
+    <Container maxWidth="lg" sx={{ marginTop: 10, padding: "20px 30px"}}>
 
     <Typography variant="h4" gutterBottom style={{ fontSize:20, fontWeight: 'bold', textDecoration: 'underline' }}>
     Acerca de nosotros

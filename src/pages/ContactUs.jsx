@@ -3,7 +3,7 @@ import { Box, Typography, TextField, Button, Grid, Container } from "@mui/materi
 
 const ContactUs = () => {
   return (
-    <Container maxWidth="md" sx={{ padding: "2rem 0", marginTop: 10, padding: "20px 30px" }}>
+    <Container maxWidth="md" sx={{ marginTop: 10, padding: "20px 30px" }}>
     <Typography variant="h4" gutterBottom style={{ fontSize: 24, fontWeight: 'bold', textDecoration :'underline'}}>
     Contáctanos
     </Typography>

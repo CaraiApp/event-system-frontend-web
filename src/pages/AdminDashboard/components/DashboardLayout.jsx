@@ -33,7 +33,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useAdminDashboard } from '../hooks/AdminDashboardContext';
+import { useAdminDashboard } from '../hooks/AdminDashboardContext.jsx';
 
 // Ancho del drawer
 const drawerWidth = 240;

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import adminApi from '../services/api';
+import adminApi from '../services/api.js';
 
 // Crear contexto
 const AdminDashboardContext = createContext();
