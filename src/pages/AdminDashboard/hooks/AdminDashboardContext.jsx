@@ -22,8 +22,11 @@ export const AdminDashboardProvider = ({ children }) => {
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
+        console.log('[AdminDashboardContext] Iniciando verificación de autenticación');
+        
         const token = localStorage.getItem('token');
         if (!token) {
+          console.log('[AdminDashboardContext] No hay token disponible');
           setIsAuthenticated(false);
           setLoading(false);
           return;
@@ -34,42 +37,61 @@ export const AdminDashboardProvider = ({ children }) => {
           try {
             return JSON.parse(atob(token.split('.')[1]));
           } catch (e) {
-            console.error("Error al decodificar token:", e);
+            console.error("[AdminDashboardContext] Error al decodificar token:", e);
             return null;
           }
         };
         
         const decodedToken = parseJwt(token);
+        console.log('[AdminDashboardContext] Token decodificado:', 
+                    decodedToken ? { id: decodedToken.id, role: decodedToken.role } : 'Inválido');
+                    
         if (!decodedToken) {
-          console.error("Token inválido o no se pudo decodificar");
+          console.error("[AdminDashboardContext] Token inválido o no se pudo decodificar");
           throw new Error("Token inválido");
         }
         
         // Guardar la información del usuario
-        setUser({
+        const userData = {
           id: decodedToken.id,
           username: decodedToken.username || decodedToken.email,
           role: decodedToken.role,
-        });
+        };
+        console.log('[AdminDashboardContext] Información de usuario extraída:', userData);
+        setUser(userData);
         
         // Verificar si el usuario es administrador
         if (decodedToken.role !== 'admin') {
+          console.warn('[AdminDashboardContext] Usuario no tiene rol de administrador:', decodedToken.role);
           setError('No tienes permisos de administrador para acceder a este área.');
           setIsAuthenticated(false);
           setLoading(false);
           return;
         }
 
+        console.log('[AdminDashboardContext] Autenticación satisfactoria como administrador');
+        
         // Intentar obtener la configuración de UI
         try {
+          console.log('[AdminDashboardContext] Solicitando configuración UI...');
           const response = await adminApi.getUiConfig('/admin/overview');
-          if (response && response.data && response.data.data) {
+          
+          // Verificar la respuesta y extraer los datos según la estructura
+          if (response?.data?.data) {
+            console.log('[AdminDashboardContext] Configuración UI recibida (data.data):', response.data.data);
             setUiConfig(response.data.data);
+          } else if (response?.data) {
+            console.log('[AdminDashboardContext] Configuración UI recibida (solo data):', response.data);
+            setUiConfig(response.data);
+          } else {
+            console.warn('[AdminDashboardContext] Respuesta UI inesperada:', response);
+            // Continuar con la configuración por defecto
+            throw new Error('Formato de respuesta no reconocido');
           }
         } catch (uiErr) {
-          console.warn('Error obteniendo configuración UI, usando configuración por defecto:', uiErr);
+          console.warn('[AdminDashboardContext] Error obteniendo configuración UI, usando configuración por defecto:', uiErr);
           // Usar configuración por defecto si falla
-          setUiConfig({
+          const defaultConfig = {
             hideHeader: true,
             hideFooter: true,
             isDashboard: true,
@@ -81,7 +103,9 @@ export const AdminDashboardProvider = ({ children }) => {
               { path: '/admin/events', label: 'Eventos', icon: 'event' },
               { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
             ]
-          });
+          };
+          console.log('[AdminDashboardContext] Usando configuración por defecto:', defaultConfig);
+          setUiConfig(defaultConfig);
         }
         
         // Si llegamos aquí, el usuario está autenticado

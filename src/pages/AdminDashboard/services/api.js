@@ -98,39 +98,52 @@ const adminApi = {
 
   // Configuración UI
   getUiConfig: async (route) => {
-    try {
-      // Intentar con la ruta principal
-      return await api.get('/api/v1/dashboard/ui-config', { params: { route } });
-    } catch (error) {
-      console.log(`Error al obtener configuración UI para ${route}:`, error.message);
-      
-      // Si falla, intentar con una ruta alternativa
+    console.log(`Iniciando obtención de configuración UI para ruta: ${route}`);
+    
+    // Array de posibles rutas a intentar en orden
+    const routesToTry = [
+      { url: '/api/v1/dashboard/ui-config', params: { route } },
+      { url: '/api/v1/dashboard', params: { config: 'ui', route } },
+      { url: '/api/v1/templates/ui-config', params: {} },
+      { url: '/api/v1/dashboard/admin/settings', params: { type: 'ui' } }
+    ];
+    
+    // Configuración por defecto como último recurso
+    const defaultConfig = {
+      data: {
+        success: true,
+        data: {
+          hideHeader: true,
+          hideFooter: true,
+          isDashboard: true,
+          dashboardType: 'admin',
+          navItems: [
+            { path: '/admin/overview', label: 'Panel de Control', icon: 'dashboard' },
+            { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+            { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+            { path: '/admin/events', label: 'Eventos', icon: 'event' },
+            { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+          ]
+        }
+      }
+    };
+    
+    // Intentar cada ruta secuencialmente
+    for (const routeConfig of routesToTry) {
       try {
-        return await api.get('/api/v1/templates/ui-config');
-      } catch (altError) {
-        console.log('Error también en ruta alternativa:', altError.message);
-        
-        // Como último recurso, devolver una configuración por defecto
-        return {
-          data: {
-            success: true,
-            data: {
-              hideHeader: true,
-              hideFooter: true,
-              isDashboard: true,
-              dashboardType: 'admin',
-              navItems: [
-                { path: '/admin/overview', label: 'Panel de Control', icon: 'dashboard' },
-                { path: '/admin/users', label: 'Usuarios', icon: 'people' },
-                { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
-                { path: '/admin/events', label: 'Eventos', icon: 'event' },
-                { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
-              ]
-            }
-          }
-        };
+        console.log(`Intentando obtener configuración UI desde: ${routeConfig.url}`, routeConfig.params);
+        const response = await api.get(routeConfig.url, { params: routeConfig.params });
+        console.log(`Configuración UI obtenida exitosamente desde ${routeConfig.url}:`, response);
+        return response;
+      } catch (error) {
+        console.log(`Error al obtener configuración UI desde ${routeConfig.url}:`, error.message);
+        // Continuar con la siguiente ruta
       }
     }
+    
+    // Si todas las rutas fallan, devolver la configuración por defecto
+    console.log('Todas las rutas fallaron, usando configuración por defecto');
+    return defaultConfig;
   },
 };
 
