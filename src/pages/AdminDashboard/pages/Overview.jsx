@@ -38,12 +38,55 @@ const Overview = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
+        console.log('Cargando datos del dashboard...');
         const response = await adminApi.getDashboardOverview();
-        setDashboardData(response.data.data);
+        
+        console.log('Respuesta completa del API:', response);
+        
+        // Comprobamos si los datos vienen en la estructura esperada
+        if (response.data && response.data.data) {
+          console.log('Datos del dashboard recibidos correctamente:', response.data.data);
+          setDashboardData(response.data.data);
+        } else if (response.data) {
+          // Si los datos vienen directamente en response.data (sin anidamiento)
+          console.log('Datos del dashboard recibidos en formato alternativo:', response.data);
+          setDashboardData(response.data);
+        } else {
+          // Si no hay datos, usamos un objeto vacío pero con la estructura correcta
+          console.error('Formato de respuesta inesperado:', response);
+          setDashboardData({
+            userCount: 0,
+            newUsers: 0,
+            totalEvents: 0,
+            activeEventCount: 0,
+            bookingCount: 0,
+            totalRevenue: 0,
+            popularCategories: [],
+            recentEvents: [],
+            revenueByMonth: {},
+            userGrowth: {}
+          });
+        }
+        
         setError(null);
       } catch (err) {
         console.error('Error al cargar datos del dashboard:', err);
+        console.error('Error completo:', err);
         setError('Error al cargar los datos del dashboard. Por favor, inténtalo de nuevo.');
+        
+        // Establecer datos de fallback para evitar errores de renderizado
+        setDashboardData({
+          userCount: 0,
+          newUsers: 0,
+          totalEvents: 0,
+          activeEventCount: 0,
+          bookingCount: 0,
+          totalRevenue: 0,
+          popularCategories: [],
+          recentEvents: [],
+          revenueByMonth: { 'Ene': 0, 'Feb': 0, 'Mar': 0 },
+          userGrowth: { 'Ene': 0, 'Feb': 0, 'Mar': 0 }
+        });
       } finally {
         setLoading(false);
       }

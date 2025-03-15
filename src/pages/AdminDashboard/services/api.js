@@ -41,7 +41,27 @@ const adminApi = {
   logout: () => api.post('/api/v1/auth/logout'),
   
   // Dashboard Overview
-  getDashboardOverview: () => api.get('/api/v1/dashboard/admin/overview'),
+  getDashboardOverview: async () => {
+    try {
+      console.log('Realizando petición a /api/v1/dashboard/admin/overview');
+      const response = await api.get('/api/v1/dashboard/admin/overview');
+      console.log('Respuesta recibida:', response);
+      return response;
+    } catch (error) {
+      console.error('Error en getDashboardOverview:', error);
+      
+      // Intentamos con una ruta alternativa en caso de error
+      try {
+        console.log('Intentando ruta alternativa...');
+        const fallbackResponse = await api.get('/api/v1/dashboard/admin');
+        console.log('Respuesta alternativa recibida:', fallbackResponse);
+        return fallbackResponse;
+      } catch (fallbackError) {
+        console.error('Error también en ruta alternativa:', fallbackError);
+        throw error; // Lanzamos el error original
+      }
+    }
+  },
   
   // Usuarios
   getUsers: (params) => api.get('/api/v1/dashboard/admin/users', { params }),
