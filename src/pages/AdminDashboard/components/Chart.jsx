@@ -16,10 +16,31 @@ const Chart = ({
   xKey = 'name', 
   series = [{ dataKey: 'value', name: 'Valor', color: '#2196f3' }],
   height = 300,
-  showLegend = true
+  showLegend = true,
+  emptyMessage = "No hay datos disponibles"
 }) => {
   // Renderizar el tipo de gráfico adecuado
   const renderChart = () => {
+    // Verificar si hay datos
+    if (!data || data.length === 0) {
+      return (
+        <Box 
+          sx={{ 
+            height, 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            flexDirection: 'column',
+            color: 'text.secondary'
+          }}
+        >
+          <Typography variant="body1" color="inherit" textAlign="center">
+            {emptyMessage}
+          </Typography>
+        </Box>
+      );
+    }
+    
     switch (type) {
       case 'line':
         return (

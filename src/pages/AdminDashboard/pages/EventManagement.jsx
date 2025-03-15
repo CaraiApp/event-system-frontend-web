@@ -291,6 +291,9 @@ const EventManagement = () => {
         totalCount={totalEvents}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
+        emptyMessage={events && events.dataNotAvailable 
+          ? (events.error || "No hay eventos disponibles. Se mostrarán cuando se creen eventos en la plataforma.")
+          : "No hay eventos para mostrar"}
       />
       
       {/* Menú de acciones para cada evento */}

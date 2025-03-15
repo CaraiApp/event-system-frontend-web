@@ -213,6 +213,10 @@ const CategoryManagement = () => {
       
       {loading ? (
         <Typography sx={{ my: 4, textAlign: 'center' }}>Cargando categorías...</Typography>
+      ) : categories.dataNotAvailable ? (
+        <Alert severity="info" sx={{ mt: 4 }}>
+          {categories.error || "No hay categorías disponibles. Se mostrarán cuando se creen categorías en la plataforma."}
+        </Alert>
       ) : categories.length > 0 ? (
         <Grid container spacing={3} sx={{ mt: 2 }}>
           {categories.map((category) => (

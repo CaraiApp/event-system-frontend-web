@@ -119,6 +119,7 @@ const DataTable = ({
   searchable = true,
   filterable = false,
   emptyMessage = "No hay datos disponibles",
+  dataNotAvailable, // Flag para indicar si los datos no están disponibles del todo
   sortable = true,
   initialSort = null,
   initialSortDirection = 'asc',

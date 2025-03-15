@@ -239,6 +239,9 @@ const UserManagement = ({ isOrganizers = false }) => {
         totalCount={totalUsers}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
+        emptyMessage={users && users.dataNotAvailable 
+          ? (users.error || "No hay datos de usuarios disponibles. Se mostrarán cuando haya usuarios registrados.")
+          : "No hay usuarios para mostrar"}
       />
       
       {/* Dialog para crear/editar usuario */}

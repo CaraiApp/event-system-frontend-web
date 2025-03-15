@@ -117,6 +117,12 @@ const Overview = () => {
         subtitle="Bienvenido al panel de administración de EntradasMelilla. Aquí puedes ver una visión general de todo el sistema."
       />
 
+      {dashboardData?.dataNotAvailable ? (
+        <Alert severity="info" sx={{ mb: 4 }}>
+          {dashboardData.error || "No hay datos disponibles en este momento. Se mostrarán cuando haya actividad en la plataforma."}
+        </Alert>
+      ) : null}
+
       {/* Tarjetas de estadísticas */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
@@ -167,6 +173,7 @@ const Overview = () => {
             xKey="name"
             series={[{ dataKey: 'value', name: 'Ingresos (€)', color: '#4caf50' }]}
             height={320}
+            emptyMessage={dashboardData?.dataNotAvailable ? "No hay datos de ingresos disponibles" : "No hay datos de ingresos para mostrar"}
           />
         </Grid>
         <Grid item xs={12} md={4}>
@@ -177,6 +184,7 @@ const Overview = () => {
             xKey="name"
             series={[{ dataKey: 'value', name: 'Eventos' }]}
             height={320}
+            emptyMessage={dashboardData?.dataNotAvailable ? "No hay datos de categorías disponibles" : "No hay datos de categorías para mostrar"}
           />
         </Grid>
       </Grid>
@@ -191,6 +199,7 @@ const Overview = () => {
             xKey="name"
             series={[{ dataKey: 'value', name: 'Nuevos Usuarios', color: '#2196f3' }]}
             height={320}
+            emptyMessage={dashboardData?.dataNotAvailable ? "No hay datos de usuarios disponibles" : "No hay datos de crecimiento para mostrar"}
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -224,7 +233,9 @@ const Overview = () => {
                 {(!dashboardData?.recentEvents || dashboardData.recentEvents.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={4} align="center">
-                      No hay eventos recientes
+                      {dashboardData?.dataNotAvailable 
+                        ? "No hay datos de eventos disponibles" 
+                        : "No hay eventos recientes"}
                     </TableCell>
                   </TableRow>
                 )}
