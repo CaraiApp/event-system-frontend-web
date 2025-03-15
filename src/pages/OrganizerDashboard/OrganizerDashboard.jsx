@@ -15,6 +15,7 @@ import {
 import axios from 'axios';
 import './OrganizerDashboard.css';
 import { COMMON_STRINGS } from '../../utils/strings';
+import DebugPanel from '../../components/DebugPanel/DebugPanel';
 
 const drawerWidth = 240;
 
@@ -531,6 +532,7 @@ const OrganizerDashboard = () => {
         <Container maxWidth="xl" sx={{ mt: 2, mb: 4 }}>
           <Outlet /> {/* Renders child routes */}
         </Container>
+        <DebugPanel />
       </Box>
     </Box>
   );

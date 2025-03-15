@@ -9,6 +9,7 @@ import CategoryManagement from './pages/CategoryManagement';
 import Reports from './pages/Reports';
 import SystemSettings from './pages/SystemSettings';
 import { AdminDashboardProvider, useAdminDashboard } from './hooks/AdminDashboardContext';
+import DebugPanel from '../../components/DebugPanel/DebugPanel';
 
 // Componente de protección de rutas admin
 const AdminProtectedRoute = ({ children }) => {
@@ -84,6 +85,7 @@ const AdminDashboardContent = () => {
         {/* Ruta por defecto y manejo de rutas no encontradas */}
         <Route path="*" element={<Navigate to="/admin/overview" replace />} />
       </Routes>
+      <DebugPanel />
     </DashboardLayout>
   );
 };
