@@ -297,7 +297,7 @@ const Header = () => {
                   </Link>
                  )}
                  {user?.role === "admin" && (
-                  <Link to="/admin" className="dropdown-item">
+                  <Link to="/admin/overview" className="dropdown-item">
                     Panel de Administración
                   </Link>
                  )}
