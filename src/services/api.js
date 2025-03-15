@@ -18,7 +18,18 @@ export const authAPI = {
   
   // Registrar usuario
   register: async (userData) => {
-    return axios.post('/api/v1/auth/register', userData);
+    // Log para depuración
+    console.log('Enviando datos de registro:', userData);
+    
+    // Intentar primero con la ruta de autenticación
+    try {
+      return await axios.post('/api/v1/auth/register', userData);
+    } catch (error) {
+      console.log('Error en ruta auth/register, intentando ruta alternativa...', error.message);
+      
+      // Si falla, intentar con la ruta directa de usuario
+      return axios.post('/api/v1/users/createUser', userData);
+    }
   },
   
   // Obtener información del usuario actual
@@ -42,6 +53,11 @@ export const authAPI = {
   // Restablecer contraseña
   resetPassword: async (token, password) => {
     return axios.post(`/api/v1/auth/resetpassword/${token}`, { password });
+  },
+  
+  // Reenviar correo de verificación
+  resendVerificationEmail: async (email) => {
+    return axios.post('/api/v1/auth/resend-verification', { email });
   }
 };
 

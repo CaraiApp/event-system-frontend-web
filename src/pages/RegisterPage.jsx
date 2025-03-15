@@ -273,19 +273,22 @@ const SignUp = () => {
       // Set loading state to true while making the request
       setLoading(true);
 
-      // Usar axios para aprovechar el proxy CORS
-      const { default: axios } = await import('axios');
+      // Usar el servicio API centralizado
+      const { default: api } = await import('../services/api.js');
       
-      // Hacer la petición a través de axios que ya tiene configurado el proxy CORS
-      const response = await axios.post('/api/v1/users/createUser', user);
+      // Hacer la petición a través del servicio API
+      const response = await api.auth.register(user);
       
-      // Acceder directamente a la respuesta de axios
+      // Acceder directamente a la respuesta
       const data = response.data;
       
       console.log("User created successfully:", data);
       
-      // Mostrar mensaje de éxito
-      setSuccess("¡Registro exitoso! Por favor, revisa tu correo electrónico para activar tu cuenta y poder iniciar sesión.");
+      // Mostrar mensaje de éxito con información adicional
+      setSuccess(
+        `¡Registro exitoso! Por favor, revisa tu correo electrónico (${user.email}) para activar tu cuenta. 
+        Si no recibes el correo en unos minutos, verifica tu carpeta de spam o solicita un nuevo correo de verificación en la página de inicio de sesión.`
+      );
       
       // Redirigir al login después de 5 segundos
       setTimeout(() => {

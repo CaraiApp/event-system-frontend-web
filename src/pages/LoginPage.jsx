@@ -208,15 +208,19 @@ const CssTextField = styled(TextField)({
 const SignIn = () => {
 
   const [loading, setLoading] = useState(false); // Loading state
+  const [resendLoading, setResendLoading] = useState(false); // Loading state for resend verification
+  const [showResendForm, setShowResendForm] = useState(false); // Show resend verification form
+  const [resendSuccess, setResendSuccess] = useState(""); // Success message for resend
 
   const mediaLessthanmd = useMediaQuery(theme.breakpoints.down("md"));
   const email = useRef();
   const password = useRef();
+  const resendEmail = useRef();
 
   const navigate = useNavigate();
 
-
   const [error, setError] = useState("");
+  const [resendError, setResendError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -266,6 +270,51 @@ const SignIn = () => {
     }
   };
 
+  // Manejar el reenvío del correo de verificación
+  const handleResendVerification = async (e) => {
+    e.preventDefault();
+    
+    // Reset messages
+    setResendError("");
+    setResendSuccess("");
+    
+    // Validar el correo electrónico
+    if (!resendEmail.current.value) {
+      setResendError("Por favor, introduce tu correo electrónico");
+      return;
+    }
+    
+    try {
+      setResendLoading(true);
+      
+      // Importar el servicio API
+      const { default: api } = await import('../services/api.js');
+      
+      // Llamar al endpoint de reenvío
+      await api.auth.resendVerificationEmail(resendEmail.current.value);
+      
+      // Mostrar mensaje de éxito
+      setResendSuccess(`Se ha enviado un nuevo correo de verificación a ${resendEmail.current.value}. Por favor, revisa tu bandeja de entrada y carpeta de spam.`);
+      
+      // Ocultar el formulario después de 5 segundos
+      setTimeout(() => {
+        setShowResendForm(false);
+        setResendSuccess("");
+      }, 5000);
+    } catch (error) {
+      console.error("Error al reenviar correo de verificación:", error);
+      
+      // Mostrar mensaje de error
+      if (error.response && error.response.data) {
+        setResendError(error.response.data.message || "Error al reenviar el correo de verificación");
+      } else {
+        setResendError("Error de conexión. Por favor, inténtalo de nuevo más tarde.");
+      }
+    } finally {
+      setResendLoading(false);
+    }
+  };
+  
   React.useEffect(() => {
     // Scroll to the top of the page when the component mounts
     window.scrollTo(0, 0);
@@ -447,6 +496,110 @@ const SignIn = () => {
                     </Link>
                   </Grid>
                 </Grid>
+                
+                {/* Link para reenviar correo de verificación */}
+                <Grid container justifyContent="center" style={{marginTop: '20px'}}>
+                  <Grid item>
+                    <Button 
+                      variant="text" 
+                      onClick={() => setShowResendForm(!showResendForm)}
+                      sx={{
+                        fontSize: '0.9rem',
+                        color: '#6497df',
+                        textTransform: 'none'
+                      }}
+                    >
+                      {showResendForm ? 'Ocultar formulario' : '¿No recibiste el correo de verificación?'}
+                    </Button>
+                  </Grid>
+                </Grid>
+                
+                {/* Formulario para reenviar correo de verificación */}
+                {showResendForm && (
+                  <Box 
+                    component="form" 
+                    onSubmit={handleResendVerification}
+                    sx={{ 
+                      mt: 2, 
+                      p: 2, 
+                      border: '1px solid #e0e0e0', 
+                      borderRadius: 1,
+                      bgcolor: '#f5f5f5'
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>
+                      Reenviar correo de verificación
+                    </Typography>
+                    
+                    {/* Mensaje de éxito */}
+                    {resendSuccess && (
+                      <Box 
+                        sx={{
+                          p: 2,
+                          mb: 2,
+                          width: '100%',
+                          borderRadius: 1,
+                          bgcolor: '#e8f5e9',
+                          color: '#2e7d32',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        {resendSuccess}
+                      </Box>
+                    )}
+                    
+                    {/* Mensaje de error */}
+                    {resendError && (
+                      <Box 
+                        sx={{
+                          p: 2,
+                          mb: 2,
+                          width: '100%',
+                          borderRadius: 1,
+                          bgcolor: '#ffebee',
+                          color: '#d32f2f',
+                          fontSize: '0.9rem'
+                        }}
+                      >
+                        {resendError}
+                      </Box>
+                    )}
+                    
+                    <CssTextField
+                      label="Correo electrónico"
+                      variant="outlined"
+                      fullWidth
+                      required
+                      inputRef={resendEmail}
+                      type="email"
+                      size="small"
+                      sx={{ mb: 2 }}
+                      InputProps={{
+                        style: { fontSize: '1rem', textTransform: 'lowercase' }
+                      }}
+                      InputLabelProps={{
+                        style: { fontSize: '0.9rem' }
+                      }}
+                    />
+                    
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      fullWidth
+                      size="small"
+                      disabled={resendLoading}
+                      sx={{ 
+                        textTransform: 'none',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      {resendLoading ? 
+                        <CircularProgress size={20} color="inherit" /> : 
+                        'Enviar correo de verificación'
+                      }
+                    </Button>
+                  </Box>
+                )}
               </form>
             </Grid>
           </Grid>
