@@ -38,9 +38,9 @@ const Overview = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        console.log('Cargando datos del dashboard a través del servicio API (que ahora usa datos estáticos)');
+        console.log('Cargando datos del dashboard a través del servicio API');
         
-        // Usamos el servicio API que ahora contiene datos estáticos
+        // Usamos el servicio API con datos estáticos
         const response = await adminApi.getDashboardOverview();
         
         if (response?.data?.data) {
@@ -54,26 +54,7 @@ const Overview = () => {
         setError(null);
       } catch (err) {
         console.error('Error en la carga de datos:', err);
-        console.log('Usando datos de fallback');
-        
-        // Datos de fallback ultra simples
-        setDashboardData({
-          userCount: 100,
-          newUsers: 15,
-          totalEvents: 30,
-          activeEventCount: 20,
-          bookingCount: 250,
-          totalRevenue: 15000,
-          popularCategories: [
-            { name: 'Conciertos', count: 12 },
-            { name: 'Deportes', count: 8 }
-          ],
-          recentEvents: [
-            { id: 1, title: 'Evento Ejemplo', organizer: 'Organizador', date: new Date().toISOString(), attendees: 100, capacity: 150, status: 'active' }
-          ],
-          revenueByMonth: { 'Ene': 5000, 'Feb': 5500, 'Mar': 6000 },
-          userGrowth: { 'Ene': 10, 'Feb': 15, 'Mar': 20 }
-        });
+        setError('Error al cargar los datos del dashboard. Por favor, inténtalo de nuevo.');
       } finally {
         setLoading(false);
       }

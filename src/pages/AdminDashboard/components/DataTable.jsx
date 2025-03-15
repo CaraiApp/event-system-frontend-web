@@ -1,330 +1,336 @@
 import React, { useState } from 'react';
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableContainer, 
+  TableHead, 
   TableRow,
-  Typography,
+  TablePagination,
+  Paper,
   Box,
-  Chip,
+  TextField,
   IconButton,
   Tooltip,
-  LinearProgress,
-  useTheme
+  Typography,
+  InputAdornment,
+  Chip
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
-import StarIcon from '@mui/icons-material/Star';
-import StarOutlineIcon from '@mui/icons-material/StarOutline';
+import SearchIcon from '@mui/icons-material/Search';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import SortIcon from '@mui/icons-material/Sort';
 
-// Componente de tabla de datos reutilizable
+// Mapeo de tipos de datos a renderizadores de celda
+const cellRenderers = {
+  // Renderiza un texto con avatar
+  avatar: (value, rowData) => (
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      {rowData.avatar && (
+        <Box
+          component="img"
+          src={rowData.avatar}
+          alt={value}
+          sx={{
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            mr: 2,
+            objectFit: 'cover'
+          }}
+        />
+      )}
+      <Typography variant="body2">{value}</Typography>
+    </Box>
+  ),
+  
+  // Renderiza fecha en formato local
+  date: (value) => {
+    if (!value) return '-';
+    return new Date(value).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  },
+  
+  // Renderiza chips de estado con colores
+  status: (value) => {
+    let color;
+    let label = value;
+    
+    switch (value?.toLowerCase()) {
+      case 'active':
+      case 'activo':
+        color = 'success';
+        label = 'Activo';
+        break;
+      case 'pending':
+      case 'pendiente':
+        color = 'warning';
+        label = 'Pendiente';
+        break;
+      case 'inactive':
+      case 'inactivo':
+        color = 'default';
+        label = 'Inactivo';
+        break;
+      case 'cancelled':
+      case 'cancelado':
+        color = 'error';
+        label = 'Cancelado';
+        break;
+      default:
+        color = 'primary';
+    }
+    
+    return (
+      <Chip
+        label={label}
+        color={color}
+        size="small"
+        variant="outlined"
+      />
+    );
+  },
+  
+  // Renderiza precio formateado
+  price: (value) => {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(value / 100);
+  },
+  
+  // Renderiza número entero
+  number: (value) => {
+    return value.toLocaleString('es-ES');
+  }
+};
+
 const DataTable = ({
-  columns,
-  data,
-  totalCount,
+  columns = [],
+  data = [],
+  title,
+  loading = false,
+  pagination = true,
+  onRefresh,
+  onRowClick,
+  searchable = true,
+  filterable = false,
+  emptyMessage = "No hay datos disponibles",
+  sortable = true,
+  initialSort = null,
+  initialSortDirection = 'asc',
+  // Parámetros de paginación
   page = 0,
   rowsPerPage = 10,
-  loading = false,
-  handleChangePage,
-  handleChangeRowsPerPage,
-  handleEdit,
-  handleDelete,
-  handleView,
-  handleToggleStatus,
-  handleToggleFeatured,
-  title
+  totalCount = 0,
+  onPageChange,
+  onRowsPerPageChange
 }) => {
-  const theme = useTheme();
-  const [hoveredRow, setHoveredRow] = useState(null);
-
-  // Renderizar célula con formato según el tipo
-  const renderCellContent = (column, item) => {
-    const value = column.accessor ? column.accessor(item) : item[column.id];
-
-    // Si la columna tiene un renderCell personalizado, úsalo
-    if (column.renderCell) {
-      return column.renderCell(item);
-    }
-
-    // Renderizar según el tipo de dato
-    switch (column.type) {
-      case 'date':
-        return value ? new Date(value).toLocaleDateString() : '-';
-      
-      case 'datetime':
-        return value ? new Date(value).toLocaleString() : '-';
-      
-      case 'status':
-        return (
-          <Chip
-            label={value}
-            size="small"
-            icon={value === 'active' || value === 'published' ? <CheckCircleIcon /> : <CancelIcon />}
-            color={
-              value === 'active' || value === 'published' ? 'success' :
-              value === 'pending' ? 'warning' : 'error'
-            }
-            variant="outlined"
-          />
-        );
-      
-      case 'boolean':
-        return value ? (
-          <Chip label="Sí" size="small" color="success" variant="outlined" />
-        ) : (
-          <Chip label="No" size="small" color="error" variant="outlined" />
-        );
-      
-      case 'number':
-        return typeof value === 'number' ? value.toLocaleString() : value;
-      
-      case 'featured':
-        return value ? (
-          <Chip 
-            icon={<StarIcon />} 
-            label="Destacado" 
-            size="small" 
-            color="primary" 
-            variant="outlined" 
-          />
-        ) : null;
-      
-      case 'progress':
-        const percentage = Math.min(Math.max(value, 0), 100);
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Box sx={{ width: '100%', mr: 1 }}>
-              <LinearProgress 
-                variant="determinate" 
-                value={percentage} 
-                sx={{ 
-                  height: 8, 
-                  borderRadius: 5,
-                  backgroundColor: theme.palette.grey[200],
-                  '& .MuiLinearProgress-bar': {
-                    borderRadius: 5,
-                    backgroundColor: 
-                      percentage < 30 ? theme.palette.error.main :
-                      percentage < 70 ? theme.palette.warning.main :
-                      theme.palette.success.main,
-                  },
-                }}
-              />
-            </Box>
-            <Box sx={{ minWidth: 35 }}>
-              <Typography variant="body2" color="text.secondary">
-                {percentage}%
-              </Typography>
-            </Box>
-          </Box>
-        );
-      
-      default:
-        return value;
+  // Estados locales
+  const [searchTerm, setSearchTerm] = useState('');
+  const [localPage, setLocalPage] = useState(page);
+  const [localRowsPerPage, setLocalRowsPerPage] = useState(rowsPerPage);
+  const [sortBy, setSortBy] = useState(initialSort);
+  const [sortDirection, setSortDirection] = useState(initialSortDirection);
+  
+  // Manejadores para paginación local
+  const handleChangePage = (event, newPage) => {
+    if (onPageChange) {
+      onPageChange(newPage);
+    } else {
+      setLocalPage(newPage);
     }
   };
 
+  const handleChangeRowsPerPage = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    
+    if (onRowsPerPageChange) {
+      onRowsPerPageChange(newRowsPerPage);
+      if (onPageChange) onPageChange(0); // Reset to first page
+    } else {
+      setLocalRowsPerPage(newRowsPerPage);
+      setLocalPage(0);
+    }
+  };
+
+  // Manejador para búsqueda
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+    if (onPageChange) onPageChange(0); // Reset to first page when searching
+    else setLocalPage(0);
+  };
+
+  // Manejador para ordenamiento
+  const handleSort = (column) => {
+    if (!sortable || !column.sortable) return;
+    
+    const isAsc = sortBy === column.field && sortDirection === 'asc';
+    setSortDirection(isAsc ? 'desc' : 'asc');
+    setSortBy(column.field);
+  };
+
+  // Preparar datos según búsqueda, ordenación y paginación
+  let filteredData = [...data];
+  
+  // Aplicar búsqueda si es local
+  if (searchTerm && !onPageChange) {
+    filteredData = filteredData.filter(row => 
+      columns.some(column => 
+        String(row[column.field]).toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }
+  
+  // Aplicar ordenación si es local
+  if (sortBy && !onPageChange) {
+    filteredData.sort((a, b) => {
+      const valueA = a[sortBy];
+      const valueB = b[sortBy];
+      
+      if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
+      if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }
+  
+  // Aplicar paginación si es local
+  const paginatedData = !onPageChange 
+    ? filteredData.slice(localPage * localRowsPerPage, localPage * localRowsPerPage + localRowsPerPage)
+    : filteredData;
+
+  // Renderizar celda según el tipo
+  const renderCell = (column, row) => {
+    const value = row[column.field];
+    
+    if (value === undefined || value === null) {
+      return column.emptyValue || '-';
+    }
+    
+    if (column.render) {
+      return column.render(value, row);
+    }
+    
+    if (column.type && cellRenderers[column.type]) {
+      return cellRenderers[column.type](value, row);
+    }
+    
+    return value;
+  };
+
   return (
-    <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: 2 }}>
-      {title && (
-        <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-          <Typography variant="h6" component="div">
-            {title}
-          </Typography>
+    <Paper sx={{ width: '100%', overflow: 'hidden', borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
+      {/* Cabecera de la tabla */}
+      {(title || searchable || onRefresh) && (
+        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {title && (
+            <Typography variant="h6" component="div">
+              {title}
+            </Typography>
+          )}
+          
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {searchable && (
+              <TextField
+                variant="outlined"
+                size="small"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={handleSearch}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+            
+            {filterable && (
+              <Tooltip title="Filtrar">
+                <IconButton color="default" size="small">
+                  <FilterListIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            
+            {onRefresh && (
+              <Tooltip title="Actualizar">
+                <IconButton onClick={onRefresh} color="primary" size="small">
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
         </Box>
       )}
       
-      <TableContainer sx={{ maxHeight: 'calc(100vh - 240px)' }}>
-        {loading && (
-          <LinearProgress 
-            sx={{ 
-              height: 3, 
-              '& .MuiLinearProgress-bar': {
-                backgroundColor: theme.palette.primary.main,
-              },
-            }} 
-          />
-        )}
-        
-        <Table stickyHeader aria-label="sticky table">
+      {/* Tabla */}
+      <TableContainer sx={{ maxHeight: 600 }}>
+        <Table stickyHeader sx={{ minWidth: 650 }} size="medium">
           <TableHead>
             <TableRow>
               {columns.map((column) => (
-                <TableCell
-                  key={column.id}
+                <TableCell 
+                  key={column.field}
                   align={column.align || 'left'}
-                  style={{ 
-                    minWidth: column.minWidth || 'auto',
-                    maxWidth: column.maxWidth,
-                    width: column.width,
-                    backgroundColor: theme.palette.grey[50]
+                  width={column.width}
+                  sx={{ 
+                    fontWeight: 'bold',
+                    cursor: sortable && column.sortable ? 'pointer' : 'default',
+                    '&:hover': {
+                      backgroundColor: sortable && column.sortable ? 'rgba(0, 0, 0, 0.04)' : 'inherit'
+                    }
                   }}
+                  onClick={() => handleSort(column)}
                 >
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    {column.header}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    {column.headerName || column.field}
+                    {sortable && column.sortable && sortBy === column.field && (
+                      <SortIcon 
+                        fontSize="small" 
+                        sx={{ 
+                          ml: 0.5,
+                          transform: sortDirection === 'desc' ? 'rotate(180deg)' : 'none'
+                        }} 
+                      />
+                    )}
+                  </Box>
                 </TableCell>
               ))}
-              
-              {/* Columna de acciones */}
-              {(handleEdit || handleDelete || handleView || handleToggleStatus || handleToggleFeatured) && (
-                <TableCell 
-                  align="center" 
-                  style={{ 
-                    width: 150, 
-                    backgroundColor: theme.palette.grey[50]
-                  }}
-                >
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    Acciones
-                  </Typography>
-                </TableCell>
-              )}
             </TableRow>
           </TableHead>
-          
           <TableBody>
-            {data.map((row, index) => {
-              return (
-                <TableRow 
-                  hover 
-                  role="checkbox" 
-                  tabIndex={-1} 
+            {paginatedData.length > 0 ? (
+              paginatedData.map((row, index) => (
+                <TableRow
+                  hover
                   key={row.id || index}
-                  onMouseEnter={() => setHoveredRow(row.id || index)}
-                  onMouseLeave={() => setHoveredRow(null)}
+                  onClick={() => onRowClick && onRowClick(row)}
                   sx={{ 
-                    '&:hover': { 
-                      backgroundColor: theme.palette.action.hover 
-                    },
-                    cursor: 'pointer'
+                    cursor: onRowClick ? 'pointer' : 'default',
+                    '&:last-child td, &:last-child th': { border: 0 }
                   }}
                 >
                   {columns.map((column) => (
                     <TableCell 
-                      key={column.id} 
+                      key={`${row.id || index}-${column.field}`}
                       align={column.align || 'left'}
-                      onClick={() => handleView && handleView(row)}
-                      sx={{ 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis',
-                        whiteSpace: column.wrap ? 'normal' : 'nowrap',
-                        maxWidth: column.maxWidth
-                      }}
                     >
-                      {renderCellContent(column, row)}
+                      {renderCell(column, row)}
                     </TableCell>
                   ))}
-                  
-                  {/* Columna de acciones */}
-                  {(handleEdit || handleDelete || handleView || handleToggleStatus || handleToggleFeatured) && (
-                    <TableCell align="center">
-                      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                        {handleView && (
-                          <Tooltip title="Ver detalles">
-                            <IconButton 
-                              size="small" 
-                              color="primary" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleView(row);
-                              }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        
-                        {handleEdit && (
-                          <Tooltip title="Editar">
-                            <IconButton 
-                              size="small" 
-                              color="primary" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(row);
-                              }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        
-                        {handleToggleStatus && (
-                          <Tooltip title={row.status === 'published' ? 'Despublicar' : 'Publicar'}>
-                            <IconButton 
-                              size="small" 
-                              color={row.status === 'published' ? 'error' : 'success'}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleStatus(row);
-                              }}
-                            >
-                              {row.status === 'published' ? (
-                                <CancelIcon fontSize="small" />
-                              ) : (
-                                <CheckCircleIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        
-                        {handleToggleFeatured && (
-                          <Tooltip title={row.featured ? 'Quitar de destacados' : 'Destacar'}>
-                            <IconButton 
-                              size="small" 
-                              color="primary" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleFeatured(row);
-                              }}
-                            >
-                              {row.featured ? (
-                                <StarIcon fontSize="small" color="warning" />
-                              ) : (
-                                <StarOutlineIcon fontSize="small" />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        
-                        {handleDelete && (
-                          <Tooltip title="Eliminar">
-                            <IconButton 
-                              size="small" 
-                              color="error" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(row);
-                              }}
-                            >
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                    </TableCell>
-                  )}
                 </TableRow>
-              );
-            })}
-            
-            {data.length === 0 && (
+              ))
+            ) : (
               <TableRow>
-                <TableCell 
-                  colSpan={columns.length + (handleEdit || handleDelete || handleView ? 1 : 0)} 
-                  align="center"
-                  sx={{ py: 6 }}
-                >
+                <TableCell colSpan={columns.length} align="center" sx={{ py: 3 }}>
                   <Typography variant="body1" color="text.secondary">
-                    {loading ? 'Cargando datos...' : 'No hay datos disponibles'}
+                    {loading ? 'Cargando datos...' : emptyMessage}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -333,17 +339,22 @@ const DataTable = ({
         </Table>
       </TableContainer>
       
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        component="div"
-        count={totalCount}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        labelRowsPerPage="Filas por página:"
-        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-      />
+      {/* Paginación */}
+      {pagination && (
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={onPageChange ? totalCount : filteredData.length}
+          rowsPerPage={onRowsPerPageChange ? rowsPerPage : localRowsPerPage}
+          page={onPageChange ? page : localPage}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Filas por página:"
+          labelDisplayedRows={({ from, to, count }) => 
+            `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`
+          }
+        />
+      )}
     </Paper>
   );
 };

@@ -1,106 +1,98 @@
 import React from 'react';
-import { Box, Typography, Button, Breadcrumbs, Link, useTheme } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Box, Typography, Button, Paper, Breadcrumbs, Link } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import { Link as RouterLink } from 'react-router-dom';
 
-// Componente para encabezados de página
 const PageHeader = ({ 
   title, 
   subtitle, 
-  action,
-  actionText = 'Acción',
-  actionIcon,
-  breadcrumbs = [],
-  onActionClick
+  button, 
+  breadcrumbs = [], 
+  children,
+  paddingBottom = 4,
+  marginBottom = 4
 }) => {
-  const theme = useTheme();
+  // Si hay breadcrumbs, generar una lista de ellos
+  const renderBreadcrumbs = () => {
+    if (breadcrumbs.length === 0) return null;
+
+    return (
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{ mb: 1 }}
+      >
+        <Link
+          component={RouterLink}
+          underline="hover"
+          color="inherit"
+          to="/admin"
+        >
+          Dashboard
+        </Link>
+        {breadcrumbs.map((breadcrumb, index) => {
+          const isLast = index === breadcrumbs.length - 1;
+
+          return isLast ? (
+            <Typography key={index} color="text.primary">
+              {breadcrumb.label}
+            </Typography>
+          ) : (
+            <Link
+              key={index}
+              component={RouterLink}
+              underline="hover"
+              color="inherit"
+              to={breadcrumb.path}
+            >
+              {breadcrumb.label}
+            </Link>
+          );
+        })}
+      </Breadcrumbs>
+    );
+  };
 
   return (
-    <Box sx={{ mb: 3 }}>
-      {/* Breadcrumbs */}
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <Breadcrumbs 
-          separator={<NavigateNextIcon fontSize="small" />} 
-          aria-label="breadcrumb"
-          sx={{ mb: 1 }}
-        >
-          <Link 
-            component={RouterLink} 
-            color="inherit" 
-            to="/admin/overview"
-            underline="hover"
-          >
-            Dashboard
-          </Link>
-          
-          {breadcrumbs.map((crumb, index) => {
-            const isLast = index === breadcrumbs.length - 1;
-            return isLast ? (
-              <Typography key={index} color="text.primary">
-                {crumb.label}
-              </Typography>
-            ) : (
-              <Link
-                key={index}
-                component={RouterLink}
-                to={crumb.link}
-                color="inherit"
-                underline="hover"
-              >
-                {crumb.label}
-              </Link>
-            );
-          })}
-        </Breadcrumbs>
-      )}
+    <Box 
+      component={Paper} 
+      elevation={0} 
+      sx={{ 
+        p: 4, 
+        pb: paddingBottom,
+        mb: marginBottom, 
+        borderRadius: 2,
+        backgroundColor: 'white' 
+      }}
+    >
+      {renderBreadcrumbs()}
       
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          flexWrap: 'wrap'
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box>
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            gutterBottom={Boolean(subtitle)} 
-            sx={{ 
-              fontWeight: 600,
-              color: theme.palette.text.primary
-            }}
-          >
+          <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 600 }}>
             {title}
           </Typography>
-          
           {subtitle && (
-            <Typography 
-              variant="subtitle1" 
-              color="text.secondary"
-              sx={{ maxWidth: '800px' }}
-            >
+            <Typography variant="body1" color="text.secondary">
               {subtitle}
             </Typography>
           )}
         </Box>
         
-        {action && (
+        {button && (
           <Button
-            variant="contained"
-            color="primary"
-            startIcon={actionIcon}
-            onClick={onActionClick}
-            sx={{ 
-              fontWeight: 'medium',
-              mt: { xs: 2, sm: 0 }
-            }}
+            variant={button.variant || "contained"}
+            color={button.color || "primary"}
+            size="medium"
+            startIcon={button.icon}
+            onClick={button.onClick}
           >
-            {actionText}
+            {button.label}
           </Button>
         )}
       </Box>
+      
+      {children}
     </Box>
   );
 };

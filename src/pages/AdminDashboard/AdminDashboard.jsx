@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { CircularProgress, Box, Typography, Alert } from '@mui/material';
 import DashboardLayout from './components/DashboardLayout';
 import Overview from './pages/Overview';
 import UserManagement from './pages/UserManagement';
 import EventManagement from './pages/EventManagement';
+import CategoryManagement from './pages/CategoryManagement';
+import Reports from './pages/Reports';
 import SystemSettings from './pages/SystemSettings';
-import { AdminDashboardProvider, useAdminDashboard } from './hooks/AdminDashboardContext.jsx';
-import adminApi from './services/api';
+import { AdminDashboardProvider, useAdminDashboard } from './hooks/AdminDashboardContext';
 
 // Componente de protección de rutas admin
 const AdminProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isAdmin, loading } = useAdminDashboard();
+  const { isAuthenticated, isAdmin, loading, error } = useAdminDashboard();
   const location = useLocation();
 
   if (loading) {
@@ -33,6 +34,14 @@ const AdminProtectedRoute = ({ children }) => {
         <Alert severity="error">
           No tienes permiso para acceder a esta área. Se requiere rol de administrador.
         </Alert>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
       </Box>
     );
   }
@@ -66,37 +75,11 @@ const AdminDashboardContent = () => {
       <Routes>
         <Route path="overview" element={<Overview />} />
         <Route path="users" element={<UserManagement />} />
-        <Route path="organizers" element={<UserManagement />} />
+        <Route path="organizers" element={<UserManagement isOrganizers />} />
         <Route path="events" element={<EventManagement />} />
+        <Route path="categories" element={<CategoryManagement />} />
+        <Route path="reports" element={<Reports />} />
         <Route path="settings" element={<SystemSettings />} />
-        
-        {/* Páginas por implementar */}
-        <Route path="categories" element={
-          <Box sx={{ p: 3 }}>
-            <Typography variant="h4">Gestión de Categorías</Typography>
-            <Typography variant="body1" sx={{ mt: 2 }}>
-              Esta funcionalidad está en desarrollo.
-            </Typography>
-          </Box>
-        } />
-        
-        <Route path="reports" element={
-          <Box sx={{ p: 3 }}>
-            <Typography variant="h4">Informes y Estadísticas</Typography>
-            <Typography variant="body1" sx={{ mt: 2 }}>
-              Esta funcionalidad está en desarrollo.
-            </Typography>
-          </Box>
-        } />
-        
-        <Route path="profile" element={
-          <Box sx={{ p: 3 }}>
-            <Typography variant="h4">Mi Perfil de Administrador</Typography>
-            <Typography variant="body1" sx={{ mt: 2 }}>
-              Esta funcionalidad está en desarrollo.
-            </Typography>
-          </Box>
-        } />
         
         {/* Ruta por defecto y manejo de rutas no encontradas */}
         <Route path="*" element={<Navigate to="/admin/overview" replace />} />

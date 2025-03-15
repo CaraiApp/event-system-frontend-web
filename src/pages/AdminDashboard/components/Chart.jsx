@@ -1,77 +1,52 @@
 import React from 'react';
-import { Paper, Typography, Box, useTheme } from '@mui/material';
+import { Card, CardContent, Typography, Box } from '@mui/material';
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
+  LineChart, Line, BarChart, Bar, PieChart, Pie, 
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
+  ResponsiveContainer, Cell
 } from 'recharts';
 
-// Componente para mostrar gráficos
+// Colores para gráficos
+const COLORS = ['#2196f3', '#4caf50', '#ff9800', '#f44336', '#9c27b0', '#03a9f4', '#e91e63', '#009688'];
+
 const Chart = ({ 
   type = 'line', 
-  data = [], 
   title, 
-  height = 300, 
+  data = [], 
   xKey = 'name', 
-  series = [{ dataKey: 'value', color: '#8884d8', name: 'Valor' }] 
+  series = [{ dataKey: 'value', name: 'Valor', color: '#2196f3' }],
+  height = 300,
+  showLegend = true
 }) => {
-  const theme = useTheme();
-
-  // Colores para gráficas
-  const COLORS = [
-    theme.palette.primary.main,
-    theme.palette.secondary.main,
-    theme.palette.success.main,
-    theme.palette.warning.main,
-    theme.palette.error.main,
-    theme.palette.info.main,
-    ...series.map(s => s.color).filter(Boolean)
-  ];
-  
-  // Renderiza el tipo de gráfico correcto
+  // Renderizar el tipo de gráfico adecuado
   const renderChart = () => {
     switch (type) {
       case 'line':
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+            <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey={xKey} 
-                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                stroke={theme.palette.divider}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
               />
               <YAxis 
-                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                stroke={theme.palette.divider}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: theme.palette.background.paper,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 4,
-                  boxShadow: theme.shadows[3]
-                }}
-              />
-              <Legend />
-              {series.map((s, index) => (
+              <Tooltip />
+              {showLegend && <Legend />}
+              {series.map((s, i) => (
                 <Line
                   key={s.dataKey}
                   type="monotone"
                   dataKey={s.dataKey}
-                  name={s.name || s.dataKey}
-                  stroke={s.color || COLORS[index % COLORS.length]}
-                  activeDot={{ r: 8 }}
+                  name={s.name}
+                  stroke={s.color || COLORS[i % COLORS.length]}
+                  activeDot={{ r: 6 }}
                   strokeWidth={2}
                 />
               ))}
@@ -82,32 +57,27 @@ const Chart = ({
       case 'bar':
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+            <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis 
                 dataKey={xKey} 
-                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                stroke={theme.palette.divider}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
               />
               <YAxis 
-                tick={{ fill: theme.palette.text.secondary, fontSize: 12 }}
-                stroke={theme.palette.divider}
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#666' }}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: theme.palette.background.paper,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 4,
-                  boxShadow: theme.shadows[3]
-                }}
-              />
-              <Legend />
-              {series.map((s, index) => (
+              <Tooltip />
+              {showLegend && <Legend />}
+              {series.map((s, i) => (
                 <Bar
                   key={s.dataKey}
                   dataKey={s.dataKey}
-                  name={s.name || s.dataKey}
-                  fill={s.color || COLORS[index % COLORS.length]}
+                  name={s.name}
+                  fill={s.color || COLORS[i % COLORS.length]}
                   radius={[4, 4, 0, 0]}
                 />
               ))}
@@ -118,65 +88,48 @@ const Chart = ({
       case 'pie':
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <PieChart>
+            <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <Pie
                 data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={height / 2.5}
-                fill="#8884d8"
                 dataKey={series[0]?.dataKey || 'value'}
                 nameKey={xKey}
+                cx="50%"
+                cy="50%"
+                outerRadius={height / 3}
+                fill="#8884d8"
                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
               >
-                {data.map((entry, index) => (
-                  <Cell 
-                    key={`cell-${index}`} 
-                    fill={entry.color || COLORS[index % COLORS.length]} 
-                  />
+                {data.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: theme.palette.background.paper,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 4,
-                  boxShadow: theme.shadows[3]
-                }}
-              />
-              <Legend />
+              <Tooltip />
+              {showLegend && <Legend />}
             </PieChart>
           </ResponsiveContainer>
         );
-        
+      
       default:
         return <Typography color="error">Tipo de gráfico no soportado</Typography>;
     }
   };
 
   return (
-    <Paper
-      elevation={1}
-      sx={{
-        p: 2,
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        borderRadius: 2,
-        overflow: 'hidden',
-      }}
-    >
-      {title && (
-        <Box sx={{ mb: 2 }}>
+    <Card sx={{ 
+      height: '100%',
+      borderRadius: 2,
+      boxShadow: '0 2px 10px rgba(0,0,0,0.08)',
+      overflow: 'hidden'
+    }}>
+      <CardContent sx={{ p: 3 }}>
+        <Box sx={{ mb: 3 }}>
           <Typography variant="h6" color="text.primary">
             {title}
           </Typography>
         </Box>
-      )}
-      
-      {renderChart()}
-    </Paper>
+        {renderChart()}
+      </CardContent>
+    </Card>
   );
 };
 

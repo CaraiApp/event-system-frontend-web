@@ -95,7 +95,7 @@ import MapManager from '../pages/OrganizerDashboard/pages/MapManager/MapManager'
 
 // Dashboard de Administrador
 import AdminDashboard from '../pages/AdminDashboard/AdminDashboard';
-import AdminHome from '../pages/AdminDashboard/pages/Dashboard';
+import AdminHome from '../pages/AdminDashboard/pages/Overview';
 import UserManagement from '../pages/AdminDashboard/pages/UserManagement';
 import EventManagement from '../pages/AdminDashboard/pages/EventManagement';
 import Reports from '../pages/AdminDashboard/pages/Reports';
@@ -219,17 +219,7 @@ const Routers = () => {
       </Route>
 
       {/* Dashboard de Administrador - Ruta independiente */}
-      <Route path="/admin" element={<AdminRoute element={<AdminDashboard />} />}>
-        <Route index element={<AdminHome />} />
-        <Route path="users" element={<UserManagement />} />
-        <Route path="events" element={<EventManagement />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="categories" element={<CategoryManagement />} />
-        <Route path="settings" element={<SystemSettings />} />
-        <Route path="communications" element={<Reports />} /> {/* Falta implementar */}
-        <Route path="templates" element={<CategoryManagement />} /> {/* Falta implementar */}
-        <Route path="organizers" element={<UserManagement />} /> {/* Filtro especial para organizadores */}
-      </Route>
+      <Route path="/admin/*" element={<AdminRoute element={<AdminDashboard />} />} />
 
       {/* Template Manager (accesible por admin y organizador) */}
       <Route path="/template-manager" element={<PrivateRoute element={<TemplateManager />} />} />
