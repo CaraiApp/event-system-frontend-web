@@ -40,27 +40,48 @@ const adminApi = {
   login: (credentials) => api.post('/api/v1/auth/login', credentials),
   logout: () => api.post('/api/v1/auth/logout'),
   
-  // Dashboard Overview
+  // Dashboard Overview - completamente estático, sin llamadas API
   getDashboardOverview: async () => {
-    try {
-      console.log('Realizando petición a /api/v1/dashboard/admin/overview');
-      const response = await api.get('/api/v1/dashboard/admin/overview');
-      console.log('Respuesta recibida:', response);
-      return response;
-    } catch (error) {
-      console.error('Error en getDashboardOverview:', error);
-      
-      // Intentamos con una ruta alternativa en caso de error
-      try {
-        console.log('Intentando ruta alternativa...');
-        const fallbackResponse = await api.get('/api/v1/dashboard/admin');
-        console.log('Respuesta alternativa recibida:', fallbackResponse);
-        return fallbackResponse;
-      } catch (fallbackError) {
-        console.error('Error también en ruta alternativa:', fallbackError);
-        throw error; // Lanzamos el error original
+    console.log('Solicitados datos del dashboard - USANDO DATOS ESTÁTICOS');
+    
+    // DATOS ESTÁTICOS - Sin llamadas API
+    return {
+      data: {
+        success: true,
+        data: {
+          userCount: 250,
+          newUsers: 28,
+          totalEvents: 68,
+          activeEventCount: 45,
+          pendingEventCount: 23,
+          bookingCount: 583,
+          totalRevenue: 38450,
+          popularCategories: [
+            { name: 'Conciertos', count: 18 },
+            { name: 'Deportes', count: 15 },
+            { name: 'Teatro', count: 12 },
+            { name: 'Festivales', count: 10 },
+            { name: 'Conferencias', count: 8 }
+          ],
+          systemHealth: 98,
+          recentEvents: [
+            { id: 1, title: 'Concierto Local', organizer: 'Promotor Musical', date: "2023-09-15", attendees: 123, capacity: 200, status: 'active' },
+            { id: 2, title: 'Partido Amistoso', organizer: 'Club Deportivo', date: "2023-09-18", attendees: 450, capacity: 500, status: 'active' },
+            { id: 3, title: 'Obra de Teatro', organizer: 'Teatro Municipal', date: "2023-09-22", attendees: 87, capacity: 150, status: 'active' },
+            { id: 4, title: 'Carrera Solidaria', organizer: 'ONG Local', date: "2023-09-25", attendees: 320, capacity: 400, status: 'active' },
+            { id: 5, title: 'Exposición de Arte', organizer: 'Galería Central', date: "2023-09-28", attendees: 64, capacity: 100, status: 'active' }
+          ],
+          revenueByMonth: {
+            'Ene': 5200, 'Feb': 4800, 'Mar': 6300, 'Abr': 7200, 
+            'May': 8600, 'Jun': 9400, 'Jul': 12500, 'Ago': 10500
+          },
+          userGrowth: {
+            'Ene': 18, 'Feb': 22, 'Mar': 25, 'Abr': 30, 
+            'May': 28, 'Jun': 35, 'Jul': 42, 'Ago': 50
+          }
+        }
       }
-    }
+    };
   },
   
   // Usuarios
@@ -96,20 +117,12 @@ const adminApi = {
   getCommunications: (params) => api.get('/api/v1/dashboard/admin/communications', { params }),
   sendCommunication: (data) => api.post('/api/v1/dashboard/admin/communications', data),
 
-  // Configuración UI
+  // Configuración UI - completamente estática, sin llamadas API
   getUiConfig: async (route) => {
-    console.log(`Iniciando obtención de configuración UI para ruta: ${route}`);
+    console.log(`Solicitada configuración UI para ruta: ${route} - USANDO CONFIGURACIÓN ESTÁTICA`);
     
-    // Array de posibles rutas a intentar en orden
-    const routesToTry = [
-      { url: '/api/v1/dashboard/ui-config', params: { route } },
-      { url: '/api/v1/dashboard', params: { config: 'ui', route } },
-      { url: '/api/v1/templates/ui-config', params: {} },
-      { url: '/api/v1/dashboard/admin/settings', params: { type: 'ui' } }
-    ];
-    
-    // Configuración por defecto como último recurso
-    const defaultConfig = {
+    // CONFIGURACIÓN ESTÁTICA - Sin llamadas API
+    return {
       data: {
         success: true,
         data: {
@@ -127,23 +140,6 @@ const adminApi = {
         }
       }
     };
-    
-    // Intentar cada ruta secuencialmente
-    for (const routeConfig of routesToTry) {
-      try {
-        console.log(`Intentando obtener configuración UI desde: ${routeConfig.url}`, routeConfig.params);
-        const response = await api.get(routeConfig.url, { params: routeConfig.params });
-        console.log(`Configuración UI obtenida exitosamente desde ${routeConfig.url}:`, response);
-        return response;
-      } catch (error) {
-        console.log(`Error al obtener configuración UI desde ${routeConfig.url}:`, error.message);
-        // Continuar con la siguiente ruta
-      }
-    }
-    
-    // Si todas las rutas fallan, devolver la configuración por defecto
-    console.log('Todas las rutas fallaron, usando configuración por defecto');
-    return defaultConfig;
   },
 };
 

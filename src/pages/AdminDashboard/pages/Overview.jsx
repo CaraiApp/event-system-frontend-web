@@ -38,54 +38,25 @@ const Overview = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        console.log('Cargando datos del dashboard...');
+        console.log('Cargando datos del dashboard a través del servicio API (que ahora usa datos estáticos)');
         
-        // SOLUCIÓN INMEDIATA: Usar datos estáticos en lugar de hacer petición API
-        console.log('Usando datos estáticos para el dashboard (solución temporal)');
+        // Usamos el servicio API que ahora contiene datos estáticos
+        const response = await adminApi.getDashboardOverview();
         
-        // Datos de muestra para el dashboard
-        const mockData = {
-          userCount: 250,
-          newUsers: 28,
-          totalEvents: 68,
-          activeEventCount: 45,
-          pendingEventCount: 23,
-          bookingCount: 583,
-          totalRevenue: 38450,
-          popularCategories: [
-            { name: 'Conciertos', count: 18 },
-            { name: 'Deportes', count: 15 },
-            { name: 'Teatro', count: 12 },
-            { name: 'Festivales', count: 10 },
-            { name: 'Conferencias', count: 8 }
-          ],
-          systemHealth: 98,
-          recentEvents: [
-            { id: 1, title: 'Concierto Local', organizer: 'Promotor Musical', date: new Date(), attendees: 123, capacity: 200, status: 'active' },
-            { id: 2, title: 'Partido Amistoso', organizer: 'Club Deportivo', date: new Date(), attendees: 450, capacity: 500, status: 'active' },
-            { id: 3, title: 'Obra de Teatro', organizer: 'Teatro Municipal', date: new Date(), attendees: 87, capacity: 150, status: 'active' },
-            { id: 4, title: 'Carrera Solidaria', organizer: 'ONG Local', date: new Date(), attendees: 320, capacity: 400, status: 'active' },
-            { id: 5, title: 'Exposición de Arte', organizer: 'Galería Central', date: new Date(), attendees: 64, capacity: 100, status: 'active' }
-          ],
-          revenueByMonth: {
-            'Ene': 5200, 'Feb': 4800, 'Mar': 6300, 'Abr': 7200, 
-            'May': 8600, 'Jun': 9400, 'Jul': 12500, 'Ago': 10500
-          },
-          userGrowth: {
-            'Ene': 18, 'Feb': 22, 'Mar': 25, 'Abr': 30, 
-            'May': 28, 'Jun': 35, 'Jul': 42, 'Ago': 50
-          }
-        };
+        if (response?.data?.data) {
+          console.log('Datos obtenidos del servicio API:', response.data.data);
+          setDashboardData(response.data.data);
+        } else {
+          console.error('Formato de respuesta inesperado. Usando datos de reserva.');
+          throw new Error('Formato inesperado');
+        }
         
-        setDashboardData(mockData);
         setError(null);
-        console.log('Datos de muestra cargados correctamente');
-        
       } catch (err) {
-        console.error('Error en el proceso de datos del dashboard:', err);
-        setError('Error en el proceso de datos. Por favor, inténtalo de nuevo.');
+        console.error('Error en la carga de datos:', err);
+        console.log('Usando datos de fallback');
         
-        // Establecer datos de fallback aún más simples
+        // Datos de fallback ultra simples
         setDashboardData({
           userCount: 100,
           newUsers: 15,
@@ -93,8 +64,13 @@ const Overview = () => {
           activeEventCount: 20,
           bookingCount: 250,
           totalRevenue: 15000,
-          popularCategories: [],
-          recentEvents: [],
+          popularCategories: [
+            { name: 'Conciertos', count: 12 },
+            { name: 'Deportes', count: 8 }
+          ],
+          recentEvents: [
+            { id: 1, title: 'Evento Ejemplo', organizer: 'Organizador', date: new Date().toISOString(), attendees: 100, capacity: 150, status: 'active' }
+          ],
           revenueByMonth: { 'Ene': 5000, 'Feb': 5500, 'Mar': 6000 },
           userGrowth: { 'Ene': 10, 'Feb': 15, 'Mar': 20 }
         });
