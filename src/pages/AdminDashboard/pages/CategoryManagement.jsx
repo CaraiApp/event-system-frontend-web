@@ -68,10 +68,27 @@ const CategoryManagement = () => {
     try {
       const response = await adminApi.getCategories();
       if (response.data && response.data.data) {
-        setCategories(response.data.data);
+        // Asegurar que categories es un array o tiene la propiedad adecuada
+        if (response.data.data.categories) {
+          // Si tenemos un objeto con propiedad categories
+          setCategories(response.data.data.categories);
+        } else if (Array.isArray(response.data.data)) {
+          // Si directamente es un array
+          setCategories(response.data.data);
+        } else {
+          // Si es otro formato, tratamos como que no hay datos disponibles
+          setCategories({ dataNotAvailable: true, error: "Formato de datos no reconocido" });
+        }
+      } else {
+        // Si no hay datos, establecer un objeto con dataNotAvailable
+        setCategories({ dataNotAvailable: true });
       }
     } catch (error) {
       console.error('Error al cargar categorías:', error);
+      setCategories({ 
+        dataNotAvailable: true, 
+        error: 'Error al cargar categorías. Por favor, inténtalo de nuevo.' 
+      });
       setAlert({
         open: true,
         message: 'Error al cargar categorías. Por favor, inténtalo de nuevo.',
