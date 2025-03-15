@@ -1,10 +1,18 @@
 import axios from 'axios';
 
+// Determinar si estamos en producción o desarrollo
+const isProduction = import.meta.env.PROD;
+const API_BASE_URL = isProduction 
+  ? 'https://event-system-backend-main.vercel.app' 
+  : import.meta.env.VITE_API_URL || '';
+
 // Crear una instancia de axios con configuración avanzada
 const axiosInstance = axios.create({
-  withCredentials: true, // Importante para mantener las cookies de sesión
+  // withCredentials solo cuando estamos en el mismo origen o dominios específicos
+  withCredentials: false, // Por ahora deshabilitamos para evitar problemas CORS
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
   timeout: 15000, // 15 segundos de timeout para detectar problemas de conexión
 });
@@ -64,15 +72,6 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
     params = null,
     headers = {},
   } = options;
-
-  // Determinar si estamos en producción o desarrollo
-  const isProduction = import.meta.env.PROD;
-  
-  // En desarrollo, usar la URL base de la API que está en .env.development
-  // En producción, usar la URL base desplegada
-  const API_BASE_URL = isProduction 
-    ? 'https://event-system-backend-main.vercel.app' 
-    : import.meta.env.VITE_API_URL || '';
   
   console.log(`Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
   console.log(`API Base URL: ${API_BASE_URL || 'Using relative paths with proxy'}`);
@@ -90,6 +89,15 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
     // De lo contrario, devolver endpoint relativo (para el proxy en desarrollo)
     return endpoint;
   };
+  
+  // Log de modo de funcionamiento
+  console.log(`Modo CORS: withCredentials=${axiosInstance.defaults.withCredentials}, API URL=${API_BASE_URL || 'usando proxy'}`);
+  
+  // Si estamos en producción, agregar el origen a la config para ayudar con CORS
+  if (isProduction) {
+    axiosInstance.defaults.headers.common['Origin'] = window.location.origin;
+    console.log(`Origen configurado para CORS: ${window.location.origin}`);
+  }
 
   // Log para debugging
   console.log(`Intentando ${method.toUpperCase()} a endpoint principal:`, primaryEndpoint);
@@ -99,7 +107,12 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
     const config = {
       url: buildFullUrl(primaryEndpoint),
       method,
-      headers,
+      headers: {
+        ...headers,
+        // Añadir cabeceras para ayudar con CORS
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
       ...(params && { params }),
       ...(data && { data }),
     };
@@ -122,7 +135,12 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
           const config = {
             url: buildFullUrl(endpoint),
             method,
-            headers,
+            headers: {
+              ...headers,
+              // Añadir cabeceras para ayudar con CORS
+              'Accept': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
             ...(params && { params }),
             ...(data && { data }),
           };
@@ -394,6 +412,77 @@ export const getCategories = async () => {
 // Exportar la instancia de axios para uso general
 export const api = axiosInstance;
 
+/**
+ * Función específica para probar la conectividad CORS
+ * @returns {Promise<object>} - Resultado de la prueba CORS
+ */
+export const testCorsConnection = async () => {
+  try {
+    console.log('Realizando prueba de conexión CORS...');
+    
+    // Intentar con diferentes endpoints para probar CORS
+    const endpoints = [
+      '/api/v1/dashboard/ui-config',
+      '/api/templates/ui-config',
+      '/api/v1/health',
+      '/'
+    ];
+    
+    // Probar cada endpoint en secuencia
+    for (const endpoint of endpoints) {
+      try {
+        const fullUrl = `https://event-system-backend-main.vercel.app${endpoint}`;
+        console.log(`Probando CORS con: ${fullUrl}`);
+        
+        // Configurar la solicitud para mostrar mejor los problemas CORS
+        const response = await axios({
+          url: fullUrl,
+          method: 'GET',
+          withCredentials: false, // Primero sin credenciales para mayor compatibilidad
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Origin': window.location.origin,
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        console.log(`✅ Endpoint ${endpoint} respondió sin problemas CORS:`, response.status);
+        return {
+          success: true,
+          endpoint,
+          status: response.status,
+          data: response.data,
+          cors: {
+            allowOrigin: response.headers['access-control-allow-origin'],
+            allowCredentials: response.headers['access-control-allow-credentials'],
+            allowMethods: response.headers['access-control-allow-methods'],
+          }
+        };
+      } catch (error) {
+        console.error(`❌ Error en prueba CORS con ${endpoint}:`, error.message);
+        
+        // Continuar con el siguiente endpoint
+        continue;
+      }
+    }
+    
+    // Si llegamos aquí, todos los intentos fallaron
+    throw new Error('Todos los endpoints fallaron la prueba CORS');
+  } catch (error) {
+    console.error('❌ Error general en prueba CORS:', error);
+    return {
+      success: false,
+      error: error.message,
+      cors: {
+        info: 'Fallo al establecer conexión CORS con el backend',
+        suggestion: 'Verifica la configuración CORS en el backend y frontend',
+        browserError: error.name === 'Error' ? 'Posible error CORS bloqueado por el navegador' : error.name
+      }
+    };
+  }
+};
+
 export default {
   api,
   apiRequestWithFallback,
@@ -402,5 +491,6 @@ export default {
   getUsers,
   getOrganizers,
   getAdminDashboardOverview,
-  getCategories
+  getCategories,
+  testCorsConnection
 };
