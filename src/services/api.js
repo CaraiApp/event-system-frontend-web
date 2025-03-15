@@ -67,7 +67,25 @@ export const authAPI = {
 export const eventAPI = {
   // Obtener todos los eventos
   getEvents: async () => {
-    return axios.get('/api/v1/events');
+    try {
+      console.log('Intentando obtener todos los eventos...');
+      // Primero intentar con la ruta principal
+      try {
+        const response = await axios.get('/api/v1/events');
+        console.log('Eventos obtenidos correctamente con /api/v1/events');
+        return response;
+      } catch (error) {
+        console.error('Error con /api/v1/events:', error.message);
+        // Si falla, intentar con la ruta alternativa
+        console.log('Intentando ruta alternativa /api/v1/events/getAllEvents');
+        const alternativeResponse = await axios.get('/api/v1/events/getAllEvents');
+        console.log('Eventos obtenidos correctamente con ruta alternativa');
+        return alternativeResponse;
+      }
+    } catch (error) {
+      console.error('Error al obtener eventos:', error.message);
+      throw error;
+    }
   },
   
   // Obtener eventos del usuario

@@ -53,15 +53,31 @@ const Home = () => {
       const userRole = localStorage.getItem("role");
 
       // Determine the appropriate endpoint based on the user role
-      const endpoint = userRole === "organizer" 
+      const primaryEndpoint = userRole === "organizer" 
         ? '/api/v1/events/getuserEvent'
         : '/api/v1/events/getAllEvents';
+      
+      // Endpoints alternativos para intentar si falla el principal
+      const fallbackEndpoint = userRole === "organizer"
+        ? '/api/v1/events/getuserEvent'
+        : '/api/v1/events';
         
       try {
-        console.log(`Solicitando eventos (${userRole}) desde: ${endpoint}`);
-        const response = await axios.get(endpoint);
-        console.log('Eventos recibidos:', response.data);
-        setEvents(response.data.data || []);
+        console.log(`Solicitando eventos (${userRole}) desde: ${primaryEndpoint}`);
+        try {
+          // Intentar con el endpoint principal
+          const response = await axios.get(primaryEndpoint);
+          console.log('Eventos recibidos:', response.data);
+          setEvents(response.data.data || []);
+        } catch (primaryError) {
+          console.error(`Error con endpoint principal ${primaryEndpoint}:`, primaryError.message);
+          
+          // Intentar con el endpoint alternativo
+          console.log(`Intentando con endpoint alternativo: ${fallbackEndpoint}`);
+          const fallbackResponse = await axios.get(fallbackEndpoint);
+          console.log('Eventos recibidos desde endpoint alternativo:', fallbackResponse.data);
+          setEvents(fallbackResponse.data.data || []);
+        }
         setLoading(false);
       } catch (error) {
         console.error("Error fetching events:", error);

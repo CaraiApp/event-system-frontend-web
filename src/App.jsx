@@ -69,13 +69,32 @@ const App = () => {
     const verifyConnection = async () => {
       try {
         console.log('Verificando conexión con el backend...');
-        const eventsResponse = await axios.get('/api/v1/events');
-        console.log('✅ Conexión exitosa a eventos:', eventsResponse.data);
         
-        const categoriesResponse = await axios.get('/api/v1/categories');
-        console.log('✅ Conexión exitosa a categorías:', categoriesResponse.data);
+        // Intentar obtener eventos con diferentes rutas
+        try {
+          // Primero intentar con ruta principal
+          const eventsResponse = await axios.get('/api/v1/events');
+          console.log('✅ Conexión exitosa a eventos (ruta principal):', eventsResponse.data);
+        } catch (error) {
+          console.error('⚠️ Error con ruta principal para eventos:', error.message);
+          
+          // Intentar con ruta alternativa
+          try {
+            const alternativeEventsResponse = await axios.get('/api/v1/events/getAllEvents');
+            console.log('✅ Conexión exitosa a eventos (ruta alternativa):', alternativeEventsResponse.data);
+          } catch (secondError) {
+            console.error('❌ Error también con ruta alternativa para eventos:', secondError.message);
+          }
+        }
         
-        console.log('✅ Backend conectado correctamente a MongoDB');
+        // Intentar obtener categorías
+        try {
+          const categoriesResponse = await axios.get('/api/v1/categories');
+          console.log('✅ Conexión exitosa a categorías:', categoriesResponse.data);
+        } catch (catError) {
+          console.error('❌ Error al obtener categorías:', catError.message);
+        }
+        
       } catch (error) {
         console.error('❌ Error al verificar conexión:', error.message);
         if (error.response) {
