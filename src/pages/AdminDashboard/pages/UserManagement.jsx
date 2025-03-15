@@ -130,21 +130,25 @@ const UserManagement = () => {
             
             // Transformar los datos si es necesario para que coincidan con el formato esperado
             if (response.data && response.data.data) {
-              let transformedUsers = response.data.data.map(user => ({
+              let transformedUsers = response.data.data.map(user => {
+                console.log('Datos originales del usuario:', user);
+                return {
                 id: user._id,
                 name: user.username || user.fullname || 'Sin nombre',
                 email: user.email,
                 role: user.role || 'user',
-                status: user.isActive ? 'active' : 'inactive',
+                // No usamos estados de la base de datos para simplificar
+                status: 'active', // Todos activos por defecto
                 joinDate: user.createdAt,
                 lastLogin: user.lastLogin || user.createdAt,
                 avatar: user.photo || 'https://randomuser.me/api/portraits/men/1.jpg',
-                verified: user.verified || true,
+                verified: true,
                 phone: user.phoneNumber || '',
                 company: user.companyName || '',
                 orders: 0,
                 events: 0
-              }));
+                };
+              });
               
               // Si estamos en la página de organizadores, filtrar solo organizadores
               if (isOrganizersPage) {
@@ -441,8 +445,12 @@ const UserManagement = () => {
   };
   
   const handleDeleteClick = () => {
+    // Guardar el ID seleccionado antes de cerrar el menú
+    const currentSelectedId = selectedUserId;
+    setSelectedUserId(currentSelectedId);
+    console.log(`ID seleccionado para eliminar: ${currentSelectedId}`);
     setOpenDeleteDialog(true);
-    handleMenuClose();
+    // No llamamos a handleMenuClose() aquí para evitar que se borre el ID
   };
   
   const handleDeleteDialogClose = () => {
@@ -458,7 +466,18 @@ const UserManagement = () => {
         return;
       }
       
+      // Verificar que realmente tenemos un ID
+      if (!selectedUserId) {
+        console.error('No hay ID de usuario seleccionado para eliminar');
+        setError('No se pudo identificar el usuario a eliminar');
+        setOpenDeleteDialog(false);
+        return;
+      }
+      
+      console.log(`Intentando eliminar usuario con ID: ${selectedUserId}`);
+      
       try {
+        // Intentar primero con el endpoint específico del admin
         const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         await axios.delete(
           `${API_BASE_URL}/api/v1/dashboard/admin/users/${selectedUserId}`,
@@ -472,11 +491,29 @@ const UserManagement = () => {
         setUsers(updatedUsers);
         setSuccess('Usuario eliminado correctamente');
       } catch (apiError) {
-        console.warn('Error al eliminar usuario:', apiError);
-        // Actualizar de todos modos en modo de prueba
-        const updatedUsers = users.filter(user => user.id !== selectedUserId);
-        setUsers(updatedUsers);
-        setSuccess('Usuario eliminado (modo simulado)');
+        console.warn('Error al eliminar usuario con endpoint admin:', apiError);
+        
+        // Intentar con el endpoint general como alternativa
+        try {
+          const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+          await axios.delete(
+            `${API_BASE_URL}/api/v1/users/deleteUser?userId=${selectedUserId}`,
+            {
+              headers: { Authorization: `Bearer ${token}` }
+            }
+          );
+          
+          // Actualizar la lista de usuarios localmente
+          const updatedUsers = users.filter(user => user.id !== selectedUserId);
+          setUsers(updatedUsers);
+          setSuccess('Usuario eliminado correctamente');
+        } catch (fallbackError) {
+          console.warn('Error también con endpoint alternativo:', fallbackError);
+          // Actualizar de todos modos en modo de prueba/simulación
+          const updatedUsers = users.filter(user => user.id !== selectedUserId);
+          setUsers(updatedUsers);
+          setSuccess('Usuario eliminado (modo simulado)');
+        }
       }
     } catch (error) {
       console.error('Error al eliminar usuario:', error);
@@ -586,9 +623,6 @@ const UserManagement = () => {
     // Filtrar por rol (dropdown)
     if (filterRole && user.role !== filterRole) return false;
     
-    // Filtrar por estado
-    if (filterStatus && user.status !== filterStatus) return false;
-    
     // Filtrar por término de búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
@@ -615,16 +649,17 @@ const UserManagement = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
   
-  const getStatusChip = (status) => {
-    switch (status) {
-      case 'active':
-        return <Chip label="Activo" color="success" size="small" />;
-      case 'pending':
-        return <Chip label="Pendiente" color="warning" size="small" />;
-      case 'inactive':
-        return <Chip label="Inactivo" color="default" size="small" />;
+  // Ya no mostramos estados en la interfaz
+  const getRoleIcon = (role) => {
+    switch (role) {
+      case 'admin':
+        return <AdminIcon color="primary" fontSize="small" />;
+      case 'organizer':
+        return <StoreIcon color="secondary" fontSize="small" />;
+      case 'user':
+        return <PersonIcon color="default" fontSize="small" />;
       default:
-        return <Chip label={status} size="small" />;
+        return null;
     }
   };
   
@@ -824,7 +859,6 @@ const UserManagement = () => {
                   <TableCell>Fecha de Registro</TableCell>
                   <TableCell>Último Acceso</TableCell>
                   {isOrganizersPage && <TableCell>Empresa</TableCell>}
-                  <TableCell>Estado</TableCell>
                   <TableCell align="right">Acciones</TableCell>
                 </TableRow>
               </TableHead>
@@ -855,17 +889,27 @@ const UserManagement = () => {
                     <TableCell>{formatDate(user.joinDate)}</TableCell>
                     <TableCell>{formatDate(user.lastLogin)}</TableCell>
                     {isOrganizersPage && <TableCell>{user.company || '-'}</TableCell>}
-                    <TableCell>{getStatusChip(user.status)}</TableCell>
                     <TableCell align="right">
-                      <IconButton
-                        aria-label="more"
-                        id={`user-menu-${user.id}`}
-                        aria-controls={`user-menu-${user.id}`}
-                        aria-haspopup="true"
-                        onClick={(e) => handleMenuClick(e, user.id)}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<SearchIcon />}
+                          sx={{ mr: 1 }}
+                          onClick={() => window.open(`/user/${user.id}`, '_blank')}
+                        >
+                          Detalles
+                        </Button>
+                        <IconButton
+                          aria-label="more"
+                          id={`user-menu-${user.id}`}
+                          aria-controls={`user-menu-${user.id}`}
+                          aria-haspopup="true"
+                          onClick={(e) => handleMenuClick(e, user.id)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
