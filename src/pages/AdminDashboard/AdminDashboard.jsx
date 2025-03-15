@@ -44,6 +44,15 @@ const AdminDashboard = () => {
   const isNotificationsOpen = Boolean(notificationAnchorEl);
   
   // Verificar autenticaci�n y rol de usuario
+  // Efecto de depuración para imprimir información de navegación
+  useEffect(() => {
+    console.log('[ADMIN DASHBOARD] Información de navegación:');
+    console.log('- Ruta actual:', location.pathname);
+    console.log('- URL completa:', window.location.href);
+    console.log('- Base URL del router:', '/');
+    console.log('- Navegador:', navigator.userAgent);
+  }, [location.pathname]);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const role = localStorage.getItem('role');
@@ -111,8 +120,35 @@ const AdminDashboard = () => {
   };
   
   const handleNavigation = (path) => {
-    navigate(path);
-    handleUserMenuClose();
+    // Verificar si la ruta comienza con '/' para asegurar rutas relativas correctas
+    const formattedPath = path.startsWith('/') ? path : `/${path}`;
+    console.log(`[ADMIN DASHBOARD] Navegando a: ${formattedPath}`);
+    
+    // Verificar si estamos en producción
+    const isProduction = window.location.hostname.includes('vercel.app') || 
+                        window.location.hostname.includes('entradasmelilla.com');
+    
+    if (isProduction) {
+      // En producción, usamos un enfoque diferente para manejar las rutas
+      console.log(`[ADMIN DASHBOARD] Detectado entorno de producción en ${window.location.hostname}`);
+      
+      // En producción, intentamos un enfoque alternativo para resolver problemas de navegación
+      const baseUrl = window.location.origin; // Usar el origen actual como base
+      const fullPath = `${baseUrl}${formattedPath}`;
+      console.log(`[ADMIN DASHBOARD] URL completa: ${fullPath}`);
+      
+      // Usar window.location para una navegación más directa en producción
+      window.location.href = fullPath;
+      return; // Salir temprano ya que estamos usando redirección directa
+    }
+    
+    // Para desarrollo, usar la navegación normal de React Router
+    navigate(formattedPath, { replace: false });
+    
+    // Cerrar el menú de usuario si está abierto
+    if (isMenuOpen) {
+      handleUserMenuClose();
+    }
   };
   
   const navigationItems = [

@@ -1,5 +1,13 @@
 {
     "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+    "headers": [
+      {
+        "source": "/(.*)",
+        "headers": [
+          { "key": "Cache-Control", "value": "s-maxage=1, stale-while-revalidate" }
+        ]
+      }
+    ],
     "env": {
       "VITE_REACT_APP_BACKEND_BASEURL": "https://event-system-backend-production.up.railway.app"
     },

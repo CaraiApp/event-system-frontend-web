@@ -27,9 +27,13 @@ window.fetch = async function(resource, options = {}) {
   return window.originalFetch(resource, options);
 };
 
+// Determinar la base URL para el enrutador basado en el entorno
+// En producción, es importante mantener las rutas base correctas
+const BASE_URL = import.meta.env.DEV ? '/' : '/';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={BASE_URL}>
       <App />
     </BrowserRouter>
   </React.StrictMode>,
