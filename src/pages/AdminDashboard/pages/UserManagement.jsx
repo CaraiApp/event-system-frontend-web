@@ -4,7 +4,7 @@ import {
   TableHead, TableRow, TablePagination, Button, Chip, CircularProgress,
   Card, TextField, MenuItem, IconButton, Menu, Avatar, InputAdornment,
   Dialog, DialogTitle, DialogContent, DialogActions, FormControl,
-  InputLabel, Select, Tabs, Tab, Grid, Alert, Tooltip
+  InputLabel, Select, Tabs, Tab, Grid, Alert, Tooltip, Divider
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -108,9 +108,42 @@ const UserManagement = () => {
           setLoading(false);
           return; // Salimos para no mostrar datos de prueba
         } catch (apiError) {
-          console.warn('Error al cargar usuarios:', apiError);
-          console.warn('Usando datos de prueba como fallback');
-          // Continuamos con datos de prueba
+          console.warn('Error al cargar usuarios desde endpoint de admin:', apiError);
+          
+          // Si falla, intentar con el endpoint getAllUsers como alternativa
+          try {
+            console.log('Intentando con endpoint alternativo...');
+            const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+            const response = await axios.get(`${API_BASE_URL}/api/v1/users/getAllUsers`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            // Transformar los datos si es necesario para que coincidan con el formato esperado
+            if (response.data && response.data.data) {
+              const transformedUsers = response.data.data.map(user => ({
+                id: user._id,
+                name: user.username || 'Sin nombre',
+                email: user.email,
+                role: user.role || 'user',
+                status: user.isActive ? 'active' : 'inactive',
+                joinDate: user.createdAt,
+                lastLogin: user.lastLogin || user.createdAt,
+                avatar: user.photo || 'https://randomuser.me/api/portraits/men/1.jpg',
+                verified: user.verified || true,
+                phone: user.phoneNumber || '',
+                company: user.companyName || '',
+                orders: 0,
+                events: 0
+              }));
+              
+              setUsers(transformedUsers);
+              setLoading(false);
+              return;
+            }
+          } catch (fallbackError) {
+            console.warn('Error en endpoint alternativo:', fallbackError);
+            console.warn('Usando datos de prueba como fallback final');
+          }
         }
         
         // Datos de prueba
