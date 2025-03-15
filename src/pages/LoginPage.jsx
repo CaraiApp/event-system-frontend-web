@@ -251,8 +251,18 @@ const SignIn = () => {
       // Store token and role in localStorage
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("role", data.data.user.role);
-      // Redirect to home page after successful login
-      navigate("/home");
+      
+      // Verificar si hay un parámetro de redirección en la URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectPath = searchParams.get('redirect');
+      
+      if (redirectPath) {
+        // Si hay una ruta de redirección, navegar a ella
+        navigate(redirectPath);
+      } else {
+        // Si no hay redirección, ir a la página de inicio por defecto
+        navigate("/home");
+      }
     } catch (error) {
       console.error("Error completo:", error);
       
@@ -315,9 +325,22 @@ const SignIn = () => {
     }
   };
   
+  const [redirectInfo, setRedirectInfo] = React.useState("");
+
   React.useEffect(() => {
     // Scroll to the top of the page when the component mounts
     window.scrollTo(0, 0);
+    
+    // Verificar si hay un parámetro de redirección en la URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectPath = searchParams.get('redirect');
+    
+    if (redirectPath) {
+      // Si el redirect es hacia el panel de administrador, mostrar un mensaje informativo
+      if (redirectPath.startsWith('/admin')) {
+        setRedirectInfo("Para acceder al Panel de Administración, primero debes iniciar sesión con una cuenta de administrador.");
+      }
+    }
   }, []);
 
 
@@ -381,6 +404,28 @@ const SignIn = () => {
                   Iniciar sesión
                 </Typography>
 
+                {/* Redirect info display */}
+                {redirectInfo && (
+                  <Box 
+                    sx={{
+                      p: 2,
+                      mb: 2,
+                      width: '100%',
+                      borderRadius: 1,
+                      bgcolor: '#e3f2fd',
+                      color: '#0d47a1',
+                      fontSize: '0.9rem',
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#0d47a1" style={{marginRight: '8px'}}>
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    {redirectInfo}
+                  </Box>
+                )}
+                
                 {/* Error message display */}
                 {error && (
                   <Box 
