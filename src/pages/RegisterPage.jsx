@@ -222,13 +222,15 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false); // Loading state
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Reset previous errors
+    // Reset previous errors and success messages
     setError("");
+    setSuccess("");
     setPasswordError("");
 
     // Check if passwords match
@@ -281,8 +283,14 @@ const SignUp = () => {
       const data = response.data;
       
       console.log("User created successfully:", data);
-      // Redirect to login page after successful signup
-      navigate("/login");
+      
+      // Mostrar mensaje de éxito
+      setSuccess("¡Registro exitoso! Por favor, revisa tu correo electrónico para activar tu cuenta y poder iniciar sesión.");
+      
+      // Redirigir al login después de 5 segundos
+      setTimeout(() => {
+        navigate("/login");
+      }, 5000);
     } catch (error) {
       console.error("Error completo:", error);
       
@@ -363,6 +371,28 @@ const SignUp = () => {
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                   </svg>
                   {error}
+                </Box>
+              )}
+              
+              {/* Success message display */}
+              {success && (
+                <Box 
+                  sx={{
+                    p: 2,
+                    mb: 2,
+                    width: '100%',
+                    borderRadius: 1,
+                    bgcolor: '#e8f5e9',
+                    color: '#2e7d32',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#2e7d32" style={{marginRight: '8px'}}>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  {success}
                 </Box>
               )}
 
@@ -670,7 +700,7 @@ const SignUp = () => {
                       textTransform: 'none',
                       boxShadow: '0px 3px 5px rgba(0, 0, 0, 0.2)'
                     }}
-                    disabled={loading} // Disable button while loading
+                    disabled={loading || success !== ""} // Disable button while loading or after success
                   >
                     {loading ? 
                       <CircularProgress size={24} color="inherit" /> : 
