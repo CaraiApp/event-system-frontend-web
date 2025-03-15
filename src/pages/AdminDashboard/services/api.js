@@ -1,286 +1,101 @@
-import axios from 'axios';
+import { 
+  api, 
+  apiRequestWithFallback, 
+  normalizeResponse, 
+  getUsers as getUsersHelper, 
+  getOrganizers as getOrganizersHelper,
+  getAdminDashboardOverview as getDashboardOverviewHelper,
+  getCategories as getCategoriesHelper 
+} from '../../../utils/apiHelper';
 
-// Crear una instancia de axios con la configuración base
-// No usamos una URL base personalizada para aprovechar el proxy configurado en vite.config.js
-const api = axios.create({
-  withCredentials: true, // Importante para mantener las cookies de sesión
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Interceptor para manejo de tokens
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Interceptor para manejo de errores
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    // Manejar errores de autenticación (401)
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login?redirect=/admin';
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Servicios para el dashboard de administrador
+// Servicios optimizados para el dashboard de administrador
 const adminApi = {
   // Autenticación
   login: (credentials) => api.post('/api/v1/auth/login', credentials),
   logout: () => api.post('/api/v1/auth/logout'),
   
-  // Dashboard Overview - Obtiene datos reales
+  // Dashboard Overview - Obtiene datos reales usando el helper optimizado
   getDashboardOverview: async () => {
-    try {
-      console.log('Solicitando datos reales del dashboard');
-      const response = await api.get('/api/v1/dashboard/admin/overview');
-      
-      // Verificar el formato de la respuesta y adaptarlo si es necesario
-      console.log('Respuesta raw del dashboard:', response);
-      
-      if (response?.data?.success === true && response?.data?.data) {
-        // Formato esperado, devolver directamente
-        return response;
-      } else if (response?.data?.statusCode === 200 && response?.data?.data) {
-        // Formato alternativo, adaptarlo al formato esperado
-        return {
-          data: {
-            success: true,
-            data: response.data.data
-          }
-        };
-      } else if (response?.data) {
-        // Si hay datos pero en otro formato, intentar adaptarlos
-        return {
-          data: {
-            success: true,
-            data: response.data
-          }
-        };
-      } else {
-        throw new Error('Formato de respuesta no reconocido');
-      }
-    } catch (error) {
-      console.error('Error al obtener datos del dashboard:', error);
-      // Generar datos de fallback
-      return {
-        data: {
-          success: true,
-          data: {
-            userCount: 0,
-            newUsers: 0,
-            totalEvents: 0,
-            activeEventCount: 0,
-            pendingEventCount: 0,
-            bookingCount: 0,
-            totalRevenue: 0,
-            popularCategories: [],
-            systemHealth: 0,
-            recentEvents: [],
-            revenueByMonth: {},
-            userGrowth: {},
-            dataNotAvailable: true, // Flag para indicar que no hay datos reales
-            error: error.response?.data?.message || 'No se pudieron cargar los datos, por favor actualice más tarde'
-          }
-        }
-      };
-    }
+    console.log('Solicitando datos del dashboard admin con helper optimizado');
+    return getDashboardOverviewHelper();
   },
   
-  // Usuarios
+  // Usuarios - Usando el helper optimizado
   getUsers: async (params) => {
-    try {
-      console.log('Solicitando lista de usuarios con parámetros:', params);
-      const response = await api.get('/api/v1/dashboard/admin/users', { params });
-      
-      console.log('Respuesta raw de usuarios:', response);
-      
-      // Verificar el formato de la respuesta y adaptarlo si es necesario
-      if (response?.data?.success === true && response?.data?.data) {
-        // Formato esperado, devolver directamente
-        return response;
-      } else if (response?.data?.statusCode === 200 && response?.data?.data) {
-        // Formato alternativo, adaptarlo al formato esperado
-        return {
-          data: {
-            success: true,
-            data: response.data.data
-          }
-        };
-      } else if (response?.data) {
-        // Si hay datos pero en otro formato, intentar adaptarlos
-        return {
-          data: {
-            success: true,
-            data: {
-              users: Array.isArray(response.data) ? response.data : [],
-              totalCount: Array.isArray(response.data) ? response.data.length : 0,
-              page: params?.page || 1,
-              limit: params?.limit || 10
-            }
-          }
-        };
-      } else {
-        throw new Error('Formato de respuesta no reconocido');
-      }
-    } catch (error) {
-      console.error('Error al obtener usuarios:', error);
-      return {
-        data: {
-          success: true,
-          data: {
-            users: [],
-            totalCount: 0,
-            page: params?.page || 1,
-            limit: params?.limit || 10,
-            dataNotAvailable: true,
-            error: error.response?.data?.message || 'No se pudieron cargar los usuarios'
-          }
-        }
-      };
-    }
+    console.log('Solicitando lista de usuarios con parámetros:', params);
+    return getUsersHelper(params);
   },
   
+  // Organizadores - Usando el helper optimizado
   getOrganizers: async (params) => {
+    console.log('Solicitando lista de organizadores con parámetros:', params);
+    return getOrganizersHelper(params);
+  },
+  
+  // Operaciones CRUD para usuarios
+  updateUser: async (userId, userData) => {
     try {
-      console.log('Solicitando lista de organizadores con parámetros:', params);
-      // Añadimos role=organizer para filtrar solo organizadores
-      const queryParams = { ...params, role: 'organizer' };
-      const response = await api.get('/api/v1/dashboard/admin/organizers', { params: queryParams });
+      // Usar el helper avanzado para manejar rutas alternativas
+      const primaryEndpoint = `/api/v1/dashboard/admin/users/${userId}`;
+      const fallbackEndpoints = [
+        `/api/v1/users/${userId}`,
+        `/api/users/${userId}`,
+        `/api/v1/admin/users/${userId}`
+      ];
       
-      console.log('Respuesta raw de organizadores:', response);
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'patch', data: userData }
+      );
       
-      // Verificar el formato de la respuesta y adaptarlo si es necesario
-      if (response?.data?.success === true && response?.data?.data) {
-        // Formato esperado, devolver directamente
-        return response;
-      } else if (response?.data?.statusCode === 200 && response?.data?.data) {
-        // Formato alternativo, adaptarlo al formato esperado
-        return {
-          data: {
-            success: true,
-            data: response.data.data
-          }
-        };
-      } else if (response?.data) {
-        // Si hay datos pero en otro formato, intentar adaptarlos
-        return {
-          data: {
-            success: true,
-            data: {
-              users: Array.isArray(response.data) ? response.data : [],
-              totalCount: Array.isArray(response.data) ? response.data.length : 0,
-              page: params?.page || 1,
-              limit: params?.limit || 10
-            }
-          }
-        };
-      } else {
-        throw new Error('Formato de respuesta no reconocido');
-      }
+      return normalizeResponse(response);
     } catch (error) {
-      console.error('Error al obtener organizadores:', error);
-      return {
-        data: {
-          success: true,
-          data: {
-            users: [],
-            totalCount: 0,
-            page: params?.page || 1,
-            limit: params?.limit || 10,
-            dataNotAvailable: true,
-            error: error.response?.data?.message || 'No se pudieron cargar los organizadores'
-          }
-        }
-      };
+      console.error('Error al actualizar usuario:', error);
+      throw error;
     }
   },
   
-  updateUser: (userId, userData) => api.patch(`/api/v1/dashboard/admin/users/${userId}`, userData),
-  deleteUser: (userId) => api.delete(`/api/v1/dashboard/admin/users/${userId}`),
+  deleteUser: async (userId) => {
+    try {
+      // Usar el helper avanzado para manejar rutas alternativas
+      const primaryEndpoint = `/api/v1/dashboard/admin/users/${userId}`;
+      const fallbackEndpoints = [
+        `/api/v1/users/${userId}`,
+        `/api/users/${userId}`,
+        `/api/v1/admin/users/${userId}`
+      ];
+      
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'delete' }
+      );
+      
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      throw error;
+    }
+  },
   
-  // Eventos
-  getEvents: async (params) => {
+  // Eventos - Optimizado para usar múltiples endpoints
+  getEvents: async (params = {}) => {
     try {
       console.log('Solicitando lista de eventos con parámetros:', params);
       
-      // Intentamos con el endpoint específico del admin dashboard
-      try {
-        const response = await api.get('/api/v1/dashboard/admin/events', { params });
-        console.log('Respuesta raw de eventos (admin):', response);
-        
-        if (response?.data?.success === true && response?.data?.data) {
-          return response;
-        } else if (response?.data?.statusCode === 200 && response?.data?.data) {
-          return {
-            data: {
-              success: true,
-              data: response.data.data
-            }
-          };
-        } else if (response?.data) {
-          return {
-            data: {
-              success: true,
-              data: {
-                events: Array.isArray(response.data) ? response.data : [],
-                totalCount: Array.isArray(response.data) ? response.data.length : 0,
-                page: params?.page || 1,
-                limit: params?.limit || 10
-              }
-            }
-          };
-        }
-      } catch (adminError) {
-        console.error('Error con endpoint admin, intentando con endpoint general', adminError);
-        
-        // Si falla, intentamos con el endpoint general de eventos
-        const generalResponse = await api.get('/api/v1/events/getAllEvents');
-        console.log('Respuesta raw de eventos (general):', generalResponse);
-        
-        if (generalResponse?.data?.success === true && generalResponse?.data?.data) {
-          // Adaptar formato
-          const events = generalResponse.data.data;
-          return {
-            data: {
-              success: true,
-              data: {
-                events: events,
-                totalCount: events.length,
-                page: params?.page || 1,
-                limit: params?.limit || 10
-              }
-            }
-          };
-        } else if (generalResponse?.data) {
-          const events = Array.isArray(generalResponse.data) ? generalResponse.data : 
-                        (generalResponse.data.data ? generalResponse.data.data : []);
-          return {
-            data: {
-              success: true,
-              data: {
-                events: events,
-                totalCount: events.length,
-                page: params?.page || 1,
-                limit: params?.limit || 10
-              }
-            }
-          };
-        }
-      }
+      // Definir endpoints por orden de prioridad
+      const primaryEndpoint = '/api/v1/dashboard/admin/events';
+      const fallbackEndpoints = [
+        '/api/v1/events/getAllEvents',
+        '/api/v1/events',
+        '/api/events'
+      ];
       
-      throw new Error('Ninguno de los endpoints devolvió datos utilizables');
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params });
+      
+      // Normalizar la respuesta usando la función utilitaria
+      return normalizeResponse(response, 'events');
     } catch (error) {
       console.error('Error al obtener eventos:', error);
       return {
@@ -292,113 +107,175 @@ const adminApi = {
             page: params?.page || 1,
             limit: params?.limit || 10,
             dataNotAvailable: true,
-            error: error.response?.data?.message || 'No se pudieron cargar los eventos'
+            error: error.message || 'No se pudieron cargar los eventos'
           }
         }
       };
     }
   },
   
-  updateEventStatus: (eventId, status) => api.patch(`/api/v1/dashboard/admin/events/${eventId}/status`, { status }),
-  toggleEventFeatured: (eventId, featured) => api.patch(`/api/v1/dashboard/admin/events/${eventId}/featured`, { featured }),
-  deleteEvent: (eventId) => api.delete(`/api/v1/dashboard/admin/events/${eventId}`),
-  
-  // Categorías
-  getCategories: async () => {
+  // Operaciones CRUD para eventos
+  updateEventStatus: async (eventId, status) => {
     try {
-      console.log('Solicitando lista de categorías');
+      const primaryEndpoint = `/api/v1/dashboard/admin/events/${eventId}/status`;
+      const fallbackEndpoints = [
+        `/api/v1/events/${eventId}/status`,
+        `/api/events/${eventId}/status`
+      ];
       
-      // Intentamos con el endpoint específico del admin
-      try {
-        const response = await api.get('/api/v1/dashboard/admin/categories');
-        console.log('Respuesta raw de categorías (admin):', response);
-        
-        if (response?.data?.success === true && response?.data?.data) {
-          return response;
-        } else if (response?.data?.statusCode === 200 && response?.data?.data) {
-          return {
-            data: {
-              success: true,
-              data: response.data.data
-            }
-          };
-        } else if (response?.data) {
-          return {
-            data: {
-              success: true,
-              data: Array.isArray(response.data) ? response.data : []
-            }
-          };
-        }
-      } catch (adminError) {
-        console.error('Error con endpoint admin, intentando con endpoint general', adminError);
-        
-        // Intentamos obtener categorías a través de la API general
-        const generalResponse = await api.get('/api/v1/categories');
-        console.log('Respuesta raw de categorías (general):', generalResponse);
-        
-        // Transformar la respuesta al formato esperado por el admin dashboard
-        if (generalResponse?.data?.success === true && generalResponse?.data?.data) {
-          const formattedCategories = generalResponse.data.data.map(cat => ({
-            id: cat._id || cat.id,
-            name: cat.name,
-            eventCount: cat.eventCount || 0,
-            icon: cat.icon || 'category'
-          }));
-          
-          return {
-            data: {
-              success: true,
-              data: formattedCategories
-            }
-          };
-        } else if (generalResponse?.data) {
-          const categories = Array.isArray(generalResponse.data) ? generalResponse.data : 
-                          (generalResponse.data.data ? generalResponse.data.data : []);
-          
-          const formattedCategories = categories.map(cat => ({
-            id: cat._id || cat.id,
-            name: cat.name,
-            eventCount: cat.eventCount || 0,
-            icon: cat.icon || 'category'
-          }));
-          
-          return {
-            data: {
-              success: true,
-              data: formattedCategories
-            }
-          };
-        }
-      }
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'patch', data: { status } }
+      );
       
-      throw new Error('Ninguno de los endpoints devolvió datos utilizables');
+      return normalizeResponse(response);
     } catch (error) {
-      console.error('Error al obtener categorías:', error);
+      console.error('Error al actualizar estado del evento:', error);
+      throw error;
+    }
+  },
+  
+  toggleEventFeatured: async (eventId, featured) => {
+    try {
+      const primaryEndpoint = `/api/v1/dashboard/admin/events/${eventId}/featured`;
+      const fallbackEndpoints = [
+        `/api/v1/events/${eventId}/featured`,
+        `/api/events/${eventId}/featured`
+      ];
       
-      // Si ambos intentos fallan, devolver lista vacía con mensaje
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'patch', data: { featured } }
+      );
+      
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al destacar/quitar destacado del evento:', error);
+      throw error;
+    }
+  },
+  
+  deleteEvent: async (eventId) => {
+    try {
+      const primaryEndpoint = `/api/v1/dashboard/admin/events/${eventId}`;
+      const fallbackEndpoints = [
+        `/api/v1/events/${eventId}`,
+        `/api/events/${eventId}`
+      ];
+      
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'delete' }
+      );
+      
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al eliminar evento:', error);
+      throw error;
+    }
+  },
+  
+  // Categorías - Usando el helper optimizado
+  getCategories: async () => {
+    console.log('Solicitando lista de categorías con helper optimizado');
+    return getCategoriesHelper();
+  },
+  
+  // Informes - Usando apiRequestWithFallback
+  getReports: async (params) => {
+    try {
+      const primaryEndpoint = '/api/v1/dashboard/admin/reports';
+      const fallbackEndpoints = [
+        '/api/v1/admin/reports',
+        '/api/admin/reports'
+      ];
+      
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params });
+      return normalizeResponse(response, 'reports');
+    } catch (error) {
+      console.error('Error al obtener informes:', error);
       return {
         data: {
           success: true,
-          data: [],
-          dataNotAvailable: true,
-          error: error.response?.data?.message || 'No se pudieron cargar las categorías'
+          data: {
+            reports: [],
+            dataNotAvailable: true,
+            error: error.message
+          }
         }
       };
     }
   },
   
-  // Informes
-  getReports: (params) => api.get('/api/v1/dashboard/admin/reports', { params }),
-  getActivityLog: (params) => api.get('/api/v1/dashboard/admin/activity-log', { params }),
-  getSystemPerformance: () => api.get('/api/v1/dashboard/admin/performance'),
+  getActivityLog: async (params) => {
+    try {
+      const primaryEndpoint = '/api/v1/dashboard/admin/activity-log';
+      const fallbackEndpoints = [
+        '/api/v1/admin/activity-log',
+        '/api/admin/activity'
+      ];
+      
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params });
+      return normalizeResponse(response, 'activities');
+    } catch (error) {
+      console.error('Error al obtener registro de actividades:', error);
+      return {
+        data: {
+          success: true,
+          data: {
+            activities: [],
+            dataNotAvailable: true,
+            error: error.message
+          }
+        }
+      };
+    }
+  },
   
-  // Configuración del sistema
+  getSystemPerformance: async () => {
+    try {
+      const primaryEndpoint = '/api/v1/dashboard/admin/performance';
+      const fallbackEndpoints = [
+        '/api/v1/admin/performance',
+        '/api/admin/system/performance'
+      ];
+      
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints);
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al obtener rendimiento del sistema:', error);
+      return {
+        data: {
+          success: true,
+          data: {
+            cpu: 0,
+            memory: 0,
+            disk: 0,
+            uptime: 0,
+            dataNotAvailable: true,
+            error: error.message
+          }
+        }
+      };
+    }
+  },
+  
+  // Configuración del sistema - Optimizada con rutas fallback
   getSystemSettings: async () => {
     try {
-      console.log('Solicitando configuración del sistema');
-      const response = await api.get('/api/v1/dashboard/admin/settings');
-      return response;
+      const primaryEndpoint = '/api/v1/dashboard/admin/settings';
+      const fallbackEndpoints = [
+        '/api/v1/admin/settings',
+        '/api/admin/settings',
+        '/api/v1/settings',
+        '/api/settings'
+      ];
+      
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints);
+      return normalizeResponse(response);
     } catch (error) {
       console.error('Error al obtener configuración del sistema:', error);
       
@@ -424,21 +301,46 @@ const adminApi = {
             maxFileSize: 5,
             timeZone: 'Europe/Madrid',
             dataNotAvailable: true,
-            error: error.response?.data?.message || 'No se pudo cargar la configuración del sistema'
+            error: error.message || 'No se pudo cargar la configuración del sistema'
           }
         }
       };
     }
   },
   
-  updateSystemSettings: (settings) => api.put('/api/v1/dashboard/admin/settings', settings),
+  updateSystemSettings: async (settings) => {
+    try {
+      const primaryEndpoint = '/api/v1/dashboard/admin/settings';
+      const fallbackEndpoints = [
+        '/api/v1/admin/settings',
+        '/api/admin/settings'
+      ];
+      
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'put', data: settings }
+      );
+      
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al actualizar configuración del sistema:', error);
+      throw error;
+    }
+  },
   
-  // Configuración de correo electrónico
+  // Configuración de correo electrónico - Optimizada con rutas fallback
   getEmailSettings: async () => {
     try {
-      console.log('Solicitando configuración de correo electrónico');
-      const response = await api.get('/api/v1/dashboard/admin/settings/email');
-      return response;
+      const primaryEndpoint = '/api/v1/dashboard/admin/settings/email';
+      const fallbackEndpoints = [
+        '/api/v1/dashboard/email/config',
+        '/api/v1/admin/settings/email',
+        '/api/email/config'
+      ];
+      
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints);
+      return normalizeResponse(response);
     } catch (error) {
       console.error('Error al obtener configuración de correo:', error);
       
@@ -463,52 +365,141 @@ const adminApi = {
               eventReminder: { subject: '', enabled: false },
             },
             dataNotAvailable: true,
-            error: error.response?.data?.message || 'No se pudo cargar la configuración de correo electrónico'
+            error: error.message || 'No se pudo cargar la configuración de correo electrónico'
           }
         }
       };
     }
   },
   
-  updateEmailSettings: (settings) => api.put('/api/v1/dashboard/admin/settings/email', settings),
-  sendTestEmail: (emailData) => api.post('/api/v1/dashboard/admin/send-test-email', emailData),
+  updateEmailSettings: async (settings) => {
+    try {
+      const primaryEndpoint = '/api/v1/dashboard/admin/settings/email';
+      const fallbackEndpoints = [
+        '/api/v1/dashboard/email/config',
+        '/api/v1/admin/settings/email',
+        '/api/email/config'
+      ];
+      
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'put', data: settings }
+      );
+      
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al actualizar configuración de correo:', error);
+      throw error;
+    }
+  },
+  
+  sendTestEmail: async (emailData) => {
+    try {
+      const primaryEndpoint = '/api/v1/dashboard/admin/send-test-email';
+      const fallbackEndpoints = [
+        '/api/v1/dashboard/email/test',
+        '/api/email/test'
+      ];
+      
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'post', data: emailData }
+      );
+      
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al enviar correo de prueba:', error);
+      throw error;
+    }
+  },
   
   // Comunicaciones
-  getCommunications: (params) => api.get('/api/v1/dashboard/admin/communications', { params }),
-  sendCommunication: (data) => api.post('/api/v1/dashboard/admin/communications', data),
-
-  // Configuración UI - Usando directamente el endpoint que funciona correctamente sin intentar otros
-  getUiConfig: async (route) => {
+  getCommunications: async (params) => {
     try {
-      console.log(`Solicitando configuración UI para ruta: ${route} usando endpoint verificado`);
+      const primaryEndpoint = '/api/v1/dashboard/admin/communications';
+      const fallbackEndpoints = [
+        '/api/v1/admin/communications',
+        '/api/admin/communications'
+      ];
       
-      // Usar directamente el endpoint que funciona correctamente sin intentar primero el que falla
-      const response = await api.get('/api/templates/ui-config');
-      console.log('✅ UI Config recibida correctamente:', response.data);
-      
-      // Devolver los datos con elementos de navegación para el admin dashboard
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params });
+      return normalizeResponse(response, 'communications');
+    } catch (error) {
+      console.error('Error al obtener comunicaciones:', error);
       return {
         data: {
           success: true,
           data: {
-            hideHeader: true,
-            hideFooter: true,
-            isDashboard: true,
-            dashboardType: 'admin',
-            ...response.data,
-            // Asegurar que siempre se tenga la navegación correcta
-            navItems: [
-              { path: '/admin/overview', label: 'Dashboard', icon: 'dashboard' },
-              { path: '/admin/users', label: 'Usuarios', icon: 'people' },
-              { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
-              { path: '/admin/events', label: 'Eventos', icon: 'event' },
-              { path: '/admin/categories', label: 'Categorías', icon: 'category' },
-              { path: '/admin/reports', label: 'Informes', icon: 'bar_chart' },
-              { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
-            ]
+            communications: [],
+            dataNotAvailable: true,
+            error: error.message
           }
         }
       };
+    }
+  },
+  
+  sendCommunication: async (data) => {
+    try {
+      const primaryEndpoint = '/api/v1/dashboard/admin/communications';
+      const fallbackEndpoints = [
+        '/api/v1/admin/communications',
+        '/api/admin/communications'
+      ];
+      
+      const response = await apiRequestWithFallback(
+        primaryEndpoint, 
+        fallbackEndpoints, 
+        { method: 'post', data }
+      );
+      
+      return normalizeResponse(response);
+    } catch (error) {
+      console.error('Error al enviar comunicación:', error);
+      throw error;
+    }
+  },
+
+  // Configuración UI - Usando el endpoint que funciona correctamente
+  getUiConfig: async (route) => {
+    try {
+      console.log(`Solicitando configuración UI para ruta: ${route}`);
+      
+      const primaryEndpoint = '/api/templates/ui-config';
+      const fallbackEndpoints = [
+        '/api/v1/dashboard/ui-config',
+        '/api/ui-config'
+      ];
+      
+      const params = route ? { route } : undefined;
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params });
+      
+      // Normalizar respuesta pero asegurar que siempre tenga la navegación correcta
+      const normalizedResponse = normalizeResponse(response);
+      
+      // Asegurar que haya elementos de navegación consistentes para el dashboard
+      if (normalizedResponse?.data?.data) {
+        normalizedResponse.data.data = {
+          ...normalizedResponse.data.data,
+          hideHeader: true,
+          hideFooter: true,
+          isDashboard: true,
+          dashboardType: 'admin',
+          navItems: [
+            { path: '/admin/overview', label: 'Dashboard', icon: 'dashboard' },
+            { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+            { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+            { path: '/admin/events', label: 'Eventos', icon: 'event' },
+            { path: '/admin/categories', label: 'Categorías', icon: 'category' },
+            { path: '/admin/reports', label: 'Informes', icon: 'bar_chart' },
+            { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+          ]
+        };
+      }
+      
+      return normalizedResponse;
     } catch (error) {
       console.error('Error al obtener configuración UI:', error);
       
