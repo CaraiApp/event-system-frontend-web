@@ -106,32 +106,6 @@ const AdminDashboard = () => {
     setAnchorEl(null);
   };
   
-  // Intercepta los clics en el menú para capturar eventos y depurar
-  useEffect(() => {
-    const addNavDebugging = () => {
-      // Buscar todos los elementos del menú después de que se renderice el componente
-      setTimeout(() => {
-        const menuItems = document.querySelectorAll('.MuiListItemButton-root');
-        menuItems.forEach(item => {
-          const originalClick = item.onclick;
-          item.onclick = (e) => {
-            console.log('[ADMIN DASHBOARD] Click en elemento de menú:', item.textContent);
-            if (originalClick) {
-              return originalClick(e);
-            }
-          };
-        });
-        console.log('[ADMIN DASHBOARD] Se han instrumentado', menuItems.length, 'elementos del menú');
-      }, 1000);
-    };
-    
-    addNavDebugging();
-    // También aplicar cuando cambie la ruta por si se vuelve a renderizar el menú
-    return () => {
-      console.log('[ADMIN DASHBOARD] Limpiando instrumentación del menú');
-    };
-  }, [location.pathname]);
-  
   const handleNotificationsOpen = (event) => {
     setNotificationAnchorEl(event.currentTarget);
   };
@@ -146,22 +120,35 @@ const AdminDashboard = () => {
   };
   
   const handleNavigation = (path) => {
-    // Solución drástica: usar siempre navegación directa con window.location para resolver problemas de rutas
-    // Ignorar completamente React Router para la navegación dentro del panel administrativo
-    
     // Verificar si la ruta comienza con '/' para asegurar rutas relativas correctas
     const formattedPath = path.startsWith('/') ? path : `/${path}`;
     console.log(`[ADMIN DASHBOARD] Navegando a: ${formattedPath}`);
     
-    // Obtener la base URL completa
-    const baseUrl = window.location.origin; // Esto da https://v2.entradasmelilla.com
-    const fullPath = `${baseUrl}${formattedPath}`; // Ruta completa absoluta
+    // Verificar si estamos en producción
+    const isProduction = window.location.hostname.includes('vercel.app') || 
+                        window.location.hostname.includes('entradasmelilla.com');
     
-    console.log(`[ADMIN DASHBOARD] Navegación directa a: ${fullPath}`);
+    if (isProduction) {
+      // En producción, usamos un enfoque diferente para manejar las rutas
+      console.log(`[ADMIN DASHBOARD] Detectado entorno de producción en ${window.location.hostname}`);
+      
+      // En producción, intentamos un enfoque alternativo para resolver problemas de navegación
+      const baseUrl = window.location.origin; // Usar el origen actual como base
+      const fullPath = `${baseUrl}${formattedPath}`;
+      console.log(`[ADMIN DASHBOARD] URL completa: ${fullPath}`);
+      
+      // Usar window.location para una navegación más directa en producción
+      window.location.href = fullPath;
+      return; // Salir temprano ya que estamos usando redirección directa
+    }
     
-    // Siempre usar window.location.href para navegar
-    // Esta aproximación ignora React Router, pero garantiza que las rutas funcionen en producción
-    window.location.href = fullPath;
+    // Para desarrollo, usar la navegación normal de React Router
+    navigate(formattedPath, { replace: false });
+    
+    // Cerrar el menú de usuario si está abierto
+    if (isMenuOpen) {
+      handleUserMenuClose();
+    }
   };
   
   const navigationItems = [

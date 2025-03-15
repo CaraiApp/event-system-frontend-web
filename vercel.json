@@ -1,13 +1,10 @@
 {
-    "version": 2,
     "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
     "headers": [
       {
         "source": "/(.*)",
         "headers": [
-          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-          { "key": "Pragma", "value": "no-cache" },
-          { "key": "Expires", "value": "0" }
+          { "key": "Cache-Control", "value": "s-maxage=1, stale-while-revalidate" }
         ]
       }
     ],
@@ -18,7 +15,5 @@
       "env": {
         "VITE_REACT_APP_BACKEND_BASEURL": "https://event-system-backend-production.up.railway.app"
       }
-    },
-    "cleanUrls": true,
-    "trailingSlash": false
+    }
   }
