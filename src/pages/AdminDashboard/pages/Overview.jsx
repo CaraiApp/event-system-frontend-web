@@ -40,21 +40,47 @@ const Overview = () => {
         setLoading(true);
         console.log('Cargando datos del dashboard a través del servicio API');
         
-        // Usamos el servicio API con datos estáticos
+        // Usamos el servicio API con manejo de diferentes formatos
         const response = await adminApi.getDashboardOverview();
+        console.log('Respuesta completa del dashboard:', response);
         
         if (response?.data?.data) {
           console.log('Datos obtenidos del servicio API:', response.data.data);
           setDashboardData(response.data.data);
+          setError(null);
         } else {
-          console.error('Formato de respuesta inesperado. Usando datos de reserva.');
-          throw new Error('Formato inesperado');
+          console.error('Respuesta con formato inesperado:', response);
+          // Intentar recuperar datos de cualquier formato disponible
+          const data = response?.data || response;
+          
+          if (data) {
+            console.log('Intentando usar datos en formato alternativo:', data);
+            setDashboardData(data);
+            setError(null);
+          } else {
+            throw new Error('No se pudieron recuperar datos en ningún formato');
+          }
         }
-        
-        setError(null);
       } catch (err) {
         console.error('Error en la carga de datos:', err);
         setError('Error al cargar los datos del dashboard. Por favor, inténtalo de nuevo.');
+        
+        // Configurar datos de fallback
+        setDashboardData({
+          userCount: 0,
+          newUsers: 0,
+          totalEvents: 0,
+          activeEventCount: 0,
+          pendingEventCount: 0,
+          bookingCount: 0,
+          totalRevenue: 0,
+          popularCategories: [],
+          systemHealth: 0,
+          recentEvents: [],
+          revenueByMonth: {},
+          userGrowth: {},
+          dataNotAvailable: true
+        });
       } finally {
         setLoading(false);
       }

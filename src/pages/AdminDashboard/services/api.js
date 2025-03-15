@@ -45,9 +45,35 @@ const adminApi = {
     try {
       console.log('Solicitando datos reales del dashboard');
       const response = await api.get('/api/v1/dashboard/admin/overview');
-      return response;
+      
+      // Verificar el formato de la respuesta y adaptarlo si es necesario
+      console.log('Respuesta raw del dashboard:', response);
+      
+      if (response?.data?.success === true && response?.data?.data) {
+        // Formato esperado, devolver directamente
+        return response;
+      } else if (response?.data?.statusCode === 200 && response?.data?.data) {
+        // Formato alternativo, adaptarlo al formato esperado
+        return {
+          data: {
+            success: true,
+            data: response.data.data
+          }
+        };
+      } else if (response?.data) {
+        // Si hay datos pero en otro formato, intentar adaptarlos
+        return {
+          data: {
+            success: true,
+            data: response.data
+          }
+        };
+      } else {
+        throw new Error('Formato de respuesta no reconocido');
+      }
     } catch (error) {
       console.error('Error al obtener datos del dashboard:', error);
+      // Generar datos de fallback
       return {
         data: {
           success: true,
@@ -77,7 +103,37 @@ const adminApi = {
     try {
       console.log('Solicitando lista de usuarios con parámetros:', params);
       const response = await api.get('/api/v1/dashboard/admin/users', { params });
-      return response;
+      
+      console.log('Respuesta raw de usuarios:', response);
+      
+      // Verificar el formato de la respuesta y adaptarlo si es necesario
+      if (response?.data?.success === true && response?.data?.data) {
+        // Formato esperado, devolver directamente
+        return response;
+      } else if (response?.data?.statusCode === 200 && response?.data?.data) {
+        // Formato alternativo, adaptarlo al formato esperado
+        return {
+          data: {
+            success: true,
+            data: response.data.data
+          }
+        };
+      } else if (response?.data) {
+        // Si hay datos pero en otro formato, intentar adaptarlos
+        return {
+          data: {
+            success: true,
+            data: {
+              users: Array.isArray(response.data) ? response.data : [],
+              totalCount: Array.isArray(response.data) ? response.data.length : 0,
+              page: params?.page || 1,
+              limit: params?.limit || 10
+            }
+          }
+        };
+      } else {
+        throw new Error('Formato de respuesta no reconocido');
+      }
     } catch (error) {
       console.error('Error al obtener usuarios:', error);
       return {
@@ -102,7 +158,37 @@ const adminApi = {
       // Añadimos role=organizer para filtrar solo organizadores
       const queryParams = { ...params, role: 'organizer' };
       const response = await api.get('/api/v1/dashboard/admin/organizers', { params: queryParams });
-      return response;
+      
+      console.log('Respuesta raw de organizadores:', response);
+      
+      // Verificar el formato de la respuesta y adaptarlo si es necesario
+      if (response?.data?.success === true && response?.data?.data) {
+        // Formato esperado, devolver directamente
+        return response;
+      } else if (response?.data?.statusCode === 200 && response?.data?.data) {
+        // Formato alternativo, adaptarlo al formato esperado
+        return {
+          data: {
+            success: true,
+            data: response.data.data
+          }
+        };
+      } else if (response?.data) {
+        // Si hay datos pero en otro formato, intentar adaptarlos
+        return {
+          data: {
+            success: true,
+            data: {
+              users: Array.isArray(response.data) ? response.data : [],
+              totalCount: Array.isArray(response.data) ? response.data.length : 0,
+              page: params?.page || 1,
+              limit: params?.limit || 10
+            }
+          }
+        };
+      } else {
+        throw new Error('Formato de respuesta no reconocido');
+      }
     } catch (error) {
       console.error('Error al obtener organizadores:', error);
       return {
@@ -128,8 +214,73 @@ const adminApi = {
   getEvents: async (params) => {
     try {
       console.log('Solicitando lista de eventos con parámetros:', params);
-      const response = await api.get('/api/v1/dashboard/admin/events', { params });
-      return response;
+      
+      // Intentamos con el endpoint específico del admin dashboard
+      try {
+        const response = await api.get('/api/v1/dashboard/admin/events', { params });
+        console.log('Respuesta raw de eventos (admin):', response);
+        
+        if (response?.data?.success === true && response?.data?.data) {
+          return response;
+        } else if (response?.data?.statusCode === 200 && response?.data?.data) {
+          return {
+            data: {
+              success: true,
+              data: response.data.data
+            }
+          };
+        } else if (response?.data) {
+          return {
+            data: {
+              success: true,
+              data: {
+                events: Array.isArray(response.data) ? response.data : [],
+                totalCount: Array.isArray(response.data) ? response.data.length : 0,
+                page: params?.page || 1,
+                limit: params?.limit || 10
+              }
+            }
+          };
+        }
+      } catch (adminError) {
+        console.error('Error con endpoint admin, intentando con endpoint general', adminError);
+        
+        // Si falla, intentamos con el endpoint general de eventos
+        const generalResponse = await api.get('/api/v1/events/getAllEvents');
+        console.log('Respuesta raw de eventos (general):', generalResponse);
+        
+        if (generalResponse?.data?.success === true && generalResponse?.data?.data) {
+          // Adaptar formato
+          const events = generalResponse.data.data;
+          return {
+            data: {
+              success: true,
+              data: {
+                events: events,
+                totalCount: events.length,
+                page: params?.page || 1,
+                limit: params?.limit || 10
+              }
+            }
+          };
+        } else if (generalResponse?.data) {
+          const events = Array.isArray(generalResponse.data) ? generalResponse.data : 
+                        (generalResponse.data.data ? generalResponse.data.data : []);
+          return {
+            data: {
+              success: true,
+              data: {
+                events: events,
+                totalCount: events.length,
+                page: params?.page || 1,
+                limit: params?.limit || 10
+              }
+            }
+          };
+        }
+      }
+      
+      throw new Error('Ninguno de los endpoints devolvió datos utilizables');
     } catch (error) {
       console.error('Error al obtener eventos:', error);
       return {
@@ -156,17 +307,38 @@ const adminApi = {
   getCategories: async () => {
     try {
       console.log('Solicitando lista de categorías');
-      const response = await api.get('/api/v1/dashboard/admin/categories');
-      return response;
-    } catch (error) {
-      console.error('Error al obtener categorías:', error);
       
-      // Intentamos obtener categorías a través de la API general
+      // Intentamos con el endpoint específico del admin
       try {
-        console.log('Intentando obtener categorías a través de la API general');
+        const response = await api.get('/api/v1/dashboard/admin/categories');
+        console.log('Respuesta raw de categorías (admin):', response);
+        
+        if (response?.data?.success === true && response?.data?.data) {
+          return response;
+        } else if (response?.data?.statusCode === 200 && response?.data?.data) {
+          return {
+            data: {
+              success: true,
+              data: response.data.data
+            }
+          };
+        } else if (response?.data) {
+          return {
+            data: {
+              success: true,
+              data: Array.isArray(response.data) ? response.data : []
+            }
+          };
+        }
+      } catch (adminError) {
+        console.error('Error con endpoint admin, intentando con endpoint general', adminError);
+        
+        // Intentamos obtener categorías a través de la API general
         const generalResponse = await api.get('/api/v1/categories');
+        console.log('Respuesta raw de categorías (general):', generalResponse);
+        
         // Transformar la respuesta al formato esperado por el admin dashboard
-        if (generalResponse.data && generalResponse.data.data) {
+        if (generalResponse?.data?.success === true && generalResponse?.data?.data) {
           const formattedCategories = generalResponse.data.data.map(cat => ({
             id: cat._id || cat.id,
             name: cat.name,
@@ -180,10 +352,29 @@ const adminApi = {
               data: formattedCategories
             }
           };
+        } else if (generalResponse?.data) {
+          const categories = Array.isArray(generalResponse.data) ? generalResponse.data : 
+                          (generalResponse.data.data ? generalResponse.data.data : []);
+          
+          const formattedCategories = categories.map(cat => ({
+            id: cat._id || cat.id,
+            name: cat.name,
+            eventCount: cat.eventCount || 0,
+            icon: cat.icon || 'category'
+          }));
+          
+          return {
+            data: {
+              success: true,
+              data: formattedCategories
+            }
+          };
         }
-      } catch (secondError) {
-        console.error('Error en segundo intento de obtener categorías:', secondError);
       }
+      
+      throw new Error('Ninguno de los endpoints devolvió datos utilizables');
+    } catch (error) {
+      console.error('Error al obtener categorías:', error);
       
       // Si ambos intentos fallan, devolver lista vacía con mensaje
       return {
