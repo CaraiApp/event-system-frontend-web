@@ -89,7 +89,47 @@ export const getEvents = async (userRole) => {
   return apiRequestWithFallback(primaryEndpoint, fallbackEndpoints);
 };
 
+/**
+ * Helper específico para obtener usuarios con múltiples alternativas
+ * @param {object} params - Parámetros de la petición (page, limit, role, etc.)
+ * @returns {Promise<object>} - Respuesta de la API con usuarios
+ */
+export const getUsers = async (params = {}) => {
+  const primaryEndpoint = '/api/v1/dashboard/admin/users';
+  const fallbackEndpoints = [
+    '/api/v1/users',
+    '/api/v1/admin/users',
+    '/api/users',
+    '/api/admin/users'
+  ];
+  
+  return apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params });
+};
+
+/**
+ * Helper específico para obtener organizadores con múltiples alternativas
+ * @param {object} params - Parámetros de la petición (page, limit, etc.)
+ * @returns {Promise<object>} - Respuesta de la API con organizadores
+ */
+export const getOrganizers = async (params = {}) => {
+  // Asegurarse de que el parámetro role esté presente
+  const queryParams = { ...params, role: 'organizer' };
+  
+  const primaryEndpoint = '/api/v1/dashboard/admin/organizers';
+  const fallbackEndpoints = [
+    '/api/v1/dashboard/admin/users', // Intentar con endpoint de usuarios filtrando por rol
+    '/api/v1/users',
+    '/api/v1/admin/users',
+    '/api/users',
+    '/api/admin/users'
+  ];
+  
+  return apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params: queryParams });
+};
+
 export default {
   apiRequestWithFallback,
-  getEvents
+  getEvents,
+  getUsers,
+  getOrganizers
 };

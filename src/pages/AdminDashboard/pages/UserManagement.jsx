@@ -5,6 +5,30 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import DataTable from '../components/DataTable';
 import PageHeader from '../components/PageHeader';
 import adminApi from '../services/api';
+import { getUsers, getOrganizers } from '../../../utils/apiHelper';
+
+// Función para generar datos mock de usuarios
+const generateMockUsers = (count = 10, isOrganizers = false) => {
+  const roles = isOrganizers ? ['organizer'] : ['user', 'organizer', 'admin'];
+  const statuses = ['active', 'inactive', 'suspended'];
+  
+  return Array.from({ length: count }, (_, i) => {
+    const role = roles[isOrganizers ? 0 : Math.floor(Math.random() * roles.length)];
+    const isOrganizer = role === 'organizer';
+    
+    return {
+      id: `mock-${i+1}`,
+      username: `usuario_${i+1}`,
+      email: `usuario${i+1}@ejemplo.com`,
+      fullName: `Usuario Ejemplo ${i+1}`,
+      companyName: isOrganizer ? `Organización ${i+1}` : '',
+      role,
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      createdAt: new Date(Date.now() - Math.floor(Math.random() * 90) * 24 * 60 * 60 * 1000),
+      eventsCount: isOrganizer ? Math.floor(Math.random() * 10) : 0
+    };
+  });
+};
 
 const UserManagement = ({ isOrganizers = false }) => {
   const [users, setUsers] = useState([]);
@@ -102,26 +126,60 @@ const UserManagement = ({ isOrganizers = false }) => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      console.log('Obteniendo usuarios para el admin dashboard...');
+      
       const params = {
         page: page + 1, // La API usa 1-indexed para páginas
         limit: rowsPerPage,
         ...(isOrganizers && { role: 'organizer' })
       };
+      
+      console.log('Parámetros de búsqueda:', params);
 
+      // Usar nuestro helper con rutas alternativas
       const response = isOrganizers
-        ? await adminApi.getOrganizers(params)
-        : await adminApi.getUsers(params);
-
-      if (response.data && response.data.data) {
-        setUsers(response.data.data.users || []);
-        setTotalUsers(response.data.data.totalCount || 0);
+        ? await getOrganizers(params)
+        : await getUsers(params);
+      
+      console.log('Respuesta de usuarios:', response);
+      
+      // Extraer datos con manejo de diferentes formatos
+      if (response?.data?.data?.users) {
+        // Formato esperado con estructura anidada
+        console.log('Usuarios obtenidos (formato anidado):', response.data.data.users.length);
+        setUsers(response.data.data.users);
+        setTotalUsers(response.data.data.totalCount || response.data.data.users.length);
+      } else if (response?.data?.data && Array.isArray(response.data.data)) {
+        // Formato con data como array directo
+        console.log('Usuarios obtenidos (array en data):', response.data.data.length);
+        setUsers(response.data.data);
+        setTotalUsers(response.data.data.length);
+      } else if (Array.isArray(response?.data)) {
+        // Formato array directo
+        console.log('Usuarios obtenidos (array directo):', response.data.length);
+        setUsers(response.data);
+        setTotalUsers(response.data.length);
+      } else {
+        // No se encontró formato conocido
+        console.error('Formato de respuesta no reconocido:', response);
+        setUsers([]);
+        setTotalUsers(0);
+        throw new Error('Formato de respuesta no reconocido');
       }
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
+      
+      // Generar datos mock en caso de que no haya conexión
+      const mockUsers = generateMockUsers(rowsPerPage, isOrganizers);
+      console.log('Usando datos mock de usuarios:', mockUsers.length);
+      
+      setUsers(mockUsers);
+      setTotalUsers(mockUsers.length);
+      
       setAlert({
         open: true,
-        message: 'Error al cargar usuarios. Por favor, inténtalo de nuevo.',
-        severity: 'error'
+        message: 'No se pudieron cargar datos reales. Mostrando datos de ejemplo.',
+        severity: 'warning'
       });
     } finally {
       setLoading(false);
