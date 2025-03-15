@@ -1,10 +1,8 @@
 import axios from 'axios';
 
 // Crear una instancia de axios con la configuración base
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
-
+// No usamos una URL base personalizada para aprovechar el proxy configurado en vite.config.js
 const api = axios.create({
-  baseURL: API_BASE_URL,
   withCredentials: true, // Importante para mantener las cookies de sesión
   headers: {
     'Content-Type': 'application/json',
@@ -39,47 +37,81 @@ api.interceptors.response.use(
 // Servicios para el dashboard de administrador
 const adminApi = {
   // Autenticación
-  login: (credentials) => api.post('/auth/login', credentials),
-  logout: () => api.post('/auth/logout'),
+  login: (credentials) => api.post('/api/v1/auth/login', credentials),
+  logout: () => api.post('/api/v1/auth/logout'),
   
   // Dashboard Overview
-  getDashboardOverview: () => api.get('/dashboard/admin/overview'),
+  getDashboardOverview: () => api.get('/api/v1/dashboard/admin/overview'),
   
   // Usuarios
-  getUsers: (params) => api.get('/dashboard/admin/users', { params }),
-  getOrganizers: (params) => api.get('/dashboard/admin/organizers', { params }),
-  updateUser: (userId, userData) => api.patch(`/dashboard/admin/users/${userId}`, userData),
-  deleteUser: (userId) => api.delete(`/dashboard/admin/users/${userId}`),
+  getUsers: (params) => api.get('/api/v1/dashboard/admin/users', { params }),
+  getOrganizers: (params) => api.get('/api/v1/dashboard/admin/organizers', { params }),
+  updateUser: (userId, userData) => api.patch(`/api/v1/dashboard/admin/users/${userId}`, userData),
+  deleteUser: (userId) => api.delete(`/api/v1/dashboard/admin/users/${userId}`),
   
   // Eventos
-  getEvents: (params) => api.get('/dashboard/admin/events', { params }),
-  updateEventStatus: (eventId, status) => api.patch(`/dashboard/admin/events/${eventId}/status`, { status }),
-  toggleEventFeatured: (eventId, featured) => api.patch(`/dashboard/admin/events/${eventId}/featured`, { featured }),
-  deleteEvent: (eventId) => api.delete(`/dashboard/admin/events/${eventId}`),
+  getEvents: (params) => api.get('/api/v1/dashboard/admin/events', { params }),
+  updateEventStatus: (eventId, status) => api.patch(`/api/v1/dashboard/admin/events/${eventId}/status`, { status }),
+  toggleEventFeatured: (eventId, featured) => api.patch(`/api/v1/dashboard/admin/events/${eventId}/featured`, { featured }),
+  deleteEvent: (eventId) => api.delete(`/api/v1/dashboard/admin/events/${eventId}`),
   
   // Categorías
-  getCategories: () => api.get('/dashboard/admin/categories'),
+  getCategories: () => api.get('/api/v1/dashboard/admin/categories'),
   
   // Informes
-  getReports: (params) => api.get('/dashboard/admin/reports', { params }),
-  getActivityLog: (params) => api.get('/dashboard/admin/activity-log', { params }),
-  getSystemPerformance: () => api.get('/dashboard/admin/performance'),
+  getReports: (params) => api.get('/api/v1/dashboard/admin/reports', { params }),
+  getActivityLog: (params) => api.get('/api/v1/dashboard/admin/activity-log', { params }),
+  getSystemPerformance: () => api.get('/api/v1/dashboard/admin/performance'),
   
   // Configuración del sistema
-  getSystemSettings: () => api.get('/dashboard/admin/settings'),
-  updateSystemSettings: (settings) => api.put('/dashboard/admin/settings', settings),
+  getSystemSettings: () => api.get('/api/v1/dashboard/admin/settings'),
+  updateSystemSettings: (settings) => api.put('/api/v1/dashboard/admin/settings', settings),
   
   // Configuración de correo electrónico
-  getEmailSettings: () => api.get('/dashboard/admin/settings/email'),
-  updateEmailSettings: (settings) => api.put('/dashboard/admin/settings/email', settings),
-  sendTestEmail: (emailData) => api.post('/dashboard/admin/send-test-email', emailData),
+  getEmailSettings: () => api.get('/api/v1/dashboard/admin/settings/email'),
+  updateEmailSettings: (settings) => api.put('/api/v1/dashboard/admin/settings/email', settings),
+  sendTestEmail: (emailData) => api.post('/api/v1/dashboard/admin/send-test-email', emailData),
   
   // Comunicaciones
-  getCommunications: (params) => api.get('/dashboard/admin/communications', { params }),
-  sendCommunication: (data) => api.post('/dashboard/admin/communications', data),
+  getCommunications: (params) => api.get('/api/v1/dashboard/admin/communications', { params }),
+  sendCommunication: (data) => api.post('/api/v1/dashboard/admin/communications', data),
 
   // Configuración UI
-  getUiConfig: (route) => api.get('/dashboard/ui-config', { params: { route } }),
+  getUiConfig: async (route) => {
+    try {
+      // Intentar con la ruta principal
+      return await api.get('/api/v1/dashboard/ui-config', { params: { route } });
+    } catch (error) {
+      console.log(`Error al obtener configuración UI para ${route}:`, error.message);
+      
+      // Si falla, intentar con una ruta alternativa
+      try {
+        return await api.get('/api/v1/templates/ui-config');
+      } catch (altError) {
+        console.log('Error también en ruta alternativa:', altError.message);
+        
+        // Como último recurso, devolver una configuración por defecto
+        return {
+          data: {
+            success: true,
+            data: {
+              hideHeader: true,
+              hideFooter: true,
+              isDashboard: true,
+              dashboardType: 'admin',
+              navItems: [
+                { path: '/admin/overview', label: 'Panel de Control', icon: 'dashboard' },
+                { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+                { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+                { path: '/admin/events', label: 'Eventos', icon: 'event' },
+                { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+              ]
+            }
+          }
+        };
+      }
+    }
+  },
 };
 
 export default adminApi;

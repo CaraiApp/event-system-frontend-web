@@ -29,31 +29,63 @@ export const AdminDashboardProvider = ({ children }) => {
           return;
         }
 
-        // Intentar obtener la configuración de UI para verificar si el token es válido
-        const response = await adminApi.getUiConfig('/admin/overview');
-        setUiConfig(response.data.data);
-        
-        // Si llegamos aquí, el usuario está autenticado
-        setIsAuthenticated(true);
-        
-        // Extraer información del usuario del token (si usas JWT)
-        // Esta es una implementación simple; en producción, podrías querer verificar el token en el servidor
+        // Parseamos el token para obtener información del usuario
         const parseJwt = (token) => {
           try {
             return JSON.parse(atob(token.split('.')[1]));
           } catch (e) {
+            console.error("Error al decodificar token:", e);
             return null;
           }
         };
         
         const decodedToken = parseJwt(token);
-        if (decodedToken) {
-          setUser({
-            id: decodedToken.id,
-            username: decodedToken.username,
-            role: decodedToken.role,
+        if (!decodedToken) {
+          console.error("Token inválido o no se pudo decodificar");
+          throw new Error("Token inválido");
+        }
+        
+        // Guardar la información del usuario
+        setUser({
+          id: decodedToken.id,
+          username: decodedToken.username || decodedToken.email,
+          role: decodedToken.role,
+        });
+        
+        // Verificar si el usuario es administrador
+        if (decodedToken.role !== 'admin') {
+          setError('No tienes permisos de administrador para acceder a este área.');
+          setIsAuthenticated(false);
+          setLoading(false);
+          return;
+        }
+
+        // Intentar obtener la configuración de UI
+        try {
+          const response = await adminApi.getUiConfig('/admin/overview');
+          if (response && response.data && response.data.data) {
+            setUiConfig(response.data.data);
+          }
+        } catch (uiErr) {
+          console.warn('Error obteniendo configuración UI, usando configuración por defecto:', uiErr);
+          // Usar configuración por defecto si falla
+          setUiConfig({
+            hideHeader: true,
+            hideFooter: true,
+            isDashboard: true,
+            dashboardType: 'admin',
+            navItems: [
+              { path: '/admin/overview', label: 'Panel de Control', icon: 'dashboard' },
+              { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+              { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+              { path: '/admin/events', label: 'Eventos', icon: 'event' },
+              { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+            ]
           });
         }
+        
+        // Si llegamos aquí, el usuario está autenticado
+        setIsAuthenticated(true);
       } catch (err) {
         console.error('Error verificando autenticación:', err);
         setError('Error al verificar la autenticación. Por favor, inicia sesión de nuevo.');
