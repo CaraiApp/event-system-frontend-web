@@ -30,7 +30,9 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import { useAdminDashboard } from '../hooks/AdminDashboardContext';
+import DebugPanel from '../../../components/DebugPanel/DebugPanel';
 
 // Ancho del drawer cuando está abierto
 const drawerWidth = 260;
@@ -49,6 +51,7 @@ const iconMapping = {
 const DashboardLayout = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, uiConfig, logout } = useAdminDashboard();
@@ -74,6 +77,10 @@ const DashboardLayout = ({ children }) => {
     handleUserMenuClose();
     await logout();
     navigate('/login');
+  };
+
+  const toggleDebugPanel = () => {
+    setShowDebugPanel(!showDebugPanel);
   };
 
   const handleNavigation = (path) => {
@@ -156,6 +163,17 @@ const DashboardLayout = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             {uiConfig.navItems.find(item => item.path === location.pathname)?.label || 'Panel de administración'}
           </Typography>
+          
+          {/* Debug Panel Toggle */}
+          <Tooltip title="Panel de depuración">
+            <IconButton 
+              color="inherit" 
+              onClick={toggleDebugPanel}
+              sx={{ mr: 2 }}
+            >
+              <BugReportIcon />
+            </IconButton>
+          </Tooltip>
           
           {/* Menú de usuario */}
           <Box>
@@ -253,6 +271,9 @@ const DashboardLayout = ({ children }) => {
       >
         <Toolbar /> {/* Espaciador para compensar la AppBar */}
         {children}
+        
+        {/* Incluir DebugPanel solo cuando esté activado */}
+        {showDebugPanel && <DebugPanel />}
       </Box>
     </Box>
   );

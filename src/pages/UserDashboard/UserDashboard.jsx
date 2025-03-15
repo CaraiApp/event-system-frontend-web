@@ -32,6 +32,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import CloseIcon from '@mui/icons-material/Close';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import DebugPanel from '../../components/DebugPanel/DebugPanel';
 import axios from 'axios';
 import './UserDashboard.css';
@@ -47,7 +48,7 @@ const UserDashboard = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const showDebugPanel = process.env.NODE_ENV === 'development';
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Manejar el toggle del menú lateral en dispositivos móviles
   const handleDrawerToggle = () => {
@@ -68,6 +69,11 @@ const UserDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login');
+  };
+  
+  // Alternar la visualización del panel de depuración
+  const toggleDebugPanel = () => {
+    setShowDebugPanel(prev => !prev);
   };
 
   // Obtener información del usuario
@@ -212,6 +218,15 @@ const UserDashboard = () => {
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Debug Panel Toggle */}
+            <IconButton 
+              color="inherit" 
+              onClick={toggleDebugPanel} 
+              title="Panel de depuración"
+            >
+              <BugReportIcon />
+            </IconButton>
+            
             {/* Icono de notificaciones */}
             <IconButton color="inherit">
               <NotificationsIcon />

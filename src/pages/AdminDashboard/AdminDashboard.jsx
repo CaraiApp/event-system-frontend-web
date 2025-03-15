@@ -85,7 +85,6 @@ const AdminDashboardContent = () => {
         {/* Ruta por defecto y manejo de rutas no encontradas */}
         <Route path="*" element={<Navigate to="/admin/overview" replace />} />
       </Routes>
-      <DebugPanel />
     </DashboardLayout>
   );
 };
