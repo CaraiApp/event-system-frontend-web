@@ -230,14 +230,14 @@ const CategoryManagement = () => {
       
       {loading ? (
         <Typography sx={{ my: 4, textAlign: 'center' }}>Cargando categorías...</Typography>
-      ) : categories.dataNotAvailable ? (
+      ) : !Array.isArray(categories) || categories.dataNotAvailable ? (
         <Alert severity="info" sx={{ mt: 4 }}>
-          {categories.error || "No hay categorías disponibles. Se mostrarán cuando se creen categorías en la plataforma."}
+          {(categories && categories.error) || "No hay categorías disponibles. Se mostrarán cuando se creen categorías en la plataforma."}
         </Alert>
       ) : categories.length > 0 ? (
         <Grid container spacing={3} sx={{ mt: 2 }}>
-          {categories.map((category) => (
-            <Grid item key={category.id} xs={12} sm={6} md={4}>
+          {categories.map((category, index) => (
+            <Grid item key={category.id || `category-${index}`} xs={12} sm={6} md={4}>
               <Card 
                 sx={{ 
                   height: '100%',

@@ -387,61 +387,131 @@ export const getAdminDashboardOverview = async () => {
 /**
  * Helper para obtener categorías
  */
+// Función para construir URL completa basada en el endpoint
+const buildFullUrl = (endpoint) => {
+  // Si el endpoint ya es una URL completa, devolverla
+  if (endpoint.startsWith('http')) return endpoint;
+  
+  // Si tenemos API_BASE_URL, construir URL completa
+  if (API_BASE_URL) {
+    return `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+  }
+  
+  // De lo contrario, devolver endpoint relativo (para el proxy en desarrollo)
+  return endpoint;
+};
+
 export const getCategories = async () => {
   const primaryEndpoint = '/api/v1/dashboard/admin/categories';
   const fallbackEndpoints = [
     '/api/v1/categories',
-    '/api/categories'
+    '/api/categories',
+    '/api/categories/test' // Endpoint adicional para probar
   ];
   
   try {
-    const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints);
-    return normalizeResponse(response, 'categories');
-  } catch (error) {
-    console.error('Error en getCategories:', error);
+    console.log('🔄 Intentando obtener categorías desde múltiples endpoints...');
+    // Registrar cada intento para diagnóstico
+    let errorLog = [];
     
-    // Proporcionar datos mock para desarrollo cuando la API no está disponible
-    console.log('Usando datos mock para categorías, ya que la API no está disponible');
-    
-    const mockCategories = [
-      {
-        id: 'cat-1',
-        name: 'Conciertos',
-        description: 'Eventos musicales y conciertos en vivo',
-        icon: 'music_note',
-        color: '#3498db',
-        imageUrl: 'https://via.placeholder.com/300x200?text=Conciertos',
-        featured: true,
-        eventCount: 5
-      },
-      {
-        id: 'cat-2',
-        name: 'Deportes',
-        description: 'Eventos deportivos y competiciones',
-        icon: 'sports_soccer',
-        color: '#2ecc71',
-        imageUrl: 'https://via.placeholder.com/300x200?text=Deportes',
-        featured: true,
-        eventCount: 3
-      },
-      {
-        id: 'cat-3',
-        name: 'Teatro',
-        description: 'Obras de teatro y espectáculos',
-        icon: 'theater_comedy',
-        color: '#e74c3c',
-        imageUrl: 'https://via.placeholder.com/300x200?text=Teatro',
-        featured: false,
-        eventCount: 2
+    try {
+      console.log(`API Request: GET ${primaryEndpoint}`, {});
+      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints);
+      console.log('✅ Éxito al obtener categorías');
+      return normalizeResponse(response, 'categories');
+    } catch (error) {
+      // Registrar el error para diagnóstico
+      console.error(`❌ Error en getCategories: ${error.message}`);
+      errorLog.push({ endpoint: primaryEndpoint, error: error.message });
+      
+      // Intentar manualmente cada endpoint para diagnosticar
+      for (const endpoint of fallbackEndpoints) {
+        try {
+          console.log(`API Request: GET ${endpoint}`, {});
+          // Intentar directamente con axios para ver qué está fallando
+          // Obtener token para autenticación
+          const token = localStorage.getItem('token');
+          const headers = {};
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          headers['Accept'] = 'application/json';
+          
+          const testResponse = await axios.get(buildFullUrl(endpoint), { headers });
+          console.log(`✅ Éxito con endpoint alternativo ${endpoint}`);
+          return normalizeResponse(testResponse, 'categories');
+        } catch (testError) {
+          console.error(`❌ Error con endpoint alternativo ${endpoint}: ${testError.message}`);
+          errorLog.push({ endpoint, error: testError.message });
+          
+          // Si hay un cuerpo de respuesta, registrarlo para diagnóstico
+          if (testError.response) {
+            console.error('Response Error Details:', testError.response.data);
+          }
+        }
       }
-    ];
-    
+      
+      // Si llegamos aquí, todos los intentos fallaron
+      console.error('❌ Error en todos los intentos de conexión a categorías:', error.message);
+      console.error('📋 Registro de errores de categorías:', errorLog);
+      
+      // Proporcionar datos mock para desarrollo cuando la API no está disponible
+      console.log('Usando datos mock para categorías, ya que la API no está disponible');
+      
+      const mockCategories = [
+        {
+          id: 'cat-1',
+          name: 'Conciertos',
+          description: 'Eventos musicales y conciertos en vivo',
+          icon: 'music_note',
+          color: '#3498db',
+          imageUrl: 'https://via.placeholder.com/300x200?text=Conciertos',
+          featured: true,
+          eventCount: 5
+        },
+        {
+          id: 'cat-2',
+          name: 'Deportes',
+          description: 'Eventos deportivos y competiciones',
+          icon: 'sports_soccer',
+          color: '#2ecc71',
+          imageUrl: 'https://via.placeholder.com/300x200?text=Deportes',
+          featured: true,
+          eventCount: 3
+        },
+        {
+          id: 'cat-3',
+          name: 'Teatro',
+          description: 'Obras de teatro y espectáculos',
+          icon: 'theater_comedy',
+          color: '#e74c3c',
+          imageUrl: 'https://via.placeholder.com/300x200?text=Teatro',
+          featured: false,
+          eventCount: 2
+        }
+      ];
+      
+      return {
+        data: {
+          success: true,
+          data: {
+            categories: mockCategories,
+            totalCount: mockCategories.length
+          }
+        }
+      };
+    }
+  } catch (finalError) {
+    console.error('Error crítico en getCategories:', finalError);
+    // Asegurar que siempre devolvemos una estructura válida
     return {
       data: {
         success: true,
         data: {
-          categories: mockCategories,
-          totalCount: mockCategories.length
+          categories: [],
+          totalCount: 0,
+          dataNotAvailable: true,
+          error: finalError.message
         }
       }
     };
