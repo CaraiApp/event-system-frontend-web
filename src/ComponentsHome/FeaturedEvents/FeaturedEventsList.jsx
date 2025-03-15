@@ -51,6 +51,7 @@ import "./FeaturedEvents.css";
 import { Tabs, Tab, Box, Modal, Typography, TextField, Button, FormControl, InputLabel, Select, MenuItem, Grid, RadioGroup, FormControlLabel, Radio } from "@mui/material";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { getEvents } from "../../utils/apiHelper";
 
 const FeaturedEventsList = ({ events, loading , setEvents}) => {
   const userRole = localStorage.getItem("role");
@@ -71,12 +72,29 @@ console.log(updatedEvent, 'updated event')
   const fetchAllEvents = async () => {
     try {
       console.log('Solicitando todos los eventos...');
-      const response = await axios.get('/api/v1/events/getAllEvents');
-      console.log('Eventos recibidos:', response.data);
-      setEvents(response.data.data);
+      
+      // Usar el helper con múltiples rutas alternativas
+      const response = await getEvents(userRole);
+      console.log('Respuesta final de eventos:', response);
+      
+      // Extraer datos con manejo de diferentes formatos
+      let eventsData = [];
+      if (response?.data?.data) {
+        // Formato estándar {success: true, data: [...]}
+        eventsData = response.data.data;
+      } else if (Array.isArray(response?.data)) {
+        // Formato directo [...]
+        eventsData = response.data;
+      } else if (response?.data) {
+        // Cualquier otro formato que contenga datos
+        eventsData = Array.isArray(response.data) ? response.data : [response.data];
+      }
+      
+      console.log('Eventos extraídos correctamente:', eventsData.length);
+      setEvents(eventsData);
     } catch (error) {
-      console.error("Error fetching events:", error);
-      console.error("Detalles:", error.response?.data || error.message);
+      console.error("Error final al obtener eventos:", error);
+      console.error("Detalles del error:", error.response?.data || error.message);
     }
   };
   const handlePublish = async (eventId) => {

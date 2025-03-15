@@ -4,6 +4,7 @@ import SearchBar from "../ComponentsHome/SearchBarEvents/SearchBar";
 import FeaturedEventsList from "../ComponentsHome/FeaturedEvents/FeaturedEventsList";
 import axios from "axios";
 import LoadingScreen from "../components/LoadingScreen/LoadingScreen";
+import { getEvents } from "../utils/apiHelper.js";
 
 const Events = () => {
   const [events, setEvents] = useState([]);
@@ -14,38 +15,36 @@ const Events = () => {
   }, []);
   useEffect(() => {
     const fetchAllEvents = async () => {
-      const userRole = localStorage.getItem("role");
-
-      // Determine the appropriate endpoint based on the user role
-      const primaryEndpoint = userRole === "organizer" 
-        ? '/api/v1/events/getuserEvent' 
-        : '/api/v1/events/getAllEvents';
-      
-      // Endpoints alternativos para intentar si falla el principal
-      const fallbackEndpoint = userRole === "organizer"
-        ? '/api/v1/events/getuserEvent'
-        : '/api/v1/events';
-      
       try {
-        console.log(`[Events.jsx] Solicitando eventos (${userRole}) desde: ${primaryEndpoint}`);
-        try {
-          // Intentar con el endpoint principal
-          const response = await axios.get(primaryEndpoint);
-          console.log('[Events.jsx] Eventos recibidos:', response.data);
-          setEvents(response.data.data || []);
-        } catch (primaryError) {
-          console.error(`[Events.jsx] Error con endpoint principal ${primaryEndpoint}:`, primaryError.message);
-          
-          // Intentar con el endpoint alternativo
-          console.log(`[Events.jsx] Intentando con endpoint alternativo: ${fallbackEndpoint}`);
-          const fallbackResponse = await axios.get(fallbackEndpoint);
-          console.log('[Events.jsx] Eventos recibidos desde endpoint alternativo:', fallbackResponse.data);
-          setEvents(fallbackResponse.data.data || []);
+        // Obtener el rol del usuario
+        const userRole = localStorage.getItem("role") || 'user';
+        console.log(`[Events.jsx] Obteniendo eventos para rol: ${userRole}`);
+        
+        // Usar el helper con múltiples rutas alternativas
+        const response = await getEvents(userRole);
+        console.log('[Events.jsx] Respuesta final de eventos:', response);
+        
+        // Extraer datos con manejo de diferentes formatos
+        let eventsData = [];
+        if (response?.data?.data) {
+          // Formato estándar {success: true, data: [...]}
+          eventsData = response.data.data;
+        } else if (Array.isArray(response?.data)) {
+          // Formato directo [...]
+          eventsData = response.data;
+        } else if (response?.data) {
+          // Cualquier otro formato que contenga datos
+          eventsData = Array.isArray(response.data) ? response.data : [response.data];
         }
-        setLoading(false);
+        
+        console.log('[Events.jsx] Eventos extraídos correctamente:', eventsData.length);
+        setEvents(eventsData);
       } catch (error) {
-        console.error("[Events.jsx] Error fetching events:", error);
-        console.error("[Events.jsx] Detalles:", error.response?.data || error.message);
+        console.error("[Events.jsx] Error final al obtener eventos:", error);
+        console.error("[Events.jsx] Detalles del error:", error.response?.data || error.message);
+        // En caso de error, inicializar con array vacío
+        setEvents([]);
+      } finally {
         setLoading(false);
       }
     };

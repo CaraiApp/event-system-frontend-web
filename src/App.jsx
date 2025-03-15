@@ -7,6 +7,7 @@ import { CartProvider } from './CartContext'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import theme from './styles/theme'
+import { getEvents } from './utils/apiHelper'
 
 // Configuración global de axios
 axios.defaults.baseURL = 'https://event-system-backend-production.up.railway.app';
@@ -14,6 +15,41 @@ axios.defaults.withCredentials = true;
 
 // Log para verificar la URL base
 console.log('Axios baseURL:', axios.defaults.baseURL);
+
+// Añadir interceptor para logs de API y debugging
+axios.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', config.method.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+axios.interceptors.response.use(
+  (response) => {
+    console.log('API Response OK:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error('API Response Error:', error.config?.url, error.message);
+    console.error('Response Error Details:', error.response?.data || 'No response data');
+    
+    // Verificar si es un error 404 de un endpoint principal para proponer alternativa
+    if (error.response?.status === 404) {
+      const url = error.config?.url || '';
+      // Intentar construir una alternativa automáticamente
+      if (url.endsWith('/events')) {
+        console.log('API 404 para /events, se sugerirá /events/getAllEvents');
+        error.alternativeEndpoint = url + '/getAllEvents';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Configuraciones para peticiones
 axios.defaults.headers.common['Content-Type'] = 'application/json';
@@ -70,33 +106,34 @@ const App = () => {
       try {
         console.log('Verificando conexión con el backend...');
         
-        // Intentar obtener eventos con diferentes rutas
+        // Usar el helper con todas las rutas alternativas para eventos
         try {
-          // Primero intentar con ruta principal
-          const eventsResponse = await axios.get('/api/v1/events');
-          console.log('✅ Conexión exitosa a eventos (ruta principal):', eventsResponse.data);
-        } catch (error) {
-          console.error('⚠️ Error con ruta principal para eventos:', error.message);
-          
-          // Intentar con ruta alternativa
-          try {
-            const alternativeEventsResponse = await axios.get('/api/v1/events/getAllEvents');
-            console.log('✅ Conexión exitosa a eventos (ruta alternativa):', alternativeEventsResponse.data);
-          } catch (secondError) {
-            console.error('❌ Error también con ruta alternativa para eventos:', secondError.message);
-          }
+          console.log('Verificando conexión a eventos...');
+          const eventsResponse = await getEvents('user');
+          console.log('✅ Conexión exitosa a eventos:', eventsResponse.data);
+        } catch (eventsError) {
+          console.error('❌ Error al verificar conexión a eventos:', eventsError.message);
         }
         
         // Intentar obtener categorías
         try {
+          console.log('Verificando conexión a categorías...');
           const categoriesResponse = await axios.get('/api/v1/categories');
           console.log('✅ Conexión exitosa a categorías:', categoriesResponse.data);
         } catch (catError) {
           console.error('❌ Error al obtener categorías:', catError.message);
+          
+          // Intentar con ruta alternativa para categorías
+          try {
+            const altCategoriesResponse = await axios.get('/api/categories');
+            console.log('✅ Conexión exitosa a categorías (ruta alternativa):', altCategoriesResponse.data);
+          } catch (altCatError) {
+            console.error('❌ Error también con ruta alternativa para categorías:', altCatError.message);
+          }
         }
         
       } catch (error) {
-        console.error('❌ Error al verificar conexión:', error.message);
+        console.error('❌ Error general al verificar conexión:', error.message);
         if (error.response) {
           console.error('Detalles:', {
             status: error.response.status,
