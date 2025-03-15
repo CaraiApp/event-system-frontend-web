@@ -76,6 +76,12 @@ import ContactUs from '../pages/ContactUs'
 import Pricing from '../pages/Pricing';
 import Pricingg from '../pages/Pricingg';
 
+// Dashboard de Usuario
+import UserDashboard from '../pages/UserDashboard/UserDashboard';
+import UserOverview from '../pages/UserDashboard/pages/UserOverview';
+import UserProfile from '../pages/UserDashboard/pages/UserProfile';
+import UserTickets from '../pages/UserDashboard/pages/UserTickets';
+
 // Dashboard de Organizador
 import OrganizerDashboard from '../pages/OrganizerDashboard/OrganizerDashboard';
 import Overview from '../pages/OrganizerDashboard/pages/Overview';
@@ -191,6 +197,16 @@ const Routers = () => {
       <Route path="/contact" element={<ContactUs />} />
       <Route path="/congrtspaymentsuccess" element={<PaymentSuccess />} />
 
+      {/* Dashboard de Usuario - Ruta independiente */}
+      <Route path="/account" element={<PrivateRoute element={<UserDashboard />} />}>
+        <Route index element={<UserOverview />} />
+        <Route path="profile" element={<UserProfile />} />
+        <Route path="tickets" element={<UserTickets />} />
+        <Route path="orders" element={<UserOverview />} /> {/* Pendiente de implementar */}
+        <Route path="favorites" element={<UserOverview />} /> {/* Pendiente de implementar */}
+        <Route path="settings" element={<UserProfile />} /> {/* Redirige temporalmente a perfil */}
+      </Route>
+    
       {/* Dashboard de Organizador - Ruta independiente */}
       <Route path="/organizer" element={<OrganizerRoute element={<OrganizerDashboard />} />}>
         <Route index element={<Overview />} />

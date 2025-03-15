@@ -202,7 +202,22 @@ const SignUp = () => {
   const email = useRef();
   const password = useRef();
   const confirmPassword = useRef();
-  const [role, setRole] = useState(""); // For role selection
+  
+  // Campos adicionales para usuario
+  const phoneNumber = useRef();
+  const fullName = useRef();
+  const address = useRef();
+  const city = useRef();
+  
+  // Campos adicionales para organizador
+  const companyName = useRef();
+  const taxId = useRef();
+  const contactName = useRef();
+  const companyAddress = useRef();
+  const companyPhone = useRef();
+  const website = useRef();
+  
+  const [role, setRole] = useState("user"); // Default to user role
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false); // Loading state
 
@@ -222,13 +237,35 @@ const SignUp = () => {
       return;
     }
 
-    // Create the user object from form data
-    const user = {
+    // Create base user object
+    let user = {
       username: userName.current.value,
       email: email.current.value.toLowerCase(),
       password: password.current.value,
       role: role || "user", // Include the selected role, default to user
     };
+    
+    // Añadir campos adicionales según el rol
+    if (role === "user") {
+      user = {
+        ...user,
+        fullName: fullName.current?.value || "",
+        phoneNumber: phoneNumber.current?.value || "",
+        address: address.current?.value || "",
+        city: city.current?.value || "",
+      };
+    } else if (role === "organizer") {
+      user = {
+        ...user,
+        companyName: companyName.current?.value || "",
+        taxId: taxId.current?.value || "",
+        contactName: contactName.current?.value || "",
+        companyAddress: companyAddress.current?.value || "",
+        companyPhone: companyPhone.current?.value || "",
+        website: website.current?.value || "",
+        isApproved: false, // Los organizadores deben ser aprobados por un administrador
+      };
+    }
 
     try {
       // Set loading state to true while making the request
@@ -434,10 +471,190 @@ const SignUp = () => {
                     >
                       <MenuItem value="user" style={{ fontSize: '1rem' }}>Usuario</MenuItem>
                       <MenuItem value="organizer" style={{ fontSize: '1rem' }}>Organizador</MenuItem>
-                      <MenuItem value="admin" style={{ fontSize: '1rem' }}>Administrador</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
+
+                {/* Campos adicionales para usuarios */}
+                {role === "user" && (
+                  <>
+                    <Grid item xs={12} sx={{ mt: 2 }}>
+                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: "bold", color: "#444" }}>
+                        Información personal
+                      </Typography>
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <CssTextField
+                        label="Nombre completo"
+                        variant="outlined"
+                        fullWidth
+                        required
+                        inputRef={fullName}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <CssTextField
+                        label="Número de teléfono"
+                        variant="outlined"
+                        fullWidth
+                        inputRef={phoneNumber}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <CssTextField
+                        label="Dirección"
+                        variant="outlined"
+                        fullWidth
+                        inputRef={address}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <CssTextField
+                        label="Ciudad"
+                        variant="outlined"
+                        fullWidth
+                        inputRef={city}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                  </>
+                )}
+                
+                {/* Campos adicionales para organizadores */}
+                {role === "organizer" && (
+                  <>
+                    <Grid item xs={12} sx={{ mt: 2 }}>
+                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: "bold", color: "#444" }}>
+                        Información de la empresa
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 2, color: "#666" }}>
+                        Los organizadores requieren aprobación por parte de los administradores antes de poder crear eventos.
+                      </Typography>
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <CssTextField
+                        label="Nombre de la empresa"
+                        variant="outlined"
+                        fullWidth
+                        required
+                        inputRef={companyName}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <CssTextField
+                        label="CIF/NIF"
+                        variant="outlined"
+                        fullWidth
+                        required
+                        inputRef={taxId}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <CssTextField
+                        label="Persona de contacto"
+                        variant="outlined"
+                        fullWidth
+                        required
+                        inputRef={contactName}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <CssTextField
+                        label="Dirección de la empresa"
+                        variant="outlined"
+                        fullWidth
+                        required
+                        inputRef={companyAddress}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <CssTextField
+                        label="Teléfono de la empresa"
+                        variant="outlined"
+                        fullWidth
+                        required
+                        inputRef={companyPhone}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <CssTextField
+                        label="Sitio web"
+                        variant="outlined"
+                        fullWidth
+                        inputRef={website}
+                        InputProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                        InputLabelProps={{
+                          style: { fontSize: '1rem' },
+                        }}
+                      />
+                    </Grid>
+                  </>
+                )}
 
                 <Grid item md={12} xs={12} justifyContent="center">
                   <Button 

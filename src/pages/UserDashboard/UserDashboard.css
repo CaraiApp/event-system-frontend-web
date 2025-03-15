@@ -1,0 +1,68 @@
+.profile-avatar {
+  cursor: pointer;
+}
+
+/* Estilos para las tarjetas en el dashboard */
+.dashboard-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+}
+
+.dashboard-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+/* Estilos para badges y estados */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.status-active {
+  background-color: #e3f7e3;
+  color: #2e7d32;
+}
+
+.status-pending {
+  background-color: #fff8e1;
+  color: #f57c00;
+}
+
+.status-expired {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+/* Estilos para botones de acción */
+.action-button {
+  margin-right: 8px;
+  text-transform: none;
+}
+
+/* Estilos responsivos */
+@media (max-width: 600px) {
+  .dashboard-card {
+    padding: 15px;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+  }
+}

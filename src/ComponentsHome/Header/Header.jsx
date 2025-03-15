@@ -272,8 +272,18 @@ const Header = () => {
               {isDropdownOpen && (
                 <div className="custom-dropdown">
                  {user?.role === "user" && (
+                  <Link to="/account" className="dropdown-item">
+                    Mi Cuenta
+                  </Link>
+                 )}
+                 {user?.role === "user" && (
                   <Link to="/wallet" className="dropdown-item">
                     Billetera
+                  </Link>
+                 )}
+                 {(user?.role === "organizer" || user?.role === "admin") && (
+                  <Link to="/organizer/settings" className="dropdown-item">
+                    Mi Cuenta
                   </Link>
                  )}
                  {(user?.role === "organizer" || user?.role === "admin") && (
