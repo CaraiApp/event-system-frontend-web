@@ -53,24 +53,49 @@ const formatJSON = (json) => {
   }
 };
 
-// LogCollector que captura console.log, error, warn
-class LogCollector {
-  constructor(onLogUpdate) {
-    this.logs = [];
-    this.onLogUpdate = onLogUpdate;
-    this.originalConsole = {
-      log: console.log,
-      error: console.error,
-      warn: console.warn,
-      info: console.info
-    };
+// Variables globales para almacenar los interceptores
+let consoleInterceptorsActive = false;
+let originalConsole = {
+  log: null,
+  error: null,
+  warn: null,
+  info: null
+};
+let globalLogs = [];
+let globalHttpRequests = [];
+let globalErrorDiagnostics = [];
+let updateCallbacks = {
+  logs: null,
+  httpRequests: null,
+  errorDiagnostics: null
+}
 
-    this.setupInterceptors();
+// Función para desactivar interceptores
+function restoreAllInterceptors() {
+  if (consoleInterceptorsActive) {
+    console.log = originalConsole.log;
+    console.error = originalConsole.error;
+    console.warn = originalConsole.warn;
+    console.info = originalConsole.info;
+    consoleInterceptorsActive = false;
   }
+}
 
-  addLog(type, args) {
+// Función para activar interceptores de consola
+function setupConsoleInterceptors() {
+  if (consoleInterceptorsActive) return;
+  
+  consoleInterceptorsActive = true;
+  originalConsole = {
+    log: console.log,
+    error: console.error,
+    warn: console.warn,
+    info: console.info
+  };
+  
+  console.log = (...args) => {
     const log = {
-      type,
+      type: 'log',
       timestamp: new Date().toISOString(),
       message: args.map(arg => {
         if (arg instanceof Error) {
@@ -87,65 +112,242 @@ class LogCollector {
       raw: args
     };
     
-    this.logs.push(log);
-    if (this.logs.length > 1000) this.logs.shift(); // Limitar a 1000 registros
-    this.onLogUpdate(this.logs);
-  }
-
-  setupInterceptors() {
-    console.log = (...args) => {
-      this.addLog('log', args);
-      this.originalConsole.log(...args);
+    globalLogs.push(log);
+    if (globalLogs.length > 1000) globalLogs.shift(); // Limitar a 1000 registros
+    
+    if (updateCallbacks.logs) {
+      try {
+        updateCallbacks.logs(globalLogs);
+      } catch (error) {
+        // Ignorar errores en callbacks
+      }
+    }
+    
+    originalConsole.log(...args);
+  };
+  
+  console.error = (...args) => {
+    const log = {
+      type: 'error',
+      timestamp: new Date().toISOString(),
+      message: args.map(arg => {
+        if (arg instanceof Error) {
+          return `${arg.name}: ${arg.message}\n${arg.stack || ''}`;
+        } else if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg);
+          } catch (e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' '),
+      raw: args
     };
     
-    console.error = (...args) => {
-      this.addLog('error', args);
-      this.originalConsole.error(...args);
+    globalLogs.push(log);
+    if (globalLogs.length > 1000) globalLogs.shift();
+    
+    if (updateCallbacks.logs) {
+      try {
+        updateCallbacks.logs(globalLogs);
+      } catch (error) {
+        // Ignorar errores en callbacks
+      }
+    }
+    
+    originalConsole.error(...args);
+  };
+  
+  console.warn = (...args) => {
+    const log = {
+      type: 'warn',
+      timestamp: new Date().toISOString(),
+      message: args.map(arg => {
+        if (arg instanceof Error) {
+          return `${arg.name}: ${arg.message}\n${arg.stack || ''}`;
+        } else if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg);
+          } catch (e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' '),
+      raw: args
     };
     
-    console.warn = (...args) => {
-      this.addLog('warn', args);
-      this.originalConsole.warn(...args);
+    globalLogs.push(log);
+    if (globalLogs.length > 1000) globalLogs.shift();
+    
+    if (updateCallbacks.logs) {
+      try {
+        updateCallbacks.logs(globalLogs);
+      } catch (error) {
+        // Ignorar errores en callbacks
+      }
+    }
+    
+    originalConsole.warn(...args);
+  };
+  
+  console.info = (...args) => {
+    const log = {
+      type: 'info',
+      timestamp: new Date().toISOString(),
+      message: args.map(arg => {
+        if (arg instanceof Error) {
+          return `${arg.name}: ${arg.message}\n${arg.stack || ''}`;
+        } else if (typeof arg === 'object') {
+          try {
+            return JSON.stringify(arg);
+          } catch (e) {
+            return String(arg);
+          }
+        }
+        return String(arg);
+      }).join(' '),
+      raw: args
     };
     
-    console.info = (...args) => {
-      this.addLog('info', args);
-      this.originalConsole.info(...args);
+    globalLogs.push(log);
+    if (globalLogs.length > 1000) globalLogs.shift();
+    
+    if (updateCallbacks.logs) {
+      try {
+        updateCallbacks.logs(globalLogs);
+      } catch (error) {
+        // Ignorar errores en callbacks
+      }
+    }
+    
+    originalConsole.info(...args);
+  };
+}
+
+// Función para procesar un nuevo request HTTP
+function processHttpRequest(request) {
+  globalHttpRequests = [request, ...globalHttpRequests].slice(0, 100);
+  
+  // Ejecutar diagnósticos (función más abajo)
+  const newDiagnostics = runAllDiagnostics(request);
+  if (newDiagnostics && newDiagnostics.length > 0) {
+    globalErrorDiagnostics = [...newDiagnostics, ...globalErrorDiagnostics].slice(0, 50);
+    
+    if (updateCallbacks.errorDiagnostics) {
+      try {
+        updateCallbacks.errorDiagnostics(globalErrorDiagnostics);
+      } catch (error) {
+        // Ignorar errores en callbacks
+      }
+    }
+  }
+  
+  if (updateCallbacks.httpRequests) {
+    try {
+      updateCallbacks.httpRequests(globalHttpRequests);
+    } catch (error) {
+      // Ignorar errores en callbacks
+    }
+  }
+}
+
+// Funciones de diagnóstico
+function checkCORS(request) {
+  if (request.error || request.status === 0) {
+    return {
+      issue: 'Posible error CORS',
+      description: 'La solicitud fue bloqueada debido a restricciones de CORS',
+      severity: 'error',
+      fix: 'Verifica la configuración CORS en el backend. Debe incluir el origen correcto.'
     };
   }
-
-  restoreConsole() {
-    console.log = this.originalConsole.log;
-    console.error = this.originalConsole.error;
-    console.warn = this.originalConsole.warn;
-    console.info = this.originalConsole.info;
+  
+  if (request.status === 403) {
+    return {
+      issue: 'Acceso prohibido',
+      description: 'El servidor rechazó la solicitud por falta de permisos',
+      severity: 'error',
+      fix: 'Verifica los headers de autorización y que el token JWT sea válido.'
+    };
   }
+  
+  return null;
+}
 
-  clear() {
-    this.logs = [];
-    this.onLogUpdate(this.logs);
+function checkAuth(request) {
+  if (request.status === 401) {
+    return {
+      issue: 'No autenticado',
+      description: 'La solicitud requiere autenticación pero el token no es válido o ha expirado',
+      severity: 'error',
+      fix: 'Intenta cerrar sesión y volver a iniciar sesión para obtener un nuevo token.'
+    };
+  }
+  return null;
+}
+
+function checkNetwork(request) {
+  if (request.duration > 5000) {
+    return {
+      issue: 'Solicitud lenta',
+      description: `La solicitud tomó ${request.duration}ms en completarse`,
+      severity: 'warning',
+      fix: 'Verifica la conexión a internet y la respuesta del servidor.'
+    };
+  }
+  return null;
+}
+
+function checkContentType(request) {
+  const contentType = request.responseHeaders && (
+    request.responseHeaders['content-type'] || 
+    request.responseHeaders['Content-Type']
+  );
+  
+  if (request.status >= 200 && request.status < 300 && contentType && !contentType.includes('application/json')) {
+    if (contentType.includes('text/html')) {
+      return {
+        issue: 'Respuesta HTML en lugar de JSON',
+        description: 'El servidor devolvió HTML cuando se esperaba JSON',
+        severity: 'warning',
+        fix: 'Verifica el endpoint de la API. Podrías estar accediendo a una página web en lugar de una API.'
+      };
+    }
+  }
+  return null;
+}
+
+function runAllDiagnostics(request) {
+  try {
+    const results = [
+      checkCORS(request),
+      checkAuth(request),
+      checkNetwork(request),
+      checkContentType(request)
+    ].filter(Boolean);
+    
+    return results;
+  } catch (error) {
+    console.error('Error en diagnósticos:', error);
+    return [];
   }
 }
 
 // Componente para monitorear respuestas HTTP
-const HttpMonitor = ({ onNewRequest }) => {
+// Este componente ya no modifica directamente el estado de React para evitar errores #310
+const HttpMonitor = () => {
+  // No usamos efectos ni estado de React para evitar problemas, 
+  // en su lugar, configuramos los interceptores solo una vez al inicio de la aplicación
+  
   useEffect(() => {
-    let isMounted = true;
+    // Esta función se ejecuta solo una vez al montar el componente
     
     // Guarda referencia al original para restaurarlo
     const originalOpen = XMLHttpRequest.prototype.open;
     const originalSend = XMLHttpRequest.prototype.send;
-    
-    // Función segura para enviar la solicitud
-    const safelyCallOnNewRequest = (data) => {
-      if (isMounted && typeof onNewRequest === 'function') {
-        try {
-          onNewRequest(data);
-        } catch (error) {
-          console.error("Error en onNewRequest:", error);
-        }
-      }
-    };
+    const originalFetch = window.fetch;
     
     // Sobrescribe el método open
     XMLHttpRequest.prototype.open = function(method, url, async) {
@@ -166,30 +368,38 @@ const HttpMonitor = ({ onNewRequest }) => {
         
         // Capturar respuesta
         this.addEventListener('load', function() {
-          const responseData = {
-            ...this._requestData,
-            status: this.status,
-            statusText: this.statusText,
-            duration: Date.now() - this._requestData.startTime,
-            responseHeaders: this.getAllResponseHeaders(),
-            responseType: this.responseType,
-            response: this.responseText || this.response
-          };
-          
-          safelyCallOnNewRequest(responseData);
+          try {
+            const responseData = {
+              ...this._requestData,
+              status: this.status,
+              statusText: this.statusText,
+              duration: Date.now() - this._requestData.startTime,
+              responseHeaders: this.getAllResponseHeaders(),
+              responseType: this.responseType,
+              response: this.responseText || this.response
+            };
+            
+            processHttpRequest(responseData);
+          } catch (error) {
+            console.error('Error procesando respuesta XHR:', error);
+          }
         });
         
         // Capturar errores
         this.addEventListener('error', function() {
-          const errorData = {
-            ...this._requestData,
-            error: true,
-            status: 0,
-            statusText: 'Error de red',
-            duration: Date.now() - this._requestData.startTime
-          };
-          
-          safelyCallOnNewRequest(errorData);
+          try {
+            const errorData = {
+              ...this._requestData,
+              error: true,
+              status: 0,
+              statusText: 'Error de red',
+              duration: Date.now() - this._requestData.startTime
+            };
+            
+            processHttpRequest(errorData);
+          } catch (error) {
+            console.error('Error procesando error XHR:', error);
+          }
         });
       }
       
@@ -197,7 +407,6 @@ const HttpMonitor = ({ onNewRequest }) => {
     };
     
     // Interceptar Fetch API
-    const originalFetch = window.fetch;
     window.fetch = async function(resource, config = {}) {
       const startTime = Date.now();
       const url = typeof resource === 'string' ? resource : resource.url;
@@ -213,9 +422,9 @@ const HttpMonitor = ({ onNewRequest }) => {
       
       try {
         const response = await originalFetch.apply(this, arguments);
-        const clonedResponse = response.clone();
         
         try {
+          const clonedResponse = response.clone();
           const responseBody = await clonedResponse.text();
           
           const responseData = {
@@ -227,7 +436,7 @@ const HttpMonitor = ({ onNewRequest }) => {
             responseBody
           };
           
-          safelyCallOnNewRequest(responseData);
+          processHttpRequest(responseData);
         } catch (e) {
           // Si no podemos acceder al cuerpo (ej: stream)
           const responseData = {
@@ -239,7 +448,7 @@ const HttpMonitor = ({ onNewRequest }) => {
             responseBody: '[No se pudo leer el cuerpo de la respuesta]'
           };
           
-          safelyCallOnNewRequest(responseData);
+          processHttpRequest(responseData);
         }
         
         return response;
@@ -252,7 +461,7 @@ const HttpMonitor = ({ onNewRequest }) => {
           duration: Date.now() - startTime
         };
         
-        safelyCallOnNewRequest(errorData);
+        processHttpRequest(errorData);
         throw error;
       }
     };
@@ -264,122 +473,49 @@ const HttpMonitor = ({ onNewRequest }) => {
         return response;
       },
       (error) => {
-        // Solo necesitamos capturar los errores que no están manejados por fetch/XHR
-        if (error.isAxiosError && !error.request) {
-          const errorData = {
-            method: error.config?.method?.toUpperCase() || 'UNKNOWN',
-            url: error.config?.url || 'UNKNOWN',
-            startTime: Date.now(),
-            error: true,
-            status: 0,
-            statusText: error.message || 'Error de configuración de Axios',
-            duration: 0
-          };
-          
-          safelyCallOnNewRequest(errorData);
+        try {
+          // Solo necesitamos capturar los errores que no están manejados por fetch/XHR
+          if (error.isAxiosError && !error.request) {
+            const errorData = {
+              method: error.config?.method?.toUpperCase() || 'UNKNOWN',
+              url: error.config?.url || 'UNKNOWN',
+              startTime: Date.now(),
+              error: true,
+              status: 0,
+              statusText: error.message || 'Error de configuración de Axios',
+              duration: 0
+            };
+            
+            processHttpRequest(errorData);
+          }
+        } catch (e) {
+          console.error('Error procesando error Axios:', e);
         }
         return Promise.reject(error);
       }
     );
     
-    // Cleanup
+    // Guardar el interceptor para limpieza global
+    window._debugPanelAxiosInterceptor = axiosInterceptor;
+    
+    // Cleanup global en caso de desmontaje
     return () => {
-      isMounted = false; // Marcar componente como desmontado
-      
-      // Restaurar prototipos y handlers originales
-      XMLHttpRequest.prototype.open = originalOpen;
-      XMLHttpRequest.prototype.send = originalSend;
-      window.fetch = originalFetch;
-      
-      // Eliminar interceptor Axios
-      try {
-        axios.interceptors.response.eject(axiosInterceptor);
-      } catch (error) {
-        console.error("Error al eliminar interceptor Axios:", error);
-      }
+      // No restauramos aquí para evitar problemas si hay múltiples instancias
+      // La restauración se hará globalmente al desactivar el panel
     };
-  }, [onNewRequest]);
+  }, []);
   
   return null;
 };
 
-// Función para diagnosticar problemas comunes
+// Este componente se ha eliminado ya que usamos las funciones globales
+// Esto es simplemente para evitar errores de referencia en cualquier código existente
 const diagnosticTools = {
-  checkCORS: (request) => {
-    if (request.error || request.status === 0) {
-      return {
-        issue: 'Posible error CORS',
-        description: 'La solicitud fue bloqueada debido a restricciones de CORS',
-        severity: 'error',
-        fix: 'Verifica la configuración CORS en el backend. Debe incluir el origen correcto.'
-      };
-    }
-    
-    if (request.status === 403) {
-      return {
-        issue: 'Acceso prohibido',
-        description: 'El servidor rechazó la solicitud por falta de permisos',
-        severity: 'error',
-        fix: 'Verifica los headers de autorización y que el token JWT sea válido.'
-      };
-    }
-    
-    return null;
-  },
-  
-  checkAuth: (request) => {
-    if (request.status === 401) {
-      return {
-        issue: 'No autenticado',
-        description: 'La solicitud requiere autenticación pero el token no es válido o ha expirado',
-        severity: 'error',
-        fix: 'Intenta cerrar sesión y volver a iniciar sesión para obtener un nuevo token.'
-      };
-    }
-    return null;
-  },
-  
-  checkNetwork: (request) => {
-    if (request.duration > 5000) {
-      return {
-        issue: 'Solicitud lenta',
-        description: `La solicitud tomó ${request.duration}ms en completarse`,
-        severity: 'warning',
-        fix: 'Verifica la conexión a internet y la respuesta del servidor.'
-      };
-    }
-    return null;
-  },
-  
-  checkContentType: (request) => {
-    const contentType = request.responseHeaders && (
-      request.responseHeaders['content-type'] || 
-      request.responseHeaders['Content-Type']
-    );
-    
-    if (request.status >= 200 && request.status < 300 && contentType && !contentType.includes('application/json')) {
-      if (contentType.includes('text/html')) {
-        return {
-          issue: 'Respuesta HTML en lugar de JSON',
-          description: 'El servidor devolvió HTML cuando se esperaba JSON',
-          severity: 'warning',
-          fix: 'Verifica el endpoint de la API. Podrías estar accediendo a una página web en lugar de una API.'
-        };
-      }
-    }
-    return null;
-  },
-  
-  runAllDiagnostics: (request) => {
-    const results = [
-      diagnosticTools.checkCORS(request),
-      diagnosticTools.checkAuth(request),
-      diagnosticTools.checkNetwork(request),
-      diagnosticTools.checkContentType(request)
-    ].filter(Boolean);
-    
-    return results;
-  }
+  checkCORS: () => null,
+  checkAuth: () => null,
+  checkNetwork: () => null, 
+  checkContentType: () => null,
+  runAllDiagnostics: () => []
 };
 
 // Componente de diagnóstico del backend
@@ -667,7 +803,7 @@ const BackendDiagnostic = ({ apiURL }) => {
   );
 };
 
-// Componente principal mejorado
+// Componente principal con enfoque en evitar el error #310
 const DebugPanel = () => {
   const { user } = useContext(UserContext);
   const [isOpen, setIsOpen] = useState(false);
@@ -696,7 +832,7 @@ const DebugPanel = () => {
   const [showAddEndpoint, setShowAddEndpoint] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [backendURL, setBackendURL] = useState('');
-  const logCollectorRef = useRef(null);
+  const isInitialized = useRef(false);
   
   // Verificar si el usuario es admin
   const isAdmin = user && (user.role === 'admin' || user.isAdmin);
@@ -706,27 +842,26 @@ const DebugPanel = () => {
     return null;
   }
   
+  // Usar un solo useEffect para evitar múltiples efectos que podrían causar problemas
   useEffect(() => {
-    // Bandera para controlar si el componente está montado
-    let isMounted = true;
+    // Solo ejecutar una vez
+    if (isInitialized.current) return;
+    isInitialized.current = true;
     
-    // Inicializar el colector de logs
-    if (!logCollectorRef.current) {
-      logCollectorRef.current = new LogCollector(logs => {
-        if (isMounted) {
-          setLogs(logs);
-        }
-      });
-    }
+    // Configurar los callbacks para actualizar el estado de React
+    updateCallbacks.logs = (newLogs) => setLogs([...newLogs]);
+    updateCallbacks.httpRequests = (newRequests) => setHttpRequests([...newRequests]);
+    updateCallbacks.errorDiagnostics = (newDiagnostics) => setErrorDiagnostics([...newDiagnostics]);
+    
+    // Configurar interceptores de consola
+    setupConsoleInterceptors();
     
     // Configuración actual de axios
-    if (isMounted) {
-      setAxiosConfig({
-        baseURL: axios.defaults.baseURL,
-        withCredentials: axios.defaults.withCredentials,
-        headers: axios.defaults.headers.common
-      });
-    }
+    setAxiosConfig({
+      baseURL: axios.defaults.baseURL,
+      withCredentials: axios.defaults.withCredentials,
+      headers: axios.defaults.headers.common
+    });
     
     // Endpoints predefinidos
     const defaultEndpoints = [
@@ -739,86 +874,62 @@ const DebugPanel = () => {
     
     // Cargar endpoints guardados
     const savedEndpoints = localStorage.getItem('debugPanelEndpoints');
-    if (savedEndpoints && isMounted) {
+    if (savedEndpoints) {
       try {
         setCustomEndpoints(JSON.parse(savedEndpoints));
       } catch (e) {
         console.error('Error al cargar endpoints guardados:', e);
-        if (isMounted) {
-          setCustomEndpoints(defaultEndpoints);
-        }
+        setCustomEndpoints(defaultEndpoints);
       }
-    } else if (isMounted) {
+    } else {
       setCustomEndpoints(defaultEndpoints);
     }
     
     // Obtener información de la red
-    if (isMounted) {
-      setNetworkInfo({
-        userAgent: navigator.userAgent,
-        online: navigator.onLine,
-        hostname: window.location.hostname,
-        protocol: window.location.protocol,
-        connectionType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
-        language: navigator.language,
-        cookiesEnabled: navigator.cookieEnabled,
-        doNotTrack: navigator.doNotTrack
-      });
-    }
+    setNetworkInfo({
+      userAgent: navigator.userAgent,
+      online: navigator.onLine,
+      hostname: window.location.hostname,
+      protocol: window.location.protocol,
+      connectionType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
+      language: navigator.language,
+      cookiesEnabled: navigator.cookieEnabled,
+      doNotTrack: navigator.doNotTrack
+    });
     
     // Obtener URL del backend
     const apiUrl = process.env.REACT_APP_API_URL || 
-                   process.env.VITE_API_URL || 
-                   axios.defaults.baseURL || 
-                   'https://v2-backend.entradasmelilla.com';
-    if (isMounted) {
-      setBackendURL(apiUrl);
-    }
+                  process.env.VITE_API_URL || 
+                  axios.defaults.baseURL || 
+                  'https://v2-backend.entradasmelilla.com';
     
-    // Cleanup
+    setBackendURL(apiUrl);
+    
+    // Función de limpieza ejecutada al desmontar
     return () => {
-      isMounted = false;
-      if (logCollectorRef.current) {
-        logCollectorRef.current.restoreConsole();
-      }
+      // Limpiar callbacks globales
+      updateCallbacks.logs = null;
+      updateCallbacks.httpRequests = null;
+      updateCallbacks.errorDiagnostics = null;
+      
+      // Restaurar console
+      restoreAllInterceptors();
     };
   }, []);
   
-  // Guardar endpoints cuando cambien
+  // Guardar endpoints cuando cambien - mantenemos este efecto separado
   useEffect(() => {
-    let isMounted = true;
-    
-    if (isMounted && customEndpoints.length > 0) {
-      localStorage.setItem('debugPanelEndpoints', JSON.stringify(customEndpoints));
+    if (customEndpoints.length > 0) {
+      try {
+        localStorage.setItem('debugPanelEndpoints', JSON.stringify(customEndpoints));
+      } catch (e) {
+        console.error('Error al guardar endpoints:', e);
+      }
     }
-    
-    return () => {
-      isMounted = false;
-    };
   }, [customEndpoints]);
   
-  // Manejar nuevas solicitudes HTTP
-  const handleNewRequest = (request) => {
-    // Verificar que estamos ejecutando la función solo cuando está montado
-    setHttpRequests(prev => {
-      const newRequests = [request, ...prev].slice(0, 100); // Mantener solo los últimos 100
-      
-      // Ejecutar diagnósticos
-      try {
-        const newDiagnostics = diagnosticTools.runAllDiagnostics(request);
-        if (newDiagnostics && newDiagnostics.length > 0) {
-          // Usamos un callback para la actualización del estado
-          setTimeout(() => {
-            setErrorDiagnostics(prev => [...newDiagnostics, ...prev].slice(0, 50));
-          }, 0);
-        }
-      } catch (error) {
-        console.error("Error en diagnóstico:", error);
-      }
-      
-      return newRequests;
-    });
-  };
+  // Simplemente usamos la función global para procesar solicitudes HTTP
+  const handleNewRequest = processHttpRequest;
   
   // Probar endpoint
   const testEndpoint = async (endpoint) => {
