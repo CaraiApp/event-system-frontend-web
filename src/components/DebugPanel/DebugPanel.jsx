@@ -130,9 +130,22 @@ class LogCollector {
 // Componente para monitorear respuestas HTTP
 const HttpMonitor = ({ onNewRequest }) => {
   useEffect(() => {
+    let isMounted = true;
+    
     // Guarda referencia al original para restaurarlo
     const originalOpen = XMLHttpRequest.prototype.open;
     const originalSend = XMLHttpRequest.prototype.send;
+    
+    // Función segura para enviar la solicitud
+    const safelyCallOnNewRequest = (data) => {
+      if (isMounted && typeof onNewRequest === 'function') {
+        try {
+          onNewRequest(data);
+        } catch (error) {
+          console.error("Error en onNewRequest:", error);
+        }
+      }
+    };
     
     // Sobrescribe el método open
     XMLHttpRequest.prototype.open = function(method, url, async) {
@@ -163,7 +176,7 @@ const HttpMonitor = ({ onNewRequest }) => {
             response: this.responseText || this.response
           };
           
-          onNewRequest(responseData);
+          safelyCallOnNewRequest(responseData);
         });
         
         // Capturar errores
@@ -176,7 +189,7 @@ const HttpMonitor = ({ onNewRequest }) => {
             duration: Date.now() - this._requestData.startTime
           };
           
-          onNewRequest(errorData);
+          safelyCallOnNewRequest(errorData);
         });
       }
       
@@ -214,7 +227,7 @@ const HttpMonitor = ({ onNewRequest }) => {
             responseBody
           };
           
-          onNewRequest(responseData);
+          safelyCallOnNewRequest(responseData);
         } catch (e) {
           // Si no podemos acceder al cuerpo (ej: stream)
           const responseData = {
@@ -226,7 +239,7 @@ const HttpMonitor = ({ onNewRequest }) => {
             responseBody: '[No se pudo leer el cuerpo de la respuesta]'
           };
           
-          onNewRequest(responseData);
+          safelyCallOnNewRequest(responseData);
         }
         
         return response;
@@ -239,7 +252,7 @@ const HttpMonitor = ({ onNewRequest }) => {
           duration: Date.now() - startTime
         };
         
-        onNewRequest(errorData);
+        safelyCallOnNewRequest(errorData);
         throw error;
       }
     };
@@ -263,7 +276,7 @@ const HttpMonitor = ({ onNewRequest }) => {
             duration: 0
           };
           
-          onNewRequest(errorData);
+          safelyCallOnNewRequest(errorData);
         }
         return Promise.reject(error);
       }
@@ -271,10 +284,19 @@ const HttpMonitor = ({ onNewRequest }) => {
     
     // Cleanup
     return () => {
+      isMounted = false; // Marcar componente como desmontado
+      
+      // Restaurar prototipos y handlers originales
       XMLHttpRequest.prototype.open = originalOpen;
       XMLHttpRequest.prototype.send = originalSend;
       window.fetch = originalFetch;
-      axios.interceptors.response.eject(axiosInterceptor);
+      
+      // Eliminar interceptor Axios
+      try {
+        axios.interceptors.response.eject(axiosInterceptor);
+      } catch (error) {
+        console.error("Error al eliminar interceptor Axios:", error);
+      }
     };
   }, [onNewRequest]);
   
@@ -685,19 +707,26 @@ const DebugPanel = () => {
   }
   
   useEffect(() => {
+    // Bandera para controlar si el componente está montado
+    let isMounted = true;
+    
     // Inicializar el colector de logs
     if (!logCollectorRef.current) {
       logCollectorRef.current = new LogCollector(logs => {
-        setLogs(logs);
+        if (isMounted) {
+          setLogs(logs);
+        }
       });
     }
     
     // Configuración actual de axios
-    setAxiosConfig({
-      baseURL: axios.defaults.baseURL,
-      withCredentials: axios.defaults.withCredentials,
-      headers: axios.defaults.headers.common
-    });
+    if (isMounted) {
+      setAxiosConfig({
+        baseURL: axios.defaults.baseURL,
+        withCredentials: axios.defaults.withCredentials,
+        headers: axios.defaults.headers.common
+      });
+    }
     
     // Endpoints predefinidos
     const defaultEndpoints = [
@@ -710,38 +739,45 @@ const DebugPanel = () => {
     
     // Cargar endpoints guardados
     const savedEndpoints = localStorage.getItem('debugPanelEndpoints');
-    if (savedEndpoints) {
+    if (savedEndpoints && isMounted) {
       try {
         setCustomEndpoints(JSON.parse(savedEndpoints));
       } catch (e) {
         console.error('Error al cargar endpoints guardados:', e);
-        setCustomEndpoints(defaultEndpoints);
+        if (isMounted) {
+          setCustomEndpoints(defaultEndpoints);
+        }
       }
-    } else {
+    } else if (isMounted) {
       setCustomEndpoints(defaultEndpoints);
     }
     
     // Obtener información de la red
-    setNetworkInfo({
-      userAgent: navigator.userAgent,
-      online: navigator.onLine,
-      hostname: window.location.hostname,
-      protocol: window.location.protocol,
-      connectionType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
-      language: navigator.language,
-      cookiesEnabled: navigator.cookieEnabled,
-      doNotTrack: navigator.doNotTrack
-    });
+    if (isMounted) {
+      setNetworkInfo({
+        userAgent: navigator.userAgent,
+        online: navigator.onLine,
+        hostname: window.location.hostname,
+        protocol: window.location.protocol,
+        connectionType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
+        language: navigator.language,
+        cookiesEnabled: navigator.cookieEnabled,
+        doNotTrack: navigator.doNotTrack
+      });
+    }
     
     // Obtener URL del backend
     const apiUrl = process.env.REACT_APP_API_URL || 
                    process.env.VITE_API_URL || 
                    axios.defaults.baseURL || 
                    'https://v2-backend.entradasmelilla.com';
-    setBackendURL(apiUrl);
+    if (isMounted) {
+      setBackendURL(apiUrl);
+    }
     
     // Cleanup
     return () => {
+      isMounted = false;
       if (logCollectorRef.current) {
         logCollectorRef.current.restoreConsole();
       }
@@ -750,18 +786,34 @@ const DebugPanel = () => {
   
   // Guardar endpoints cuando cambien
   useEffect(() => {
-    localStorage.setItem('debugPanelEndpoints', JSON.stringify(customEndpoints));
+    let isMounted = true;
+    
+    if (isMounted && customEndpoints.length > 0) {
+      localStorage.setItem('debugPanelEndpoints', JSON.stringify(customEndpoints));
+    }
+    
+    return () => {
+      isMounted = false;
+    };
   }, [customEndpoints]);
   
   // Manejar nuevas solicitudes HTTP
   const handleNewRequest = (request) => {
+    // Verificar que estamos ejecutando la función solo cuando está montado
     setHttpRequests(prev => {
       const newRequests = [request, ...prev].slice(0, 100); // Mantener solo los últimos 100
       
       // Ejecutar diagnósticos
-      const newDiagnostics = diagnosticTools.runAllDiagnostics(request);
-      if (newDiagnostics.length > 0) {
-        setErrorDiagnostics(prev => [...newDiagnostics, ...prev].slice(0, 50));
+      try {
+        const newDiagnostics = diagnosticTools.runAllDiagnostics(request);
+        if (newDiagnostics && newDiagnostics.length > 0) {
+          // Usamos un callback para la actualización del estado
+          setTimeout(() => {
+            setErrorDiagnostics(prev => [...newDiagnostics, ...prev].slice(0, 50));
+          }, 0);
+        }
+      } catch (error) {
+        console.error("Error en diagnóstico:", error);
       }
       
       return newRequests;
