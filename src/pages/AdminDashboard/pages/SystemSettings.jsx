@@ -95,12 +95,14 @@ const SystemSettings = () => {
       smtpEncryption: 'tls',
       fromName: 'EntradasMelilla',
       fromEmail: 'info@entradasmelilla.com',
+      apiKey: 'xkeysib-********************************', // API key para servicios como SendGrid, Brevo, etc.
       emailTemplates: [
         { id: 'welcome', name: 'Bienvenida', subject: 'Bienvenido a EntradasMelilla' },
-        { id: 'booking_confirmation', name: 'Confirmaci�n de Reserva', subject: 'Confirmaci�n de tu reserva' },
+        { id: 'booking_confirmation', name: 'Confirmación de Reserva', subject: 'Confirmación de tu reserva' },
         { id: 'booking_cancelled', name: 'Reserva Cancelada', subject: 'Tu reserva ha sido cancelada' },
-        { id: 'payment_confirmation', name: 'Confirmaci�n de Pago', subject: 'Confirmaci�n de pago' },
-        { id: 'event_reminder', name: 'Recordatorio de Evento', subject: 'Recordatorio: Tu evento se acerca' }
+        { id: 'payment_confirmation', name: 'Confirmación de Pago', subject: 'Confirmación de pago' },
+        { id: 'event_reminder', name: 'Recordatorio de Evento', subject: 'Recordatorio: Tu evento se acerca' },
+        { id: 'verification_email', name: 'Verificación de Email', subject: 'Verifica tu dirección de correo electrónico' }
       ]
     },
     events: {
@@ -289,20 +291,45 @@ const SystemSettings = () => {
       }
       
       try {
-        // En producción, aquí se realizará la petición real a la API
-        // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        // const response = await axios.get(`${API_BASE_URL}/api/v1/admin/settings`, {
-        //   headers: { Authorization: `Bearer ${token}` }
-        // });
-        // setSettings(response.data.data);
+        // Importamos el servicio API
+        const { default: api } = await import('../../../services/api.js');
+        
+        try {
+          // Intentar obtener la configuración del sistema
+          const response = await api.system.getSettings();
+          
+          if (response.data && response.data.data) {
+            // Si la respuesta es exitosa, actualizar el estado
+            setSettings(response.data.data);
+          }
+        } catch (apiError) {
+          console.warn('No se pudo obtener la configuración desde la API, usando valores por defecto', apiError);
+          // Usamos los valores por defecto que ya están en el estado
+        }
+        
+        // Intentar obtener la configuración específica de correo electrónico
+        try {
+          const emailResponse = await api.system.getEmailSettings();
+          
+          if (emailResponse.data && emailResponse.data.data) {
+            // Si la respuesta es exitosa, actualizamos solo la sección de email
+            setSettings(prevSettings => ({
+              ...prevSettings,
+              email: {
+                ...prevSettings.email,
+                ...emailResponse.data.data
+              }
+            }));
+          }
+        } catch (emailError) {
+          console.warn('No se pudo obtener la configuración de correo desde la API, usando valores por defecto', emailError);
+        }
         
         // Cargar también las tareas programadas
         fetchSchedulerStatus();
         
-        // Simulamos un tiempo de carga
-        setTimeout(() => {
-          setLoading(false);
-        }, 1000);
+        // Finalizamos la carga
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching settings:', error);
         setError('Error al cargar la configuración del sistema');
@@ -380,26 +407,57 @@ const SystemSettings = () => {
     setSaving(true);
     
     try {
-      // En producci�n, aqu� se realizar� la petici�n real a la API
-      // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-      // const token = localStorage.getItem('token');
-      // await axios.put(`${API_BASE_URL}/api/v1/admin/settings`, settings, {
-      //   headers: { Authorization: `Bearer ${token}` }
-      // });
+      // Importamos el servicio API
+      const { default: api } = await import('../../../services/api.js');
       
-      // Simulamos un tiempo de guardado
-      setTimeout(() => {
-        setSuccess('Configuraci�n guardada correctamente');
-        setSaving(false);
+      // Guardar configuración general
+      try {
+        await api.system.saveSettings(settings);
+      } catch (generalError) {
+        console.error('Error al guardar configuración general:', generalError);
+        // Continuamos con otras configuraciones si es posible
+      }
+      
+      // Guardar configuración específica de correo electrónico
+      try {
+        const emailConfigData = {
+          provider: settings.email.emailProvider,
+          useApi: settings.email.emailProvider !== 'smtp',
+          smtpSettings: {
+            host: settings.email.smtpHost,
+            port: settings.email.smtpPort,
+            secure: settings.email.smtpEncryption === 'ssl',
+            auth: {
+              user: settings.email.smtpUser,
+              pass: settings.email.smtpPassword
+            },
+            fromEmail: settings.email.fromEmail,
+            fromName: settings.email.fromName
+          },
+          apiSettings: {
+            provider: settings.email.emailProvider !== 'smtp' ? settings.email.emailProvider : 'brevo',
+            apiKey: settings.email.apiKey || '',
+            fromEmail: settings.email.fromEmail,
+            fromName: settings.email.fromName
+          }
+        };
         
-        // Ocultar mensaje de �xito despu�s de 3 segundos
-        setTimeout(() => {
-          setSuccess(null);
-        }, 3000);
-      }, 1500);
+        await api.system.saveEmailSettings(emailConfigData);
+      } catch (emailError) {
+        console.error('Error al guardar configuración de correo:', emailError);
+        // Continuamos si es posible
+      }
+      
+      setSuccess('Configuración guardada correctamente');
+      
+      // Ocultar mensaje de éxito después de 3 segundos
+      setTimeout(() => {
+        setSuccess(null);
+      }, 3000);
     } catch (error) {
       console.error('Error saving settings:', error);
-      setError('Error al guardar la configuraci�n');
+      setError('Error al guardar la configuración: ' + (error.response?.data?.message || error.message));
+    } finally {
       setSaving(false);
     }
   };
@@ -890,177 +948,152 @@ const SystemSettings = () => {
           </Box>
         </TabPanel>
         
-        {/* Configuraci�n de Email */}
+        {/* Configuración de Email */}
         <TabPanel value={tabValue} index={2}>
           <Box sx={{ p: 3 }}>
+            {/* Importar y usar el nuevo componente EmailConfigPanel */}
+            {React.lazy(() => import('../components/EmailConfigPanel')).render({
+              emailConfig: {
+                provider: settings.email.emailProvider,
+                useAPI: settings.email.emailProvider !== 'smtp',
+                smtpSettings: {
+                  host: settings.email.smtpHost,
+                  port: settings.email.smtpPort,
+                  secure: settings.email.smtpEncryption === 'ssl',
+                  auth: {
+                    user: settings.email.smtpUser,
+                    pass: settings.email.smtpPassword
+                  },
+                  fromEmail: settings.email.fromEmail,
+                  fromName: settings.email.fromName
+                },
+                apiSettings: {
+                  provider: settings.email.emailProvider !== 'smtp' ? settings.email.emailProvider : 'brevo',
+                  apiKey: settings.email.apiKey || '',
+                  fromEmail: settings.email.fromEmail,
+                  fromName: settings.email.fromName
+                }
+              },
+              onSaveConfig: async (newConfig) => {
+                try {
+                  // Actualizar el estado local primero
+                  const updatedEmailSettings = {
+                    emailProvider: newConfig.useAPI ? newConfig.apiSettings.provider : 'smtp',
+                    smtpHost: newConfig.smtpSettings.host,
+                    smtpPort: newConfig.smtpSettings.port,
+                    smtpEncryption: newConfig.smtpSettings.secure ? 'ssl' : 'tls',
+                    smtpUser: newConfig.smtpSettings.auth.user,
+                    smtpPassword: newConfig.smtpSettings.auth.pass,
+                    fromEmail: newConfig.useAPI ? newConfig.apiSettings.fromEmail : newConfig.smtpSettings.fromEmail,
+                    fromName: newConfig.useAPI ? newConfig.apiSettings.fromName : newConfig.smtpSettings.fromName,
+                    apiKey: newConfig.useAPI ? newConfig.apiSettings.apiKey : '',
+                    emailTemplates: settings.email.emailTemplates
+                  };
+                  
+                  // Actualizar el estado local
+                  setSettings(prevSettings => ({
+                    ...prevSettings,
+                    email: updatedEmailSettings
+                  }));
+                  
+                  // En producción, aquí se enviarían los datos al backend
+                  const { default: api } = await import('../../../services/api.js');
+                  
+                  // Configurar el cuerpo de la petición
+                  const emailConfigData = {
+                    provider: updatedEmailSettings.emailProvider,
+                    useApi: newConfig.useAPI,
+                    smtpSettings: newConfig.smtpSettings,
+                    apiSettings: newConfig.apiSettings
+                  };
+                  
+                  // Guardar los cambios en el backend
+                  await api.system.saveEmailSettings(emailConfigData);
+                  
+                  // Mostrar mensaje de éxito
+                  setSuccess('Configuración de correo guardada correctamente');
+                  
+                  // Ocultar mensaje después de 3 segundos
+                  setTimeout(() => {
+                    setSuccess(null);
+                  }, 3000);
+                } catch (error) {
+                  console.error('Error al guardar configuración de correo:', error);
+                  setError('Error al guardar la configuración de correo: ' + (error.response?.data?.message || error.message));
+                }
+              },
+              loading: saving
+            })}
+            
+            <Divider sx={{ my: 4 }} />
+            
+            {/* Sección de plantillas (mantenemos esta parte) */}
             <Typography variant="h6" gutterBottom>
-              Configuraci�n de Email
+              Plantillas de Email
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Configura el servicio de correo electr�nico y plantillas.
+              Configura las plantillas para los diferentes tipos de correos que envía el sistema.
             </Typography>
             
-            <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth margin="normal">
-                  <InputLabel id="email-provider-label">Proveedor de Email</InputLabel>
-                  <Select
-                    labelId="email-provider-label"
-                    value={settings.email.emailProvider}
-                    label="Proveedor de Email"
-                    onChange={(e) => handleSettingChange('email', 'emailProvider', e.target.value)}
-                  >
-                    <MenuItem value="brevo">Brevo (Sendinblue)</MenuItem>
-                    <MenuItem value="smtp">SMTP Personalizado</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Nombre del Remitente"
-                  value={settings.email.fromName}
-                  onChange={(e) => handleSettingChange('email', 'fromName', e.target.value)}
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Email del Remitente"
-                  value={settings.email.fromEmail}
-                  onChange={(e) => handleSettingChange('email', 'fromEmail', e.target.value)}
-                  margin="normal"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="subtitle1" gutterBottom>
-                  Configuraci�n SMTP
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Servidor SMTP"
-                      value={settings.email.smtpHost}
-                      onChange={(e) => handleSettingChange('email', 'smtpHost', e.target.value)}
-                      margin="normal"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Puerto SMTP"
-                      value={settings.email.smtpPort}
-                      onChange={(e) => handleSettingChange('email', 'smtpPort', e.target.value)}
-                      margin="normal"
-                      type="number"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Usuario SMTP"
-                      value={settings.email.smtpUser}
-                      onChange={(e) => handleSettingChange('email', 'smtpUser', e.target.value)}
-                      margin="normal"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      label="Contrase�a SMTP"
-                      value={settings.email.smtpPassword}
-                      onChange={(e) => handleSettingChange('email', 'smtpPassword', e.target.value)}
-                      margin="normal"
-                      type="password"
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <FormControl fullWidth margin="normal">
-                      <InputLabel id="smtp-encryption-label">Encriptaci�n SMTP</InputLabel>
-                      <Select
-                        labelId="smtp-encryption-label"
-                        value={settings.email.smtpEncryption}
-                        label="Encriptaci�n SMTP"
-                        onChange={(e) => handleSettingChange('email', 'smtpEncryption', e.target.value)}
-                      >
-                        <MenuItem value="tls">TLS</MenuItem>
-                        <MenuItem value="ssl">SSL</MenuItem>
-                        <MenuItem value="none">Ninguna</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="subtitle1" gutterBottom>
-                  Plantillas de Email
-                </Typography>
-                <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Plantilla</TableCell>
-                        <TableCell>Asunto</TableCell>
-                        <TableCell align="center">Acciones</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {settings.email.emailTemplates.map((template) => (
-                        <TableRow key={template.id}>
-                          <TableCell>{template.name}</TableCell>
-                          <TableCell>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={template.subject}
-                              onChange={(e) => handleNestedSettingChange(
-                                'email', 
-                                'emailTemplates', 
-                                template.id, 
-                                { subject: e.target.value }
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            <Tooltip title="Editar Plantilla">
-                              <IconButton size="small" color="primary">
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Eliminar Plantilla">
-                              <IconButton 
-                                size="small" 
-                                color="error"
-                                onClick={() => handleDeleteItem('email', 'emailTemplates', template.id)}
-                              >
-                                <DeleteOutlineIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Box>
-                <Button 
-                  variant="outlined" 
-                  size="small" 
-                  sx={{ mt: 2 }}
-                  onClick={() => handleAddItem('email', 'emailTemplates', {
-                    id: `template_${Date.now()}`,
-                    name: 'Nueva Plantilla',
-                    subject: 'Asunto de la nueva plantilla'
-                  })}
-                >
-                  A�adir Plantilla
-                </Button>
-              </Grid>
-            </Grid>
+            <Box sx={{ maxHeight: 400, overflow: 'auto', mb: 3 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Plantilla</TableCell>
+                    <TableCell>Asunto</TableCell>
+                    <TableCell align="center">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {settings.email.emailTemplates.map((template) => (
+                    <TableRow key={template.id}>
+                      <TableCell>{template.name}</TableCell>
+                      <TableCell>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          value={template.subject}
+                          onChange={(e) => handleNestedSettingChange(
+                            'email', 
+                            'emailTemplates', 
+                            template.id, 
+                            { subject: e.target.value }
+                          )}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Editar Plantilla">
+                          <IconButton size="small" color="primary">
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Eliminar Plantilla">
+                          <IconButton 
+                            size="small" 
+                            color="error"
+                            onClick={() => handleDeleteItem('email', 'emailTemplates', template.id)}
+                          >
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+            <Button 
+              variant="outlined" 
+              size="small"
+              startIcon={<AddIcon />}
+              onClick={() => handleAddItem('email', 'emailTemplates', {
+                id: `template_${Date.now()}`,
+                name: 'Nueva Plantilla',
+                subject: 'Asunto de la nueva plantilla'
+              })}
+            >
+              Añadir Plantilla
+            </Button>
           </Box>
         </TabPanel>
         

@@ -296,11 +296,78 @@ export const dashboardAPI = {
   }
 };
 
+/**
+ * Funciones relacionadas con la configuración del sistema
+ */
+export const systemAPI = {
+  // Obtener configuración del sistema
+  getSettings: async () => {
+    return axios.get('/api/v1/admin/settings');
+  },
+  
+  // Guardar configuración del sistema
+  saveSettings: async (settings) => {
+    return axios.put('/api/v1/admin/settings', settings);
+  },
+  
+  // Obtener configuración de correo electrónico
+  getEmailSettings: async () => {
+    try {
+      return await axios.get('/api/v1/admin/settings/email');
+    } catch (error) {
+      console.log('Error al obtener configuración de correo:', error.message);
+      
+      // Intentar ruta alternativa
+      try {
+        return await axios.get('/api/v1/email/config');
+      } catch (altError) {
+        console.log('Error también en ruta alternativa:', altError.message);
+        throw altError;
+      }
+    }
+  },
+  
+  // Guardar configuración de correo electrónico
+  saveEmailSettings: async (emailSettings) => {
+    try {
+      return await axios.put('/api/v1/admin/settings/email', emailSettings);
+    } catch (error) {
+      console.log('Error al guardar configuración de correo:', error.message);
+      
+      // Intentar ruta alternativa
+      try {
+        return await axios.put('/api/v1/email/config', emailSettings);
+      } catch (altError) {
+        console.log('Error también en ruta alternativa:', altError.message);
+        throw altError;
+      }
+    }
+  },
+  
+  // Enviar correo de prueba
+  sendTestEmail: async (emailData) => {
+    try {
+      return await axios.post('/api/v1/admin/send-test-email', emailData);
+    } catch (error) {
+      console.log('Error al enviar correo de prueba:', error.message);
+      
+      // Intentar ruta alternativa
+      try {
+        return await axios.post('/api/v1/email/test', emailData);
+      } catch (altError) {
+        console.log('Error también en ruta alternativa:', altError.message);
+        throw altError;
+      }
+    }
+  }
+};
+
 // Exportar un objeto API con todas las funciones
 export default {
   auth: authAPI,
   events: eventAPI,
   bookings: bookingAPI,
   templates: templateAPI,
-  dashboard: dashboardAPI
+  dashboard: dashboardAPI,
+  system: systemAPI
 };
