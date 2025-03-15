@@ -7,9 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:8000'
-          : 'https://event-system-backend-production.up.railway.app',
+        target: 'https://event-system-backend-production.up.railway.app',
         changeOrigin: true,
         secure: false,
       }

@@ -28,13 +28,15 @@ export default function EventPage() {
 
   const fetchEventData = useMemo(() => {
     return async () => {
-      const url = `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getsingleEvent?id=${id}`;
       try {
-        const response = await axios.get(url);
+        console.log('Solicitando evento con ID:', id);
+        const response = await axios.get(`/api/v1/events/getsingleEvent?id=${id}`);
+        console.log('Datos del evento recibidos:', response.data);
         setEventData(response.data.data);
         setLoading(false); // Stop the loader after fetching data
       } catch (error) {
         console.error("Error fetching events:", error);
+        console.error("Detalles:", error.response?.data || error.message);
         setLoading(false); // Stop the loader even if there's an error
       }
     };
@@ -60,12 +62,13 @@ export default function EventPage() {
     if (eventData?._id && userRole !== "user") {
       const fetchPayments = async () => {
         try {
-          const response = await axios.get(
-            `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/booking/geteventbooking?event_id=${eventData._id}`
-          );
+          console.log('Solicitando reservas para evento:', eventData._id);
+          const response = await axios.get(`/api/v1/booking/geteventbooking?event_id=${eventData._id}`);
+          console.log('Reservas recibidas:', response.data);
           setPayments(response.data.data);
         } catch (error) {
           console.error("Error fetching payments:", error);
+          console.error("Detalles:", error.response?.data || error.message);
         }
       };
 

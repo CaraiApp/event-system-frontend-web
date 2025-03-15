@@ -9,8 +9,11 @@ import CssBaseline from '@mui/material/CssBaseline'
 import theme from './styles/theme'
 
 // Configuración global de axios
-axios.defaults.baseURL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
+axios.defaults.baseURL = 'https://event-system-backend-production.up.railway.app';
 axios.defaults.withCredentials = true;
+
+// Log para verificar la URL base
+console.log('Axios baseURL:', axios.defaults.baseURL);
 
 // Configuraciones para peticiones
 axios.defaults.headers.common['Content-Type'] = 'application/json';
@@ -61,6 +64,30 @@ axios.interceptors.response.use(
 const App = () => {
   useEffect(() => {
     console.log('App initialized with backend URL:', axios.defaults.baseURL);
+    
+    // Verificar conexión con el backend y la base de datos
+    const verifyConnection = async () => {
+      try {
+        console.log('Verificando conexión con el backend...');
+        const eventsResponse = await axios.get('/api/v1/events');
+        console.log('✅ Conexión exitosa a eventos:', eventsResponse.data);
+        
+        const categoriesResponse = await axios.get('/api/v1/categories');
+        console.log('✅ Conexión exitosa a categorías:', categoriesResponse.data);
+        
+        console.log('✅ Backend conectado correctamente a MongoDB');
+      } catch (error) {
+        console.error('❌ Error al verificar conexión:', error.message);
+        if (error.response) {
+          console.error('Detalles:', {
+            status: error.response.status,
+            data: error.response.data
+          });
+        }
+      }
+    };
+    
+    verifyConnection();
   }, []);
 
   return (

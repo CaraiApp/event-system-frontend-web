@@ -78,8 +78,7 @@ export const eventAPI = {
       console.log('📝 Token presente:', !!token);
       console.log('📝 Rol del usuario:', localStorage.getItem('role'));
       
-      const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-      console.log('📝 URL completa:', `${API_BASE_URL}/api/v1/events/getuserEvent`);
+      console.log('📝 URL completa:', `${axios.defaults.baseURL}/api/v1/events/getuserEvent`);
       
       const response = await axios.get('/api/v1/events/getuserEvent');
       console.log('📝 Respuesta exitosa:', response);

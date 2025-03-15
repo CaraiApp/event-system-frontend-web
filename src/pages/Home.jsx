@@ -52,28 +52,20 @@ const Home = () => {
       const token = localStorage.getItem("token");
       const userRole = localStorage.getItem("role");
 
-      // if (!token) {
-      //   console.error("No token found, please login.");
-      //   setLoading(false);
-      //   return;
-      // }
-
       // Determine the appropriate endpoint based on the user role
       const endpoint = userRole === "organizer" 
         ? '/api/v1/events/getuserEvent'
         : '/api/v1/events/getAllEvents';
         
       try {
-        // Usar axios con la configuración global
-        const response = await axios.get(endpoint, {
-          headers: {
-            Authorization: `Bearer ${token}`, // Send the token in the Authorization header
-          },
-        });
-        setEvents(response.data.data);
+        console.log(`Solicitando eventos (${userRole}) desde: ${endpoint}`);
+        const response = await axios.get(endpoint);
+        console.log('Eventos recibidos:', response.data);
+        setEvents(response.data.data || []);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching events:", error);
+        console.error("Detalles:", error.response?.data || error.message);
         setLoading(false);
       }
     };

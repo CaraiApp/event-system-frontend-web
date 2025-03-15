@@ -14,30 +14,22 @@ const Events = () => {
   }, []);
   useEffect(() => {
     const fetchAllEvents = async () => {
-      const token = localStorage.getItem("token");
       const userRole = localStorage.getItem("role");
 
-      // if (!token) {
-      //   console.error("No token found, please login.");
-      //   setLoading(false);
-      //   return;
-      // }
-
-      // Determine the appropriate URL based on the user role
-      const url =
-        userRole === "organizer"
-          ? `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getuserEvent`
-          : `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getAllEvents`;
+      // Determine the appropriate endpoint based on the user role
+      const endpoint = userRole === "organizer" 
+        ? '/api/v1/events/getuserEvent' 
+        : '/api/v1/events/getAllEvents';
+      
       try {
-        const response = await axios.get(url , {
-          headers: {
-            Authorization: `Bearer ${token}`, // Send the token in the Authorization header
-          },
-        });
-        setEvents(response.data.data);
+        console.log(`[Events.jsx] Solicitando eventos (${userRole}) desde: ${endpoint}`);
+        const response = await axios.get(endpoint);
+        console.log('[Events.jsx] Eventos recibidos:', response.data);
+        setEvents(response.data.data || []);
         setLoading(false);
       } catch (error) {
-        console.error("Error fetching events:", error);
+        console.error("[Events.jsx] Error fetching events:", error);
+        console.error("[Events.jsx] Detalles:", error.response?.data || error.message);
         setLoading(false);
       }
     };

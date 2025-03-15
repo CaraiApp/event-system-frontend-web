@@ -70,47 +70,42 @@ console.log(updatedEvent, 'updated event')
 
   const fetchAllEvents = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/getAllEvents`);
+      console.log('Solicitando todos los eventos...');
+      const response = await axios.get('/api/v1/events/getAllEvents');
+      console.log('Eventos recibidos:', response.data);
       setEvents(response.data.data);
-     
     } catch (error) {
       console.error("Error fetching events:", error);
-     
+      console.error("Detalles:", error.response?.data || error.message);
     }
   };
   const handlePublish = async (eventId) => {
-
     try {
+      console.log('Publicando evento:', eventId);
       const response = await axios.patch(
-        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/publishedEvent`,
-        {eventId},  // If you need to send additional data in the body, add it here
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Add the token in the Authorization header
-          },
-        }
+        '/api/v1/events/publishedEvent',
+        {eventId}
       );
+      console.log('Respuesta de publicación:', response.data);
       await fetchAllEvents();
     } catch (error) {
       console.error("Error publishing event:", error);
+      console.error("Detalles:", error.response?.data || error.message);
     }
   };
 
   const handleFeature = async (eventId) => {
     try {
+      console.log('Destacando evento:', eventId);
       const response = await axios.patch(
-        `${import.meta.env.VITE_REACT_APP_BACKEND_BASEURL}/api/v1/events/featuredEvent`,
-        {eventId},  // If you need to send additional data in the body, add it here
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // Add the token in the Authorization header
-          },
-        }
+        '/api/v1/events/featuredEvent',
+        {eventId}
       );
-      await fetchAllEvents(eventId);
-
+      console.log('Respuesta de destacado:', response.data);
+      await fetchAllEvents();
     } catch (error) {
       console.error("Error featuring event:", error);
+      console.error("Detalles:", error.response?.data || error.message);
     }
   };
 
