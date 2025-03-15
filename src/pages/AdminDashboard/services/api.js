@@ -286,31 +286,63 @@ const adminApi = {
   getCommunications: (params) => api.get('/api/v1/dashboard/admin/communications', { params }),
   sendCommunication: (data) => api.post('/api/v1/dashboard/admin/communications', data),
 
-  // Configuración UI - completamente estática
+  // Configuración UI - Usando directamente el endpoint que funciona correctamente sin intentar otros
   getUiConfig: async (route) => {
-    console.log(`Solicitada configuración UI para ruta: ${route} - USANDO CONFIGURACIÓN ESTÁTICA`);
-    
-    // CONFIGURACIÓN ESTÁTICA - Sin llamadas API
-    return {
-      data: {
-        success: true,
+    try {
+      console.log(`Solicitando configuración UI para ruta: ${route} usando endpoint verificado`);
+      
+      // Usar directamente el endpoint que funciona correctamente sin intentar primero el que falla
+      const response = await api.get('/api/templates/ui-config');
+      console.log('✅ UI Config recibida correctamente:', response.data);
+      
+      // Devolver los datos con elementos de navegación para el admin dashboard
+      return {
         data: {
-          hideHeader: true,
-          hideFooter: true,
-          isDashboard: true,
-          dashboardType: 'admin',
-          navItems: [
-            { path: '/admin/overview', label: 'Dashboard', icon: 'dashboard' },
-            { path: '/admin/users', label: 'Usuarios', icon: 'people' },
-            { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
-            { path: '/admin/events', label: 'Eventos', icon: 'event' },
-            { path: '/admin/categories', label: 'Categorías', icon: 'category' },
-            { path: '/admin/reports', label: 'Informes', icon: 'bar_chart' },
-            { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
-          ]
+          success: true,
+          data: {
+            hideHeader: true,
+            hideFooter: true,
+            isDashboard: true,
+            dashboardType: 'admin',
+            ...response.data,
+            // Asegurar que siempre se tenga la navegación correcta
+            navItems: [
+              { path: '/admin/overview', label: 'Dashboard', icon: 'dashboard' },
+              { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+              { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+              { path: '/admin/events', label: 'Eventos', icon: 'event' },
+              { path: '/admin/categories', label: 'Categorías', icon: 'category' },
+              { path: '/admin/reports', label: 'Informes', icon: 'bar_chart' },
+              { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+            ]
+          }
         }
-      }
-    };
+      };
+    } catch (error) {
+      console.error('Error al obtener configuración UI:', error);
+      
+      // Usar configuración estática en caso de error
+      return {
+        data: {
+          success: true,
+          data: {
+            hideHeader: true,
+            hideFooter: true,
+            isDashboard: true,
+            dashboardType: 'admin',
+            navItems: [
+              { path: '/admin/overview', label: 'Dashboard', icon: 'dashboard' },
+              { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+              { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+              { path: '/admin/events', label: 'Eventos', icon: 'event' },
+              { path: '/admin/categories', label: 'Categorías', icon: 'category' },
+              { path: '/admin/reports', label: 'Informes', icon: 'bar_chart' },
+              { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+            ]
+          }
+        }
+      };
+    }
   },
 };
 

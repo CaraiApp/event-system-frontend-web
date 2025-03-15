@@ -264,34 +264,65 @@ export const templateAPI = {
  * Funciones relacionadas con el dashboard y la configuración de UI
  */
 export const dashboardAPI = {
-  // Obtener configuración de UI para dashboards
+  // Obtener configuración de UI para dashboards - usando directamente el endpoint que funciona
   getUIConfig: async (route) => {
     try {
-      return await axios.get('/api/v1/dashboard/ui-config', { params: { route } });
-    } catch (error) {
-      // Si falla, intentar con la ruta alternativa
-      console.log(`Error al obtener configuración UI para ${route}:`, error.message);
+      console.log(`Solicitando configuración UI para ruta ${route} usando endpoint funcional`);
+      // Usar directamente el endpoint alternativo que sabemos que funciona
+      const response = await axios.get('/api/templates/ui-config');
+      console.log('✅ UI Config recibida correctamente:', response.data);
       
-      // Intentar ruta alternativa
-      try {
-        return await axios.get('/api/templates/ui-config');
-      } catch (altError) {
-        console.log('Error también en ruta alternativa:', altError.message);
-        
-        // Devolver una configuración por defecto como último recurso
-        return {
+      // Devolver los datos con un formato consistente
+      return {
+        data: {
+          success: true,
           data: {
-            success: true,
-            data: {
-              hideHeader: true,
-              hideFooter: true,
-              dashboardConfig: {
-                navItems: [] // Puedes definir elementos de navegación por defecto aquí
-              }
-            }
+            ...response.data,
+            // Asegurar que siempre se tenga la navegación correcta para rutas administrativas
+            ...(route.includes('/admin') && {
+              navItems: [
+                { path: '/admin/overview', label: 'Dashboard', icon: 'dashboard' },
+                { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+                { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+                { path: '/admin/events', label: 'Eventos', icon: 'event' },
+                { path: '/admin/categories', label: 'Categorías', icon: 'category' },
+                { path: '/admin/reports', label: 'Informes', icon: 'bar_chart' },
+                { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+              ]
+            })
           }
-        };
-      }
+        }
+      };
+    } catch (error) {
+      console.error('Error al obtener configuración UI:', error);
+      
+      // Devolver una configuración por defecto como último recurso
+      return {
+        data: {
+          success: true,
+          data: {
+            hideHeader: true,
+            hideFooter: true,
+            isDashboard: true,
+            dashboardType: route.includes('/admin') ? 'admin' : 'organizer',
+            navItems: route.includes('/admin') ? [
+              { path: '/admin/overview', label: 'Dashboard', icon: 'dashboard' },
+              { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+              { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+              { path: '/admin/events', label: 'Eventos', icon: 'event' },
+              { path: '/admin/categories', label: 'Categorías', icon: 'category' },
+              { path: '/admin/reports', label: 'Informes', icon: 'bar_chart' },
+              { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+            ] : [
+              { path: '/organizer/overview', label: 'Dashboard', icon: 'dashboard' },
+              { path: '/organizer/events', label: 'Mis Eventos', icon: 'event' },
+              { path: '/organizer/sales', label: 'Ventas', icon: 'payments' },
+              { path: '/organizer/attendees', label: 'Asistentes', icon: 'people' },
+              { path: '/organizer/settings', label: 'Configuración', icon: 'settings' }
+            ]
+          }
+        }
+      };
     }
   }
 };
