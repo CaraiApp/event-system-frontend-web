@@ -71,42 +71,26 @@ export const AdminDashboardProvider = ({ children }) => {
 
         console.log('[AdminDashboardContext] Autenticación satisfactoria como administrador');
         
-        // Intentar obtener la configuración de UI
-        try {
-          console.log('[AdminDashboardContext] Solicitando configuración UI...');
-          const response = await adminApi.getUiConfig('/admin/overview');
-          
-          // Verificar la respuesta y extraer los datos según la estructura
-          if (response?.data?.data) {
-            console.log('[AdminDashboardContext] Configuración UI recibida (data.data):', response.data.data);
-            setUiConfig(response.data.data);
-          } else if (response?.data) {
-            console.log('[AdminDashboardContext] Configuración UI recibida (solo data):', response.data);
-            setUiConfig(response.data);
-          } else {
-            console.warn('[AdminDashboardContext] Respuesta UI inesperada:', response);
-            // Continuar con la configuración por defecto
-            throw new Error('Formato de respuesta no reconocido');
-          }
-        } catch (uiErr) {
-          console.warn('[AdminDashboardContext] Error obteniendo configuración UI, usando configuración por defecto:', uiErr);
-          // Usar configuración por defecto si falla
-          const defaultConfig = {
-            hideHeader: true,
-            hideFooter: true,
-            isDashboard: true,
-            dashboardType: 'admin',
-            navItems: [
-              { path: '/admin/overview', label: 'Panel de Control', icon: 'dashboard' },
-              { path: '/admin/users', label: 'Usuarios', icon: 'people' },
-              { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
-              { path: '/admin/events', label: 'Eventos', icon: 'event' },
-              { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
-            ]
-          };
-          console.log('[AdminDashboardContext] Usando configuración por defecto:', defaultConfig);
-          setUiConfig(defaultConfig);
-        }
+        // Saltamos la solicitud a la API y usamos directamente la configuración por defecto
+        // SOLUCIÓN INMEDIATA: Usar configuración estática en lugar de solicitar al servidor
+        console.log('[AdminDashboardContext] Usando configuración UI estática para evitar problemas de API');
+        
+        const defaultConfig = {
+          hideHeader: true,
+          hideFooter: true,
+          isDashboard: true,
+          dashboardType: 'admin',
+          navItems: [
+            { path: '/admin/overview', label: 'Panel de Control', icon: 'dashboard' },
+            { path: '/admin/users', label: 'Usuarios', icon: 'people' },
+            { path: '/admin/organizers', label: 'Organizadores', icon: 'business' },
+            { path: '/admin/events', label: 'Eventos', icon: 'event' },
+            { path: '/admin/settings', label: 'Configuración', icon: 'settings' }
+          ]
+        };
+        
+        console.log('[AdminDashboardContext] Configuración UI estática cargada:', defaultConfig);
+        setUiConfig(defaultConfig);
         
         // Si llegamos aquí, el usuario está autenticado
         setIsAuthenticated(true);
