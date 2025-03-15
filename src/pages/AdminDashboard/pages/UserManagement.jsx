@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, TablePagination, Button, Chip, CircularProgress,
@@ -24,7 +25,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 
-// Componente TabPanel para las pesta�as
+// Componente TabPanel para las pestañas
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -57,6 +58,7 @@ const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const location = useLocation(); // Añadimos el hook de ubicación para detectar la ruta
   const [tabValue, setTabValue] = useState(0);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editUser, setEditUser] = useState({
@@ -85,10 +87,18 @@ const UserManagement = () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontr� token de autenticaci�n');
+        setError('No se encontró token de autenticación');
         setLoading(false);
         return;
       }
+      
+      // Determinar si estamos en la página de organizadores
+      const isOrganizersPage = location.pathname.includes('/admin/organizers');
+      // Si estamos en la página de organizadores, forzar el filtro a 'organizer'
+      const roleFilter = isOrganizersPage ? 'organizer' : filterRole;
+      
+      console.log(`Estamos en la página de organizadores: ${isOrganizersPage}`);
+      console.log(`Filtro de rol: ${roleFilter}`);
       
       try {
         // Llamada a la API real - usando los datos simulados en caso de error
@@ -97,7 +107,7 @@ const UserManagement = () => {
           const response = await axios.get(`${API_BASE_URL}/api/v1/dashboard/admin/users`, {
             headers: { Authorization: `Bearer ${token}` },
             params: {
-              role: filterRole || undefined,
+              role: roleFilter || undefined,
               status: filterStatus || undefined,
               search: searchTerm || undefined,
               page: page + 1,
@@ -120,9 +130,9 @@ const UserManagement = () => {
             
             // Transformar los datos si es necesario para que coincidan con el formato esperado
             if (response.data && response.data.data) {
-              const transformedUsers = response.data.data.map(user => ({
+              let transformedUsers = response.data.data.map(user => ({
                 id: user._id,
-                name: user.username || 'Sin nombre',
+                name: user.username || user.fullname || 'Sin nombre',
                 email: user.email,
                 role: user.role || 'user',
                 status: user.isActive ? 'active' : 'inactive',
@@ -135,6 +145,12 @@ const UserManagement = () => {
                 orders: 0,
                 events: 0
               }));
+              
+              // Si estamos en la página de organizadores, filtrar solo organizadores
+              if (isOrganizersPage) {
+                transformedUsers = transformedUsers.filter(user => user.role === 'organizer');
+                console.log(`Filtrando solo organizadores: ${transformedUsers.length} encontrados`);
+              }
               
               setUsers(transformedUsers);
               setLoading(false);
@@ -151,7 +167,7 @@ const UserManagement = () => {
           const mockUsers = [
             {
               id: 'u1',
-              name: 'Laura G�mez',
+              name: 'Laura Gómez',
               email: 'laura@example.com',
               role: 'user',
               status: 'active',
@@ -178,7 +194,7 @@ const UserManagement = () => {
             },
             {
               id: 'u3',
-              name: 'Sof�a Navarro',
+              name: 'Sofía Navarro',
               email: 'sofia@example.com',
               role: 'user',
               status: 'active',
@@ -191,7 +207,7 @@ const UserManagement = () => {
             },
             {
               id: 'u4',
-              name: 'David Fern�ndez',
+              name: 'David Fernández',
               email: 'david@example.com',
               role: 'organizer',
               status: 'active',
@@ -205,7 +221,7 @@ const UserManagement = () => {
             },
             {
               id: 'u5',
-              name: 'Ana Mart�nez',
+              name: 'Ana Martínez',
               email: 'ana@example.com',
               role: 'admin',
               status: 'active',
@@ -217,7 +233,7 @@ const UserManagement = () => {
             },
             {
               id: 'u6',
-              name: 'Carlos Rodr�guez',
+              name: 'Carlos Rodríguez',
               email: 'carlos@example.com',
               role: 'user',
               status: 'inactive',
@@ -230,7 +246,7 @@ const UserManagement = () => {
             },
             {
               id: 'u7',
-              name: 'Elena L�pez',
+              name: 'Elena López',
               email: 'elena@example.com',
               role: 'organizer',
               status: 'pending',
@@ -243,7 +259,7 @@ const UserManagement = () => {
             },
             {
               id: 'u8',
-              name: 'Javier Garc�a',
+              name: 'Javier García',
               email: 'javier@example.com',
               role: 'user',
               status: 'active',
@@ -256,7 +272,7 @@ const UserManagement = () => {
             },
             {
               id: 'u9',
-              name: 'Mar�a S�nchez',
+              name: 'María Sánchez',
               email: 'maria@example.com',
               role: 'user',
               status: 'active',
@@ -269,7 +285,7 @@ const UserManagement = () => {
             },
             {
               id: 'u10',
-              name: 'Roberto D�az',
+              name: 'Roberto Díaz',
               email: 'roberto@example.com',
               role: 'organizer',
               status: 'active',
@@ -283,7 +299,14 @@ const UserManagement = () => {
             }
           ];
           
-          setUsers(mockUsers);
+          // Filtrar los datos de prueba si estamos en la página de organizadores
+          let filteredMockUsers = mockUsers;
+          if (isOrganizersPage) {
+            filteredMockUsers = mockUsers.filter(user => user.role === 'organizer');
+            console.log(`Filtrando datos de prueba: ${filteredMockUsers.length} organizadores encontrados`);
+          }
+          
+          setUsers(filteredMockUsers);
           setLoading(false);
         }, 1000);
       } catch (error) {
@@ -294,7 +317,7 @@ const UserManagement = () => {
     };
     
     fetchUsers();
-  }, []);
+  }, [filterRole, filterStatus, searchTerm, page, rowsPerPage, location.pathname]);
   
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -336,7 +359,7 @@ const UserManagement = () => {
   
   const handleRefresh = () => {
     setLoading(true);
-    // Aqu� se recargar�an los datos reales
+    // Aquí se recargarían los datos reales
     setTimeout(() => {
       setLoading(false);
     }, 1000);
@@ -526,7 +549,7 @@ const UserManagement = () => {
   };
   
   const handleAddUserSubmit = () => {
-    // Aqu� se implementar�a la llamada a la API para crear el usuario
+    // Aquí se implementaría la llamada a la API para crear el usuario
     const newUserObj = {
       id: `u${users.length + 1}`,
       name: newUser.name,
@@ -555,7 +578,7 @@ const UserManagement = () => {
   
   // Filtrar usuarios
   const filteredUsers = users.filter(user => {
-    // Filtrar por pesta�a
+    // Filtrar por pestaña
     if (tabValue === 1 && user.role !== 'user') return false;
     if (tabValue === 2 && user.role !== 'organizer') return false;
     if (tabValue === 3 && user.role !== 'admin') return false;
@@ -566,7 +589,7 @@ const UserManagement = () => {
     // Filtrar por estado
     if (filterStatus && user.status !== filterStatus) return false;
     
-    // Filtrar por t�rmino de b�squeda
+    // Filtrar por término de búsqueda
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       return (
@@ -580,7 +603,7 @@ const UserManagement = () => {
     return true;
   });
   
-  // Paginaci�n
+  // Paginación
   const paginatedUsers = filteredUsers.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -634,18 +657,22 @@ const UserManagement = () => {
     );
   }
   
+  // Determinar el título de la página
+  const isOrganizersPage = location.pathname.includes('/admin/organizers');
+  const pageTitle = isOrganizersPage ? 'Gestión de Organizadores' : 'Gestión de Usuarios';
+  
   return (
     <>
       <Box className="admin-title">
         <Typography variant="h4" component="h1" className="admin-title-text">
-          Gesti�n de Usuarios
+          {pageTitle}
         </Typography>
         <Button 
           variant="contained" 
           startIcon={<AddIcon />}
           onClick={handleAddUserClick}
         >
-          A�adir Usuario
+          {isOrganizersPage ? 'Añadir Organizador' : 'Añadir Usuario'}
         </Button>
       </Box>
       
@@ -669,43 +696,49 @@ const UserManagement = () => {
           aria-label="user role tabs"
           sx={{ '& .MuiTab-root': { fontWeight: 'medium' } }}
         >
-          <Tab label="Todos los Usuarios" />
-          <Tab 
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography>Usuarios</Typography>
-                <Chip 
-                  label={users.filter(u => u.role === 'user').length} 
-                  size="small"
-                  sx={{ ml: 1, height: 20, fontSize: '0.75rem' }}
-                />
-              </Box>
-            } 
-          />
-          <Tab 
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography>Organizadores</Typography>
-                <Chip 
-                  label={users.filter(u => u.role === 'organizer').length} 
-                  size="small"
-                  sx={{ ml: 1, height: 20, fontSize: '0.75rem' }}
-                />
-              </Box>
-            } 
-          />
-          <Tab 
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography>Administradores</Typography>
-                <Chip 
-                  label={users.filter(u => u.role === 'admin').length} 
-                  size="small"
-                  sx={{ ml: 1, height: 20, fontSize: '0.75rem' }}
-                />
-              </Box>
-            } 
-          />
+          <Tab label={isOrganizersPage ? "Todos los Organizadores" : "Todos los Usuarios"} />
+          {!isOrganizersPage && (
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography>Usuarios</Typography>
+                  <Chip 
+                    label={users.filter(u => u.role === 'user').length} 
+                    size="small"
+                    sx={{ ml: 1, height: 20, fontSize: '0.75rem' }}
+                  />
+                </Box>
+              } 
+            />
+          )}
+          {!isOrganizersPage && (
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography>Organizadores</Typography>
+                  <Chip 
+                    label={users.filter(u => u.role === 'organizer').length} 
+                    size="small"
+                    sx={{ ml: 1, height: 20, fontSize: '0.75rem' }}
+                  />
+                </Box>
+              } 
+            />
+          )}
+          {!isOrganizersPage && (
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Typography>Administradores</Typography>
+                  <Chip 
+                    label={users.filter(u => u.role === 'admin').length} 
+                    size="small"
+                    sx={{ ml: 1, height: 20, fontSize: '0.75rem' }}
+                  />
+                </Box>
+              } 
+            />
+          )}
         </Tabs>
       </Box>
       
@@ -716,7 +749,7 @@ const UserManagement = () => {
             <TextField
               fullWidth
               variant="outlined"
-              placeholder="Buscar por nombre, email, tel�fono..."
+              placeholder="Buscar por nombre, email, teléfono..."
               value={searchTerm}
               onChange={handleSearchChange}
               size="small"
@@ -729,24 +762,26 @@ const UserManagement = () => {
               }}
             />
           </Grid>
-          <Grid item xs={6} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="role-filter-label">Filtrar por Rol</InputLabel>
-              <Select
-                labelId="role-filter-label"
-                id="role-filter"
-                value={filterRole}
-                label="Filtrar por Rol"
-                onChange={handleRoleFilterChange}
-              >
-                <MenuItem value="">Todos los roles</MenuItem>
-                <MenuItem value="admin">Administradores</MenuItem>
-                <MenuItem value="organizer">Organizadores</MenuItem>
-                <MenuItem value="user">Usuarios</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={6} md={3}>
+          {!isOrganizersPage && (
+            <Grid item xs={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="role-filter-label">Filtrar por Rol</InputLabel>
+                <Select
+                  labelId="role-filter-label"
+                  id="role-filter"
+                  value={filterRole}
+                  label="Filtrar por Rol"
+                  onChange={handleRoleFilterChange}
+                >
+                  <MenuItem value="">Todos los roles</MenuItem>
+                  <MenuItem value="admin">Administradores</MenuItem>
+                  <MenuItem value="organizer">Organizadores</MenuItem>
+                  <MenuItem value="user">Usuarios</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
+          <Grid item xs={6} md={isOrganizersPage ? 4 : 3}>
             <FormControl fullWidth size="small">
               <InputLabel id="status-filter-label">Filtrar por Estado</InputLabel>
               <Select
@@ -763,7 +798,7 @@ const UserManagement = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+          <Grid item xs={12} md={isOrganizersPage ? 4 : 2} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
             <Button 
               startIcon={<RefreshIcon />} 
               onClick={handleRefresh}
@@ -782,12 +817,13 @@ const UserManagement = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Usuario</TableCell>
-                  <TableCell>Rol</TableCell>
+                  <TableCell>{isOrganizersPage ? 'Organizador' : 'Usuario'}</TableCell>
+                  {!isOrganizersPage && <TableCell>Rol</TableCell>}
                   <TableCell>Email</TableCell>
-                  <TableCell>Tel�fono</TableCell>
+                  <TableCell>Teléfono</TableCell>
                   <TableCell>Fecha de Registro</TableCell>
-                  <TableCell>�ltimo Acceso</TableCell>
+                  <TableCell>Último Acceso</TableCell>
+                  {isOrganizersPage && <TableCell>Empresa</TableCell>}
                   <TableCell>Estado</TableCell>
                   <TableCell align="right">Acciones</TableCell>
                 </TableRow>
@@ -805,7 +841,7 @@ const UserManagement = () => {
                             </Typography>
                             {getVerifiedBadge(user.verified)}
                           </Box>
-                          {user.company && (
+                          {!isOrganizersPage && user.company && (
                             <Typography variant="caption" color="text.secondary">
                               {user.company}
                             </Typography>
@@ -813,11 +849,12 @@ const UserManagement = () => {
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell>{getRoleChip(user.role)}</TableCell>
+                    {!isOrganizersPage && <TableCell>{getRoleChip(user.role)}</TableCell>}
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.phone || '-'}</TableCell>
                     <TableCell>{formatDate(user.joinDate)}</TableCell>
                     <TableCell>{formatDate(user.lastLogin)}</TableCell>
+                    {isOrganizersPage && <TableCell>{user.company || '-'}</TableCell>}
                     <TableCell>{getStatusChip(user.status)}</TableCell>
                     <TableCell align="right">
                       <IconButton
@@ -834,9 +871,9 @@ const UserManagement = () => {
                 ))}
                 {paginatedUsers.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                    <TableCell colSpan={isOrganizersPage ? 7 : 8} align="center" sx={{ py: 3 }}>
                       <Typography variant="body1">
-                        No se encontraron usuarios
+                        No se encontraron {isOrganizersPage ? 'organizadores' : 'usuarios'}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -852,242 +889,248 @@ const UserManagement = () => {
             page={page}
             onPageChange={handleChangePage}
             onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por p�gina:"
+            labelRowsPerPage="Filas por página:"
             labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
           />
         </Paper>
       </TabPanel>
       
-      <TabPanel value={tabValue} index={1}>
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Usuario</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Tel�fono</TableCell>
-                  <TableCell>Fecha de Registro</TableCell>
-                  <TableCell>�ltimo Acceso</TableCell>
-                  <TableCell>Compras</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedUsers.map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar src={user.avatar} sx={{ mr: 2 }} />
-                        <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {user.name}
-                            </Typography>
-                            {getVerifiedBadge(user.verified)}
+      {!isOrganizersPage && (
+        <TabPanel value={tabValue} index={1}>
+          <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Usuario</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Teléfono</TableCell>
+                    <TableCell>Fecha de Registro</TableCell>
+                    <TableCell>Último Acceso</TableCell>
+                    <TableCell>Compras</TableCell>
+                    <TableCell>Estado</TableCell>
+                    <TableCell align="right">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedUsers.map((user) => (
+                    <TableRow key={user.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar src={user.avatar} sx={{ mr: 2 }} />
+                          <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                {user.name}
+                              </Typography>
+                              {getVerifiedBadge(user.verified)}
+                            </Box>
                           </Box>
                         </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone || '-'}</TableCell>
-                    <TableCell>{formatDate(user.joinDate)}</TableCell>
-                    <TableCell>{formatDate(user.lastLogin)}</TableCell>
-                    <TableCell>{user.orders || 0}</TableCell>
-                    <TableCell>{getStatusChip(user.status)}</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        aria-label="more"
-                        id={`user-menu-${user.id}`}
-                        aria-controls={`user-menu-${user.id}`}
-                        aria-haspopup="true"
-                        onClick={(e) => handleMenuClick(e, user.id)}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {paginatedUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
-                      <Typography variant="body1">
-                        No se encontraron usuarios
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredUsers.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por p�gina:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-          />
-        </Paper>
-      </TabPanel>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.phone || '-'}</TableCell>
+                      <TableCell>{formatDate(user.joinDate)}</TableCell>
+                      <TableCell>{formatDate(user.lastLogin)}</TableCell>
+                      <TableCell>{user.orders || 0}</TableCell>
+                      <TableCell>{getStatusChip(user.status)}</TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          aria-label="more"
+                          id={`user-menu-${user.id}`}
+                          aria-controls={`user-menu-${user.id}`}
+                          aria-haspopup="true"
+                          onClick={(e) => handleMenuClick(e, user.id)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {paginatedUsers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                        <Typography variant="body1">
+                          No se encontraron usuarios
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={filteredUsers.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              labelRowsPerPage="Filas por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+            />
+          </Paper>
+        </TabPanel>
+      )}
       
-      <TabPanel value={tabValue} index={2}>
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Organizador</TableCell>
-                  <TableCell>Empresa</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Tel�fono</TableCell>
-                  <TableCell>Fecha de Registro</TableCell>
-                  <TableCell>Eventos</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedUsers.map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar src={user.avatar} sx={{ mr: 2 }} />
-                        <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {user.name}
-                            </Typography>
-                            {getVerifiedBadge(user.verified)}
+      {!isOrganizersPage && (
+        <TabPanel value={tabValue} index={2}>
+          <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Organizador</TableCell>
+                    <TableCell>Empresa</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Teléfono</TableCell>
+                    <TableCell>Fecha de Registro</TableCell>
+                    <TableCell>Eventos</TableCell>
+                    <TableCell>Estado</TableCell>
+                    <TableCell align="right">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedUsers.map((user) => (
+                    <TableRow key={user.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar src={user.avatar} sx={{ mr: 2 }} />
+                          <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                {user.name}
+                              </Typography>
+                              {getVerifiedBadge(user.verified)}
+                            </Box>
                           </Box>
                         </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{user.company || '-'}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone || '-'}</TableCell>
-                    <TableCell>{formatDate(user.joinDate)}</TableCell>
-                    <TableCell>{user.events || 0}</TableCell>
-                    <TableCell>{getStatusChip(user.status)}</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        aria-label="more"
-                        id={`user-menu-${user.id}`}
-                        aria-controls={`user-menu-${user.id}`}
-                        aria-haspopup="true"
-                        onClick={(e) => handleMenuClick(e, user.id)}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {paginatedUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
-                      <Typography variant="body1">
-                        No se encontraron organizadores
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredUsers.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por p�gina:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-          />
-        </Paper>
-      </TabPanel>
+                      </TableCell>
+                      <TableCell>{user.company || '-'}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.phone || '-'}</TableCell>
+                      <TableCell>{formatDate(user.joinDate)}</TableCell>
+                      <TableCell>{user.events || 0}</TableCell>
+                      <TableCell>{getStatusChip(user.status)}</TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          aria-label="more"
+                          id={`user-menu-${user.id}`}
+                          aria-controls={`user-menu-${user.id}`}
+                          aria-haspopup="true"
+                          onClick={(e) => handleMenuClick(e, user.id)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {paginatedUsers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 3 }}>
+                        <Typography variant="body1">
+                          No se encontraron organizadores
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={filteredUsers.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              labelRowsPerPage="Filas por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+            />
+          </Paper>
+        </TabPanel>
+      )}
       
-      <TabPanel value={tabValue} index={3}>
-        <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Administrador</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Tel�fono</TableCell>
-                  <TableCell>Fecha de Registro</TableCell>
-                  <TableCell>�ltimo Acceso</TableCell>
-                  <TableCell>Estado</TableCell>
-                  <TableCell align="right">Acciones</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedUsers.map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Avatar src={user.avatar} sx={{ mr: 2 }} />
-                        <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                              {user.name}
-                            </Typography>
-                            {getVerifiedBadge(user.verified)}
+      {!isOrganizersPage && (
+        <TabPanel value={tabValue} index={3}>
+          <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Administrador</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Teléfono</TableCell>
+                    <TableCell>Fecha de Registro</TableCell>
+                    <TableCell>Último Acceso</TableCell>
+                    <TableCell>Estado</TableCell>
+                    <TableCell align="right">Acciones</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedUsers.map((user) => (
+                    <TableRow key={user.id} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Avatar src={user.avatar} sx={{ mr: 2 }} />
+                          <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                {user.name}
+                              </Typography>
+                              {getVerifiedBadge(user.verified)}
+                            </Box>
                           </Box>
                         </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.phone || '-'}</TableCell>
-                    <TableCell>{formatDate(user.joinDate)}</TableCell>
-                    <TableCell>{formatDate(user.lastLogin)}</TableCell>
-                    <TableCell>{getStatusChip(user.status)}</TableCell>
-                    <TableCell align="right">
-                      <IconButton
-                        aria-label="more"
-                        id={`user-menu-${user.id}`}
-                        aria-controls={`user-menu-${user.id}`}
-                        aria-haspopup="true"
-                        onClick={(e) => handleMenuClick(e, user.id)}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {paginatedUsers.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                      <Typography variant="body1">
-                        No se encontraron administradores
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredUsers.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            labelRowsPerPage="Filas por p�gina:"
-            labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
-          />
-        </Paper>
-      </TabPanel>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.phone || '-'}</TableCell>
+                      <TableCell>{formatDate(user.joinDate)}</TableCell>
+                      <TableCell>{formatDate(user.lastLogin)}</TableCell>
+                      <TableCell>{getStatusChip(user.status)}</TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          aria-label="more"
+                          id={`user-menu-${user.id}`}
+                          aria-controls={`user-menu-${user.id}`}
+                          aria-haspopup="true"
+                          onClick={(e) => handleMenuClick(e, user.id)}
+                        >
+                          <MoreVertIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {paginatedUsers.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
+                        <Typography variant="body1">
+                          No se encontraron administradores
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={filteredUsers.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              labelRowsPerPage="Filas por página:"
+              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+            />
+          </Paper>
+        </TabPanel>
+      )}
       
-      {/* Men� de Acciones */}
+      {/* Menú de Acciones */}
       <Menu
         id="user-actions-menu"
         anchorEl={anchorEl}
@@ -1097,14 +1140,14 @@ const UserManagement = () => {
       >
         <MenuItem onClick={handleEditClick}>
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
-          Editar Usuario
+          Editar {isOrganizersPage ? 'Organizador' : 'Usuario'}
         </MenuItem>
         <MenuItem onClick={handleSendEmail}>
           <MailIcon fontSize="small" sx={{ mr: 1 }} />
           Enviar Email
         </MenuItem>
         
-        {/* Mostrar opciones espec�ficas para organizadores pendientes */}
+        {/* Mostrar opciones específicas para organizadores pendientes */}
         {users.find(u => u.id === selectedUserId)?.role === 'organizer' && 
          users.find(u => u.id === selectedUserId)?.status === 'pending' && (
           <>
@@ -1123,11 +1166,11 @@ const UserManagement = () => {
         <Divider />
         <MenuItem onClick={handleDeleteClick} sx={{ color: 'error.main' }}>
           <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-          Eliminar Usuario
+          Eliminar {isOrganizersPage ? 'Organizador' : 'Usuario'}
         </MenuItem>
       </Menu>
       
-      {/* Di�logo Editar Usuario */}
+      {/* Diálogo Editar Usuario */}
       <Dialog
         open={openEditDialog}
         onClose={handleEditDialogClose}
@@ -1135,7 +1178,9 @@ const UserManagement = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle id="edit-user-dialog-title">Editar Usuario</DialogTitle>
+        <DialogTitle id="edit-user-dialog-title">
+          Editar {isOrganizersPage ? 'Organizador' : 'Usuario'}
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -1160,7 +1205,7 @@ const UserManagement = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Tel�fono"
+                label="Teléfono"
                 name="phone"
                 value={editUser.phone}
                 onChange={(e) => setEditUser({ ...editUser, phone: e.target.value })}
@@ -1174,6 +1219,7 @@ const UserManagement = () => {
                   value={editUser.role}
                   label="Rol"
                   onChange={(e) => setEditUser({ ...editUser, role: e.target.value })}
+                  disabled={isOrganizersPage} // Deshabilitar cambio de rol en página de organizadores
                 >
                   <MenuItem value="user">Usuario</MenuItem>
                   <MenuItem value="organizer">Organizador</MenuItem>
@@ -1181,7 +1227,7 @@ const UserManagement = () => {
                 </Select>
               </FormControl>
             </Grid>
-            {editUser.role === 'organizer' && (
+            {(editUser.role === 'organizer' || isOrganizersPage) && (
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -1217,18 +1263,18 @@ const UserManagement = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Di�logo Confirmar Eliminaci�n */}
+      {/* Diálogo Confirmar Eliminación */}
       <Dialog
         open={openDeleteDialog}
         onClose={handleDeleteDialogClose}
         aria-labelledby="delete-user-dialog-title"
       >
         <DialogTitle id="delete-user-dialog-title">
-          Confirmar Eliminaci�n
+          Confirmar Eliminación
         </DialogTitle>
         <DialogContent>
           <Typography>
-            �Est�s seguro de que deseas eliminar este usuario? Esta acci�n no se puede deshacer.
+            ¿Estás seguro de que deseas eliminar este {isOrganizersPage ? 'organizador' : 'usuario'}? Esta acción no se puede deshacer.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -1239,7 +1285,7 @@ const UserManagement = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Di�logo A�adir Usuario */}
+      {/* Diálogo Añadir Usuario */}
       <Dialog
         open={openAddUserDialog}
         onClose={handleAddUserDialogClose}
@@ -1247,7 +1293,9 @@ const UserManagement = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle id="add-user-dialog-title">A�adir Nuevo Usuario</DialogTitle>
+        <DialogTitle id="add-user-dialog-title">
+          Añadir Nuevo {isOrganizersPage ? 'Organizador' : 'Usuario'}
+        </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
@@ -1274,7 +1322,7 @@ const UserManagement = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Contrase�a"
+                label="Contraseña"
                 name="password"
                 type="password"
                 value={newUser.password}
@@ -1285,7 +1333,7 @@ const UserManagement = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Confirmar Contrase�a"
+                label="Confirmar Contraseña"
                 name="confirmPassword"
                 type="password"
                 value={newUser.confirmPassword}
@@ -1294,7 +1342,7 @@ const UserManagement = () => {
                 error={newUser.password !== newUser.confirmPassword && newUser.confirmPassword !== ''}
                 helperText={
                   newUser.password !== newUser.confirmPassword && newUser.confirmPassword !== ''
-                    ? 'Las contrase�as no coinciden'
+                    ? 'Las contraseñas no coinciden'
                     : ''
                 }
               />
@@ -1302,7 +1350,7 @@ const UserManagement = () => {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Tel�fono"
+                label="Teléfono"
                 name="phone"
                 value={newUser.phone}
                 onChange={handleNewUserChange}
@@ -1313,9 +1361,10 @@ const UserManagement = () => {
                 <InputLabel>Rol</InputLabel>
                 <Select
                   name="role"
-                  value={newUser.role}
+                  value={isOrganizersPage ? 'organizer' : newUser.role}
                   label="Rol"
                   onChange={handleNewUserChange}
+                  disabled={isOrganizersPage} // Forzar rol en la página de organizadores
                 >
                   <MenuItem value="user">Usuario</MenuItem>
                   <MenuItem value="organizer">Organizador</MenuItem>
@@ -1323,7 +1372,7 @@ const UserManagement = () => {
                 </Select>
               </FormControl>
             </Grid>
-            {newUser.role === 'organizer' && (
+            {(newUser.role === 'organizer' || isOrganizersPage) && (
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -1350,7 +1399,7 @@ const UserManagement = () => {
               newUser.password !== newUser.confirmPassword
             }
           >
-            A�adir
+            Añadir
           </Button>
         </DialogActions>
       </Dialog>
