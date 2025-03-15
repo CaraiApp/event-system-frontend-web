@@ -2,8 +2,9 @@ import axios from 'axios';
 
 // Determinar si estamos en producción o desarrollo
 const isProduction = import.meta.env.PROD;
+// CORRECCIÓN: Usamos la URL correcta de Railway en producción
 const API_BASE_URL = isProduction 
-  ? 'https://event-system-backend-main.vercel.app' 
+  ? 'https://event-system-backend-production.up.railway.app' 
   : import.meta.env.VITE_API_URL || '';
 
 // Crear una instancia de axios con configuración avanzada
@@ -433,7 +434,8 @@ export const testCorsConnection = async () => {
     // Probar cada endpoint en secuencia
     for (const endpoint of endpoints) {
       try {
-        const fullUrl = `https://event-system-backend-main.vercel.app${endpoint}`;
+        // CORRECCIÓN: Usamos la URL correcta de Railway para la prueba CORS
+        const fullUrl = `https://event-system-backend-production.up.railway.app${endpoint}`;
         console.log(`Probando CORS con: ${fullUrl}`);
         
         // Configurar la solicitud para mostrar mejor los problemas CORS

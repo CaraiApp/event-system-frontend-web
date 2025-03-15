@@ -10,11 +10,18 @@ import theme from './styles/theme'
 import { getEvents } from './utils/apiHelper'
 
 // Configuración global de axios
-axios.defaults.baseURL = 'https://event-system-backend-production.up.railway.app';
+// NOTA: Usamos explícitamente la URL de Railway (producción)
+const BACKEND_URL = 'https://event-system-backend-production.up.railway.app';
+axios.defaults.baseURL = BACKEND_URL;
 axios.defaults.withCredentials = true;
 
 // Log para verificar la URL base
-console.log('Axios baseURL:', axios.defaults.baseURL);
+console.log('🔄 Axios baseURL configurada a:', axios.defaults.baseURL);
+console.log('🔄 Variables de entorno:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL || 'no definida',
+  VITE_REACT_APP_BACKEND_BASEURL: import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'no definida',
+  isProduction: import.meta.env.PROD
+});
 
 // Añadir interceptor para logs de API y debugging
 axios.interceptors.request.use(
