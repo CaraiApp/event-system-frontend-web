@@ -23,16 +23,31 @@ const Layout = () => {
       
       // Obtener la configuración UI usando solo el endpoint que funciona
       const fetchUIConfig = async () => {
+        // Creamos una variable para controlar si el componente está montado
+        let isMounted = true;
+        
         try {
           const response = await dashboardAPI.getUIConfig(location.pathname);
-          console.log('✅ UI Config obtenida correctamente:', response.data.data);
+          // Solo actualizamos el estado si el componente sigue montado
+          if (isMounted) {
+            console.log('✅ UI Config obtenida correctamente:', response.data.data);
+          }
         } catch (error) {
-          console.error('Error al obtener configuración UI:', error);
-          // En cualquier caso, mantenemos ocultos los elementos UI para rutas de dashboard
+          // Solo mostramos el error si el componente sigue montado
+          if (isMounted) {
+            console.error('Error al obtener configuración UI:', error);
+            // En cualquier caso, mantenemos ocultos los elementos UI para rutas de dashboard
+          }
         }
       };
       
       fetchUIConfig();
+      
+      // Función de limpieza que se ejecuta cuando el componente se desmonta
+      return () => {
+        // Marcar que el componente ya no está montado
+        isMounted = false;
+      };
     } else {
       setHideUI(false);
     }

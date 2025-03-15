@@ -113,23 +113,44 @@ const App = () => {
           console.log('✅ Conexión exitosa a eventos:', eventsResponse.data);
         } catch (eventsError) {
           console.error('❌ Error al verificar conexión a eventos:', eventsError.message);
+          // No hacemos nada, continuamos con el siguiente paso
         }
         
-        // Intentar obtener categorías
+        // Intentar obtener categorías con manejo mejorado de errores
         try {
           console.log('Verificando conexión a categorías...');
-          const categoriesResponse = await axios.get('/api/v1/categories');
-          console.log('✅ Conexión exitosa a categorías:', categoriesResponse.data);
-        } catch (catError) {
-          console.error('❌ Error al obtener categorías:', catError.message);
-          
-          // Intentar con ruta alternativa para categorías
           try {
-            const altCategoriesResponse = await axios.get('/api/categories');
-            console.log('✅ Conexión exitosa a categorías (ruta alternativa):', altCategoriesResponse.data);
-          } catch (altCatError) {
-            console.error('❌ Error también con ruta alternativa para categorías:', altCatError.message);
+            // Intento 1: Ruta v1
+            const categoriesResponse = await axios.get('/api/v1/categories');
+            console.log('✅ Conexión exitosa a categorías:', categoriesResponse.data);
+          } catch (catErrorV1) {
+            console.log('🔄 Primer intento de conexión a categorías fallido, intentando ruta alternativa...');
+            
+            try {
+              // Intento 2: Ruta sin v1
+              const altCategoriesResponse = await axios.get('/api/categories');
+              console.log('✅ Conexión exitosa a categorías (ruta alternativa):', altCategoriesResponse.data);
+            } catch (catErrorNoV1) {
+              console.log('🔄 Segundo intento fallido, probando endpoint de test...');
+              
+              try {
+                // Intento 3: Endpoint de test
+                const testResponse = await axios.get('/api/categories/test');
+                console.log('✅ Endpoint de test de categorías disponible:', testResponse.data);
+                console.warn('⚠️ Las API de categorías no responden correctamente pero el endpoint de test sí');
+              } catch (testError) {
+                // Todos los intentos fallaron
+                console.error('❌ Error en todos los intentos de conexión a categorías:', testError.message);
+                console.error('📋 Registro de errores de categorías:', { 
+                  errorV1: catErrorV1.message, 
+                  errorNoV1: catErrorNoV1.message,
+                  errorTest: testError.message 
+                });
+              }
+            }
           }
+        } catch (e) {
+          console.error('❌ Error inesperado en la verificación de categorías:', e.message);
         }
         
       } catch (error) {

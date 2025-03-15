@@ -93,10 +93,12 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
   // Log de modo de funcionamiento
   console.log(`Modo CORS: withCredentials=${axiosInstance.defaults.withCredentials}, API URL=${API_BASE_URL || 'usando proxy'}`);
   
-  // Si estamos en producción, agregar el origen a la config para ayudar con CORS
+  // NOTA: No podemos establecer el header 'Origin' manualmente
+  // El navegador lo hace automáticamente y rechaza los intentos de modificarlo
   if (isProduction) {
-    axiosInstance.defaults.headers.common['Origin'] = window.location.origin;
-    console.log(`Origen configurado para CORS: ${window.location.origin}`);
+    // Podemos usar otras cabeceras permitidas
+    axiosInstance.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+    console.log(`Modo producción detectado, usando cabecera X-Requested-With`);
   }
 
   // Log para debugging
