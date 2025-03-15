@@ -111,12 +111,12 @@ export default function EventPage() {
         didOpen: () => {
           document.getElementById("firstDateBtn").addEventListener("click", () => {
             Swal.close();
-            navigate("/seatMap", { state: { event: eventData, selectionDate: "first" } });
+            navigate(`/seatMap/${eventData._id}`, { state: { event: eventData, selectionDate: "first" } });
           });
   
           document.getElementById("secondDateBtn").addEventListener("click", () => {
             Swal.close();
-            navigate("/seatMap", { state: { event: eventData, selectionDate: "second" } });
+            navigate(`/seatMap/${eventData._id}`, { state: { event: eventData, selectionDate: "second" } });
           });
         },
       });

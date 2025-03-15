@@ -30,7 +30,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
    
    const handleSeatClick = (seat) => {
  
-     if (reservedSeats.includes(seat)) return; // Prevent reserved seats from being selected
+     if (Array.isArray(reservedSeats) && reservedSeats.includes(seat)) return; // Prevent reserved seats from being selected
  
      setSelectedSeats((prev) =>
        prev.includes(seat)
@@ -61,7 +61,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
        {seats.map((seat) => {
          const isVip = seat.startsWith("VIP");
          const isSelected = selectedSeats.includes(seat);
-         const isReserved = reservedSeats.includes(seat);
+         const isReserved = Array.isArray(reservedSeats) && reservedSeats.includes(seat);
          return (
            <Tooltip title={isReserved ? "Reserved" : isSelected ? "Selected" : "Available"}
            componentsProps={{

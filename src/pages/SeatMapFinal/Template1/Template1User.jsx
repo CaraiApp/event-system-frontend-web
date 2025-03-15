@@ -62,7 +62,8 @@ import { useCart } from "../../../CartContext";
   
   // Verificar si un asiento está disponible
   const isSeatAvailable = (seat) => {
-    const isPermanentlyReserved = reservedSeats.includes(seat);
+    // Asegurarse de que reservedSeats es un array válido
+    const isPermanentlyReserved = Array.isArray(reservedSeats) && reservedSeats.includes(seat);
     const isTempReserved = temporarySeats.includes(seat) && !cartItems.includes(seat);
     
     return !isPermanentlyReserved && !isTempReserved;
@@ -70,7 +71,7 @@ import { useCart } from "../../../CartContext";
    
   const handleSeatClick = (seat) => {
     // No permitir selección de asientos reservados permanentemente
-    if (reservedSeats.includes(seat)) {
+    if (Array.isArray(reservedSeats) && reservedSeats.includes(seat)) {
       setAlert({
         open: true,
         message: 'Este asiento ya está reservado',
@@ -137,7 +138,7 @@ import { useCart } from "../../../CartContext";
          const isSelected = selectedSeats.includes(seat);
          
          // Verificar diferentes estados de reserva
-         const isPermanentlyReserved = reservedSeats.includes(seat);
+         const isPermanentlyReserved = Array.isArray(reservedSeats) && reservedSeats.includes(seat);
          const isTempReservedByOthers = temporarySeats.includes(seat) && !cartItems.includes(seat);
          const isTempReservedByMe = cartItems.includes(seat);
          

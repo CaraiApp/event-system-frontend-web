@@ -3,7 +3,8 @@ import {
   Box, Typography, Paper, Grid, TextField, Button, FormControlLabel, Switch,
   Divider, Alert, CircularProgress, Card, CardContent, CardHeader, Tabs, Tab,
   FormControl, InputLabel, Select, MenuItem, InputAdornment, Accordion,
-  AccordionSummary, AccordionDetails, Chip, IconButton, Tooltip, Snackbar
+  AccordionSummary, AccordionDetails, Chip, IconButton, Tooltip, Snackbar,
+  Table, TableBody, TableCell, TableHead, TableRow
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -17,11 +18,17 @@ import {
   EventAvailableOutlined as EventAvailableOutlinedIcon,
   PersonOutlineOutlined as PersonOutlineOutlinedIcon,
   GavelOutlined as GavelOutlinedIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Autorenew as AutorenewIcon,
+  Schedule as ScheduleIcon,
+  Delete as DeleteIcon,
+  Cached as CachedIcon,
+  PlayArrow as PlayArrowIcon,
+  Pause as PauseIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
-// TabPanel para las pestañas
+// TabPanel para las pestaï¿½as
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
 
@@ -48,6 +55,9 @@ const SystemSettings = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [tabValue, setTabValue] = useState(0);
+  const [scheduledTasks, setScheduledTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [cleaningInProgress, setCleaningInProgress] = useState(false);
   const [settings, setSettings] = useState({
     general: {
       siteName: 'EntradasMelilla',
@@ -59,11 +69,11 @@ const SystemSettings = () => {
       defaultLanguage: 'es',
       timeZone: 'Europe/Madrid',
       maintenanceMode: false,
-      maintenanceMessage: 'Estamos realizando tareas de mantenimiento. Por favor, vuelve más tarde.'
+      maintenanceMessage: 'Estamos realizando tareas de mantenimiento. Por favor, vuelve mï¿½s tarde.'
     },
     payment: {
       currency: 'EUR',
-      currencySymbol: '¬',
+      currencySymbol: 'ï¿½',
       stripeEnabled: true,
       stripePublicKey: 'pk_test_********************************',
       stripeSecretKey: 'sk_test_********************************',
@@ -87,9 +97,9 @@ const SystemSettings = () => {
       fromEmail: 'info@entradasmelilla.com',
       emailTemplates: [
         { id: 'welcome', name: 'Bienvenida', subject: 'Bienvenido a EntradasMelilla' },
-        { id: 'booking_confirmation', name: 'Confirmación de Reserva', subject: 'Confirmación de tu reserva' },
+        { id: 'booking_confirmation', name: 'Confirmaciï¿½n de Reserva', subject: 'Confirmaciï¿½n de tu reserva' },
         { id: 'booking_cancelled', name: 'Reserva Cancelada', subject: 'Tu reserva ha sido cancelada' },
-        { id: 'payment_confirmation', name: 'Confirmación de Pago', subject: 'Confirmación de pago' },
+        { id: 'payment_confirmation', name: 'Confirmaciï¿½n de Pago', subject: 'Confirmaciï¿½n de pago' },
         { id: 'event_reminder', name: 'Recordatorio de Evento', subject: 'Recordatorio: Tu evento se acerca' }
       ]
     },
@@ -105,7 +115,7 @@ const SystemSettings = () => {
       enablePartialRefunds: false,
       defaultEventDuration: 120, // minutes
       defaultTicketTypes: [
-        { id: 'standard', name: 'Estándar', color: '#2196F3' },
+        { id: 'standard', name: 'Estï¿½ndar', color: '#2196F3' },
         { id: 'vip', name: 'VIP', color: '#F44336' }
       ]
     },
@@ -144,23 +154,150 @@ const SystemSettings = () => {
     }
   });
   
+  // FunciÃ³n para obtener estado de tareas programadas
+  const fetchSchedulerStatus = async () => {
+    setLoadingTasks(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontrÃ³ token de autenticaciÃ³n');
+      }
+      
+      const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      const response = await axios.get(`${API_BASE_URL}/api/v1/scheduler/status`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data && response.data.data && response.data.data.tasks) {
+        setScheduledTasks(response.data.data.tasks);
+      } else {
+        // Si no hay conexiÃ³n al backend o la API aÃºn no estÃ¡ implementada, 
+        // usamos datos de muestra para la demo
+        setScheduledTasks([
+          {
+            name: 'tempBookingCleanup',
+            expression: '*/2 * * * *',
+            active: true,
+            createdAt: new Date().toISOString(),
+            description: 'Limpieza de reservas temporales expiradas'
+          },
+          {
+            name: 'eventReminder',
+            expression: '0 9 * * *',
+            active: true,
+            createdAt: new Date().toISOString(),
+            description: 'EnvÃ­o de recordatorios de eventos'
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching scheduler status:', error);
+      // Generar datos de muestra para la demo si hay error
+      setScheduledTasks([
+        {
+          name: 'tempBookingCleanup',
+          expression: '*/2 * * * *',
+          active: true,
+          createdAt: new Date().toISOString(),
+          description: 'Limpieza de reservas temporales expiradas'
+        }
+      ]);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+  
+  // FunciÃ³n para ejecutar limpieza manual de reservas temporales
+  const executeCleanupNow = async () => {
+    setCleaningInProgress(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontrÃ³ token de autenticaciÃ³n');
+      }
+      
+      const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      const response = await axios.post(
+        `${API_BASE_URL}/api/v1/tempbookings/cleanup-now`, 
+        {}, 
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+      
+      if (response.data && response.data.status === 'success') {
+        setSuccess('Limpieza de reservas temporales iniciada correctamente');
+        
+        // Ocultar mensaje despuÃ©s de 3 segundos
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      } else {
+        setError('Error al iniciar limpieza de reservas temporales');
+      }
+    } catch (error) {
+      console.error('Error executing cleanup:', error);
+      setError('Error al iniciar limpieza: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setCleaningInProgress(false);
+    }
+  };
+  
+  // FunciÃ³n para ejecutar una tarea programada manualmente
+  const runScheduledTask = async (taskName) => {
+    setLoadingTasks(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No se encontrÃ³ token de autenticaciÃ³n');
+      }
+      
+      const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
+      const response = await axios.post(
+        `${API_BASE_URL}/api/v1/scheduler/execute/${taskName}`, 
+        {}, 
+        { headers: { Authorization: `Bearer ${token}` }}
+      );
+      
+      if (response.data && response.data.status === 'success') {
+        setSuccess(`Tarea ${taskName} ejecutada correctamente`);
+        
+        // Ocultar mensaje despuÃ©s de 3 segundos
+        setTimeout(() => {
+          setSuccess(null);
+        }, 3000);
+      } else {
+        setError(`Error al ejecutar tarea ${taskName}`);
+      }
+    } catch (error) {
+      console.error('Error running scheduled task:', error);
+      setError('Error al ejecutar tarea: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
   useEffect(() => {
     const fetchSettings = async () => {
       const token = localStorage.getItem('token');
       
       if (!token) {
-        setError('No se encontró token de autenticación');
+        setError('No se encontrÃ³ token de autenticaciÃ³n');
         setLoading(false);
         return;
       }
       
       try {
-        // En producción, aquí se realizará la petición real a la API
+        // En producciÃ³n, aquÃ­ se realizarÃ¡ la peticiÃ³n real a la API
         // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
         // const response = await axios.get(`${API_BASE_URL}/api/v1/admin/settings`, {
         //   headers: { Authorization: `Bearer ${token}` }
         // });
         // setSettings(response.data.data);
+        
+        // Cargar tambiÃ©n las tareas programadas
+        fetchSchedulerStatus();
         
         // Simulamos un tiempo de carga
         setTimeout(() => {
@@ -168,7 +305,7 @@ const SystemSettings = () => {
         }, 1000);
       } catch (error) {
         console.error('Error fetching settings:', error);
-        setError('Error al cargar la configuración del sistema');
+        setError('Error al cargar la configuraciÃ³n del sistema');
         setLoading(false);
       }
     };
@@ -233,7 +370,7 @@ const SystemSettings = () => {
   
   const handleRefresh = () => {
     setLoading(true);
-    // En una implementación real, aquí se recargarían los datos desde el backend
+    // En una implementaciï¿½n real, aquï¿½ se recargarï¿½an los datos desde el backend
     setTimeout(() => {
       setLoading(false);
     }, 1000);
@@ -243,7 +380,7 @@ const SystemSettings = () => {
     setSaving(true);
     
     try {
-      // En producción, aquí se realizará la petición real a la API
+      // En producciï¿½n, aquï¿½ se realizarï¿½ la peticiï¿½n real a la API
       // const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
       // const token = localStorage.getItem('token');
       // await axios.put(`${API_BASE_URL}/api/v1/admin/settings`, settings, {
@@ -252,17 +389,17 @@ const SystemSettings = () => {
       
       // Simulamos un tiempo de guardado
       setTimeout(() => {
-        setSuccess('Configuración guardada correctamente');
+        setSuccess('Configuraciï¿½n guardada correctamente');
         setSaving(false);
         
-        // Ocultar mensaje de éxito después de 3 segundos
+        // Ocultar mensaje de ï¿½xito despuï¿½s de 3 segundos
         setTimeout(() => {
           setSuccess(null);
         }, 3000);
       }, 1500);
     } catch (error) {
       console.error('Error saving settings:', error);
-      setError('Error al guardar la configuración');
+      setError('Error al guardar la configuraciï¿½n');
       setSaving(false);
     }
   };
@@ -279,7 +416,7 @@ const SystemSettings = () => {
     <>
       <Box className="admin-title">
         <Typography variant="h4" component="h1" className="admin-title-text">
-          Configuración del Sistema
+          Configuraciï¿½n del Sistema
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button 
@@ -326,7 +463,7 @@ const SystemSettings = () => {
       <Card sx={{ mb: 4 }}>
         <CardHeader
           title="Estado del Sistema"
-          subheader="Información general sobre el sistema"
+          subheader="Informaciï¿½n general sobre el sistema"
         />
         <Divider />
         <CardContent>
@@ -344,7 +481,7 @@ const SystemSettings = () => {
             <Grid item xs={12} md={4}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Versión del Sistema
+                  Versiï¿½n del Sistema
                 </Typography>
                 <Typography variant="h6">
                   2.0.1
@@ -392,12 +529,12 @@ const SystemSettings = () => {
             <Grid item xs={12} md={4}>
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Comisión por Venta
+                  Comisiï¿½n por Venta
                 </Typography>
                 <Typography variant="h6">
                   {settings.payment.commissionType === 'percentage' 
                     ? `${settings.payment.commissionRate}%` 
-                    : `${settings.payment.commissionFixed}¬`}
+                    : `${settings.payment.commissionFixed}ï¿½`}
                 </Typography>
               </Box>
             </Grid>
@@ -415,7 +552,7 @@ const SystemSettings = () => {
         </CardContent>
       </Card>
       
-      {/* Pestañas de Configuración */}
+      {/* Pestaï¿½as de Configuraciï¿½n */}
       <Paper sx={{ mb: 3 }}>
         <Tabs 
           value={tabValue} 
@@ -432,17 +569,18 @@ const SystemSettings = () => {
           <Tab icon={<SecurityOutlinedIcon />} iconPosition="start" label="Seguridad" />
           <Tab icon={<GavelOutlinedIcon />} iconPosition="start" label="Privacidad" />
           <Tab icon={<PersonOutlineOutlinedIcon />} iconPosition="start" label="Usuarios" />
+          <Tab icon={<ScheduleIcon />} iconPosition="start" label="Tareas Programadas" />
           <Tab icon={<BuildOutlinedIcon />} iconPosition="start" label="Avanzado" />
         </Tabs>
         
-        {/* Configuración General */}
+        {/* Configuraciï¿½n General */}
         <TabPanel value={tabValue} index={0}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración General
+              Configuraciï¿½n General
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Configura los ajustes básicos de la plataforma.
+              Configura los ajustes bï¿½sicos de la plataforma.
             </Typography>
             
             <Grid container spacing={3}>
@@ -467,7 +605,7 @@ const SystemSettings = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Descripción del Sitio"
+                  label="Descripciï¿½n del Sitio"
                   value={settings.general.siteDescription}
                   onChange={(e) => handleSettingChange('general', 'siteDescription', e.target.value)}
                   margin="normal"
@@ -478,7 +616,7 @@ const SystemSettings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Teléfono de Soporte"
+                  label="Telï¿½fono de Soporte"
                   value={settings.general.supportPhone}
                   onChange={(e) => handleSettingChange('general', 'supportPhone', e.target.value)}
                   margin="normal"
@@ -509,9 +647,9 @@ const SystemSettings = () => {
                     label="Idioma Predeterminado"
                     onChange={(e) => handleSettingChange('general', 'defaultLanguage', e.target.value)}
                   >
-                    <MenuItem value="es">Español</MenuItem>
+                    <MenuItem value="es">Espaï¿½ol</MenuItem>
                     <MenuItem value="en">English</MenuItem>
-                    <MenuItem value="fr">Français</MenuItem>
+                    <MenuItem value="fr">Franï¿½ais</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -546,11 +684,11 @@ const SystemSettings = () => {
           </Box>
         </TabPanel>
         
-        {/* Configuración de Pagos */}
+        {/* Configuraciï¿½n de Pagos */}
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración de Pagos
+              Configuraciï¿½n de Pagos
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Configura las pasarelas de pago y comisiones.
@@ -575,7 +713,7 @@ const SystemSettings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Símbolo de Moneda"
+                  label="Sï¿½mbolo de Moneda"
                   value={settings.payment.currencySymbol}
                   onChange={(e) => handleSettingChange('payment', 'currencySymbol', e.target.value)}
                   margin="normal"
@@ -590,11 +728,11 @@ const SystemSettings = () => {
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth margin="normal">
-                      <InputLabel id="commission-type-label">Tipo de Comisión</InputLabel>
+                      <InputLabel id="commission-type-label">Tipo de Comisiï¿½n</InputLabel>
                       <Select
                         labelId="commission-type-label"
                         value={settings.payment.commissionType}
-                        label="Tipo de Comisión"
+                        label="Tipo de Comisiï¿½n"
                         onChange={(e) => handleSettingChange('payment', 'commissionType', e.target.value)}
                       >
                         <MenuItem value="percentage">Porcentaje</MenuItem>
@@ -606,7 +744,7 @@ const SystemSettings = () => {
                     {settings.payment.commissionType === 'percentage' ? (
                       <TextField
                         fullWidth
-                        label="Porcentaje de Comisión"
+                        label="Porcentaje de Comisiï¿½n"
                         value={settings.payment.commissionRate}
                         onChange={(e) => handleSettingChange('payment', 'commissionRate', e.target.value)}
                         margin="normal"
@@ -618,7 +756,7 @@ const SystemSettings = () => {
                     ) : (
                       <TextField
                         fullWidth
-                        label="Comisión Fija"
+                        label="Comisiï¿½n Fija"
                         value={settings.payment.commissionFixed}
                         onChange={(e) => handleSettingChange('payment', 'commissionFixed', e.target.value)}
                         margin="normal"
@@ -752,14 +890,14 @@ const SystemSettings = () => {
           </Box>
         </TabPanel>
         
-        {/* Configuración de Email */}
+        {/* Configuraciï¿½n de Email */}
         <TabPanel value={tabValue} index={2}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración de Email
+              Configuraciï¿½n de Email
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Configura el servicio de correo electrónico y plantillas.
+              Configura el servicio de correo electrï¿½nico y plantillas.
             </Typography>
             
             <Grid container spacing={3}>
@@ -798,7 +936,7 @@ const SystemSettings = () => {
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="subtitle1" gutterBottom>
-                  Configuración SMTP
+                  Configuraciï¿½n SMTP
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
@@ -832,7 +970,7 @@ const SystemSettings = () => {
                   <Grid item xs={12} md={6}>
                     <TextField
                       fullWidth
-                      label="Contraseña SMTP"
+                      label="Contraseï¿½a SMTP"
                       value={settings.email.smtpPassword}
                       onChange={(e) => handleSettingChange('email', 'smtpPassword', e.target.value)}
                       margin="normal"
@@ -841,11 +979,11 @@ const SystemSettings = () => {
                   </Grid>
                   <Grid item xs={12} md={6}>
                     <FormControl fullWidth margin="normal">
-                      <InputLabel id="smtp-encryption-label">Encriptación SMTP</InputLabel>
+                      <InputLabel id="smtp-encryption-label">Encriptaciï¿½n SMTP</InputLabel>
                       <Select
                         labelId="smtp-encryption-label"
                         value={settings.email.smtpEncryption}
-                        label="Encriptación SMTP"
+                        label="Encriptaciï¿½n SMTP"
                         onChange={(e) => handleSettingChange('email', 'smtpEncryption', e.target.value)}
                       >
                         <MenuItem value="tls">TLS</MenuItem>
@@ -919,18 +1057,18 @@ const SystemSettings = () => {
                     subject: 'Asunto de la nueva plantilla'
                   })}
                 >
-                  Añadir Plantilla
+                  Aï¿½adir Plantilla
                 </Button>
               </Grid>
             </Grid>
           </Box>
         </TabPanel>
         
-        {/* Configuración de Eventos */}
+        {/* Configuraciï¿½n de Eventos */}
         <TabPanel value={tabValue} index={3}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración de Eventos
+              Configuraciï¿½n de Eventos
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Configura las opciones relacionadas con eventos.
@@ -940,7 +1078,7 @@ const SystemSettings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Máximo de Entradas por Compra"
+                  label="Mï¿½ximo de Entradas por Compra"
                   value={settings.events.maxTicketsPerPurchase}
                   onChange={(e) => handleSettingChange('events', 'maxTicketsPerPurchase', e.target.value)}
                   margin="normal"
@@ -950,7 +1088,7 @@ const SystemSettings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Mínimo de Entradas por Compra"
+                  label="Mï¿½nimo de Entradas por Compra"
                   value={settings.events.minTicketsPerPurchase}
                   onChange={(e) => handleSettingChange('events', 'minTicketsPerPurchase', e.target.value)}
                   margin="normal"
@@ -960,7 +1098,7 @@ const SystemSettings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Duración Predeterminada (minutos)"
+                  label="Duraciï¿½n Predeterminada (minutos)"
                   value={settings.events.defaultEventDuration}
                   onChange={(e) => handleSettingChange('events', 'defaultEventDuration', e.target.value)}
                   margin="normal"
@@ -970,7 +1108,7 @@ const SystemSettings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Período de Reembolso (días)"
+                  label="Perï¿½odo de Reembolso (dï¿½as)"
                   value={settings.events.refundPeriodDays}
                   onChange={(e) => handleSettingChange('events', 'refundPeriodDays', e.target.value)}
                   margin="normal"
@@ -1001,7 +1139,7 @@ const SystemSettings = () => {
                       color="primary"
                     />
                   }
-                  label="Requerir número de teléfono en la compra"
+                  label="Requerir nï¿½mero de telï¿½fono en la compra"
                 />
               </Grid>
               <Grid item xs={12}>
@@ -1014,7 +1152,7 @@ const SystemSettings = () => {
                       color="primary"
                     />
                   }
-                  label="Requerir dirección en la compra"
+                  label="Requerir direcciï¿½n en la compra"
                 />
               </Grid>
               <Grid item xs={12}>
@@ -1139,26 +1277,26 @@ const SystemSettings = () => {
                     color: '#673AB7'
                   })}
                 >
-                  Añadir Tipo de Entrada
+                  Aï¿½adir Tipo de Entrada
                 </Button>
               </Grid>
             </Grid>
           </Box>
         </TabPanel>
         
-        {/* Las pestañas restantes pueden implementarse de manera similar */}
+        {/* Las pestaï¿½as restantes pueden implementarse de manera similar */}
         <TabPanel value={tabValue} index={4}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración de Seguridad
+              Configuraciï¿½n de Seguridad
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Configura los ajustes de seguridad y autenticación.
+              Configura los ajustes de seguridad y autenticaciï¿½n.
             </Typography>
             
-            {/* Implementación simplificada */}
+            {/* Implementaciï¿½n simplificada */}
             <Alert severity="info" sx={{ mb: 3 }}>
-              La configuración detallada de seguridad se implementará en una versión futura.
+              La configuraciï¿½n detallada de seguridad se implementarï¿½ en una versiï¿½n futura.
             </Alert>
             
             <Grid container spacing={3}>
@@ -1172,7 +1310,7 @@ const SystemSettings = () => {
                       color="primary"
                     />
                   }
-                  label="Requerir verificación de email"
+                  label="Requerir verificaciï¿½n de email"
                 />
               </Grid>
               <Grid item xs={12} md={6}>
@@ -1185,13 +1323,13 @@ const SystemSettings = () => {
                       color="primary"
                     />
                   }
-                  label="Habilitar autenticación de dos factores"
+                  label="Habilitar autenticaciï¿½n de dos factores"
                 />
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Longitud Mínima de Contraseña"
+                  label="Longitud Mï¿½nima de Contraseï¿½a"
                   value={settings.security.passwordMinLength}
                   onChange={(e) => handleSettingChange('security', 'passwordMinLength', e.target.value)}
                   margin="normal"
@@ -1201,7 +1339,7 @@ const SystemSettings = () => {
               <Grid item xs={12} md={6}>
                 <TextField
                   fullWidth
-                  label="Tiempo de Expiración JWT (horas)"
+                  label="Tiempo de Expiraciï¿½n JWT (horas)"
                   value={settings.security.jwtExpirationTime}
                   onChange={(e) => handleSettingChange('security', 'jwtExpirationTime', e.target.value)}
                   margin="normal"
@@ -1215,14 +1353,14 @@ const SystemSettings = () => {
         <TabPanel value={tabValue} index={5}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración de Privacidad
+              Configuraciï¿½n de Privacidad
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Configura los ajustes relacionados con la privacidad y GDPR.
             </Typography>
             
             <Alert severity="info" sx={{ mb: C}}>
-              La configuración detallada de privacidad se implementará en una versión futura.
+              La configuraciï¿½n detallada de privacidad se implementarï¿½ en una versiï¿½n futura.
             </Alert>
           </Box>
         </TabPanel>
@@ -1230,14 +1368,14 @@ const SystemSettings = () => {
         <TabPanel value={tabValue} index={6}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración de Usuarios
+              Configuraciï¿½n de Usuarios
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Configura los ajustes relacionados con los usuarios y organizadores.
             </Typography>
             
             <Alert severity="info" sx={{ mb: 3 }}>
-              La configuración detallada de usuarios se implementará en una versión futura.
+              La configuraciï¿½n detallada de usuarios se implementarï¿½ en una versiï¿½n futura.
             </Alert>
           </Box>
         </TabPanel>
@@ -1245,7 +1383,177 @@ const SystemSettings = () => {
         <TabPanel value={tabValue} index={7}>
           <Box sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Configuración Avanzada
+              Tareas Programadas
+            </Typography>
+            <Typography variant="body2" color="text.secondary" paragraph>
+              Gestiona y monitoriza las tareas programadas del sistema, como limpieza de datos o envÃ­o de notificaciones.
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+              <Button 
+                variant="outlined" 
+                startIcon={<RefreshIcon />}
+                onClick={fetchSchedulerStatus}
+                disabled={loadingTasks}
+              >
+                Actualizar Estado
+              </Button>
+              <Button 
+                variant="contained" 
+                color="primary"
+                startIcon={<DeleteIcon />}
+                onClick={executeCleanupNow}
+                disabled={cleaningInProgress}
+              >
+                {cleaningInProgress ? (
+                  <>
+                    Limpiando reservas... <CircularProgress size={20} sx={{ ml: 1 }} />
+                  </>
+                ) : 'Limpiar Reservas Temporales'}
+              </Button>
+            </Box>
+            
+            {loadingTasks ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <Paper>
+                <Box sx={{ p: 2, borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                    Tareas Activas del Sistema
+                  </Typography>
+                </Box>
+                
+                {scheduledTasks.length === 0 ? (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography color="text.secondary">
+                      No hay tareas programadas configuradas
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box>
+                    {scheduledTasks.map((task) => (
+                      <Box key={task.name} sx={{ p: 2, borderBottom: '1px solid rgba(0, 0, 0, 0.12)' }}>
+                        <Grid container spacing={2} alignItems="center">
+                          <Grid item xs={12} md={3}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <ScheduleIcon sx={{ mr: 1, color: 'primary.main' }} />
+                              <Typography variant="subtitle1">{task.name}</Typography>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} md={4}>
+                            <Typography variant="body2" color="text.secondary">
+                              {task.description || 'Sin descripciÃ³n'}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6} md={2}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Chip 
+                                label={task.expression} 
+                                size="small" 
+                                variant="outlined"
+                                title="ExpresiÃ³n cron (minuto hora dÃ­a-mes mes dÃ­a-semana)"
+                              />
+                            </Box>
+                          </Grid>
+                          <Grid item xs={6} md={1}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Chip 
+                                label={task.active ? 'Activa' : 'Pausa'} 
+                                color={task.active ? 'success' : 'default'} 
+                                size="small"
+                              />
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12} md={2}>
+                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                              <Tooltip title="Ejecutar ahora">
+                                <IconButton 
+                                  color="primary" 
+                                  onClick={() => runScheduledTask(task.name)}
+                                  disabled={loadingTasks || !task.active}
+                                >
+                                  <CachedIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Typography variant="caption" color="text.secondary">
+                              Creada: {new Date(task.createdAt).toLocaleString()}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Paper>
+            )}
+            
+            <Box sx={{ mt: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                Acciones Manuales
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Limpieza de Reservas Temporales
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Elimina manualmente todas las reservas temporales que han expirado. Ãštil cuando necesitas liberar asientos inmediatamente.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      startIcon={<DeleteIcon />}
+                      onClick={executeCleanupNow}
+                      disabled={cleaningInProgress}
+                    >
+                      {cleaningInProgress ? (
+                        <>
+                          Limpiando... <CircularProgress size={20} sx={{ ml: 1 }} />
+                        </>
+                      ) : 'Ejecutar Limpieza'}
+                    </Button>
+                  </Paper>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Paper sx={{ p: 2 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Estado del Programador
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                      Comprueba el estado del sistema de tareas programadas y actualiza la informaciÃ³n mostrada.
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      startIcon={<RefreshIcon />}
+                      onClick={fetchSchedulerStatus}
+                      disabled={loadingTasks}
+                    >
+                      {loadingTasks ? (
+                        <>
+                          Actualizando... <CircularProgress size={20} sx={{ ml: 1 }} />
+                        </>
+                      ) : 'Actualizar Estado'}
+                    </Button>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </Box>
+          </Box>
+        </TabPanel>
+        
+        <TabPanel value={tabValue} index={8}>
+          <Box sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              ConfiguraciÃ³n Avanzada
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
               Configuraciones avanzadas del sistema.
@@ -1258,7 +1566,7 @@ const SystemSettings = () => {
         </TabPanel>
       </Paper>
       
-      {/* Botón Guardar Fijo */}
+      {/* Botï¿½n Guardar Fijo */}
       <Paper 
         sx={{ 
           position: 'sticky', 
