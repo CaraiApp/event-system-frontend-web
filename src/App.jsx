@@ -11,9 +11,9 @@ import { getEvents } from './utils/apiHelper'
 
 // Configuración global de axios
 // NOTA: Usamos explícitamente la URL de Railway (producción)
-const BACKEND_URL = 'https://event-system-backend-production.up.railway.app';
+const BACKEND_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL || 'https://event-system-backend-production.up.railway.app';
 axios.defaults.baseURL = BACKEND_URL;
-axios.defaults.withCredentials = true;
+axios.defaults.withCredentials = false; // Desactivamos withCredentials para evitar problemas CORS
 
 // Log para verificar la URL base
 console.log('🔄 Axios baseURL configurada a:', axios.defaults.baseURL);
