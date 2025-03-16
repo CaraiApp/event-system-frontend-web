@@ -1,6 +1,13 @@
 // Servidor mock para el sistema de eventos
-const jsonServer = require('json-server');
-const path = require('path');
+import jsonServer from 'json-server';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { readFileSync } from 'fs';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const server = jsonServer.create();
 const middlewares = jsonServer.defaults();
 
@@ -10,7 +17,8 @@ const dataPath = path.join(__dirname, '..', 'entradasmelilladb');
 // Función para cargar los archivos JSON
 const loadJSON = (filePath) => {
   try {
-    const data = require(filePath);
+    // En ESM usamos readFileSync directamente
+    const data = JSON.parse(readFileSync(filePath, 'utf8'));
     return data;
   } catch (error) {
     console.error(`Error al cargar ${filePath}:`, error.message);
@@ -19,15 +27,39 @@ const loadJSON = (filePath) => {
 };
 
 // Crear un objeto con todos los datos JSON
+// Si los archivos no existen, usamos datos de ejemplo
+const mockEvents = [];
+const mockUsers = [
+  {
+    _id: { $oid: "67d1a62b22dd165cb748c73d" },
+    username: "admin_user",
+    email: "admin@example.com",
+    role: "admin",
+    fullname: "Admin User",
+    status: "active",
+    createdAt: { $date: new Date().toISOString() },
+  },
+  {
+    _id: { $oid: "67d1a62b22dd165cb748c73e" },
+    username: "org_user1",
+    email: "organizer1@example.com",
+    role: "organizer",
+    fullname: "Organizer One",
+    status: "active",
+    createdAt: { $date: new Date().toISOString() },
+  }
+];
+
+// Intentar cargar datos reales o usar mocks como fallback
 const data = {
-  events: loadJSON(path.join(dataPath, 'entradasmelilla.events.json')),
-  users: loadJSON(path.join(dataPath, 'entradasmelilla.users.json')),
-  bookings: loadJSON(path.join(dataPath, 'entradasmelilla.bookings.json')),
-  templates: loadJSON(path.join(dataPath, 'entradasmelilla.templates.json')),
-  categories: loadJSON(path.join(dataPath, 'entradasmelilla.categories.json')),
-  reviews: loadJSON(path.join(dataPath, 'entradasmelilla.reviews.json')),
-  tempbookings: loadJSON(path.join(dataPath, 'entradasmelilla.tempbookings.json')),
-  timeslots: loadJSON(path.join(dataPath, 'entradasmelilla.timeslots.json'))
+  events: loadJSON(path.join(dataPath, 'entradasmelilla.events.json')) || mockEvents,
+  users: loadJSON(path.join(dataPath, 'entradasmelilla.users.json')) || mockUsers,
+  bookings: loadJSON(path.join(dataPath, 'entradasmelilla.bookings.json')) || [],
+  templates: loadJSON(path.join(dataPath, 'entradasmelilla.templates.json')) || [],
+  categories: loadJSON(path.join(dataPath, 'entradasmelilla.categories.json')) || [],
+  reviews: loadJSON(path.join(dataPath, 'entradasmelilla.reviews.json')) || [],
+  tempbookings: loadJSON(path.join(dataPath, 'entradasmelilla.tempbookings.json')) || [],
+  timeslots: loadJSON(path.join(dataPath, 'entradasmelilla.timeslots.json')) || []
 };
 
 // Crear el router con los datos
