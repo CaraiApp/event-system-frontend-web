@@ -1,610 +1,362 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Container,
-  Typography,
-  Box,
-  Button,
-  Grid,
-  Paper,
-  IconButton,
-  Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  DialogContentText,
-  Snackbar,
-  Alert,
+import { 
+  Box, 
+  Grid, 
+  Paper, 
+  Typography, 
+  Button, 
+  IconButton, 
+  TextField, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions, 
+  FormControl, 
+  FormControlLabel, 
+  RadioGroup, 
+  Radio, 
+  Select, 
+  MenuItem, 
+  InputLabel, 
+  Slider, 
+  Divider, 
   Chip,
   Tooltip,
-  ToggleButton,
-  ToggleButtonGroup,
-  Slider
+  Switch,
+  Snackbar,
+  Alert,
+  Tab,
+  Tabs,
+  CircularProgress,
+  Container
 } from '@mui/material';
-import {
-  ArrowBack,
-  Save,
+import { v4 as uuidv4 } from 'uuid';
+import { 
+  ZoomIn, 
+  ZoomOut, 
+  Save, 
+  Delete, 
+  Edit, 
+  PanTool, 
+  GridOn, 
+  GridOff, 
+  AddBox, 
+  TextFields, 
+  FormatColorFill, 
+  BorderAll,
+  Settings,
+  ViewColumn,
+  CropSquare,
+  Title,
+  Dashboard,
+  LabelImportant,
+  Chair,
   EventSeat,
-  DeleteForever,
-  Add,
-  Replay,
-  Close,
-  Edit,
-  GridOn,
-  KeyboardArrowUp,
-  KeyboardArrowDown,
-  KeyboardArrowLeft,
-  KeyboardArrowRight,
-  DragIndicator
+  Weekend,
+  Visibility,
+  VisibilityOff,
+  ArrowBack,
+  Search,
+  ContentCopy
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import { SketchPicker } from 'react-color';
+
+// Estilos y temas propios
+const styles = {
+  editorContainer: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100vh',
+    overflow: 'hidden'
+  },
+  toolbar: {
+    padding: '8px',
+    backgroundColor: '#f5f5f5',
+    display: 'flex',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '8px'
+  },
+  toolbarGroup: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center'
+  },
+  canvasContainer: {
+    flex: 1,
+    overflow: 'auto',
+    position: 'relative',
+    backgroundColor: '#e0e0e0'
+  },
+  canvas: {
+    position: 'relative',
+    margin: '20px auto',
+    backgroundColor: 'white',
+    boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+    transformOrigin: 'top left'
+  },
+  statusBar: {
+    padding: '4px 16px',
+    backgroundColor: '#f5f5f5',
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '0.85rem'
+  },
+  colorPickerPopover: {
+    position: 'absolute',
+    zIndex: 1000
+  },
+  seat: {
+    position: 'absolute',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '11px',
+    userSelect: 'none',
+    transition: 'transform 0.1s ease-in-out'
+  },
+  selectedSeat: {
+    border: '2px solid blue',
+    zIndex: 10
+  },
+  sectionBox: {
+    position: 'absolute',
+    border: '2px solid #333',
+    backgroundColor: 'rgba(200, 200, 200, 0.2)',
+    padding: '4px',
+    cursor: 'move',
+    userSelect: 'none'
+  },
+  textElement: {
+    position: 'absolute',
+    padding: '4px',
+    cursor: 'move',
+    userSelect: 'none',
+    whiteSpace: 'nowrap'
+  },
+  editTools: {
+    position: 'absolute',
+    right: '20px',
+    top: '100px',
+    backgroundColor: 'white',
+    padding: '10px',
+    boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    zIndex: 100
+  },
+  tool: {
+    margin: '5px 0'
+  },
+  properties: {
+    padding: '16px',
+    width: '300px'
+  },
+  grid: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+    backgroundSize: '20px 20px',
+    backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px)'
+  }
+};
 
 const TemplateEditor = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { template } = location.state || {}; 
-  const editorRef = useRef(null);
-  
-  // Estado para los asientos y la configuración
+  // Estado principal
   const [seats, setSeats] = useState([]);
-  const [selectedSeatType, setSelectedSeatType] = useState('VIP');
-  const [editMode, setEditMode] = useState('draw'); // 'draw', 'move', 'select', 'delete'
+  const [sections, setSections] = useState([]);
+  const [texts, setTexts] = useState([]);
   const [selectedSeat, setSelectedSeat] = useState(null);
-  const [stageDimensions, setStageDimensions] = useState({ width: 30, height: 10 });
-  const [showGrid, setShowGrid] = useState(true);
-  const [gridSize, setGridSize] = useState(10);
-  const [draggingSeat, setDraggingSeat] = useState(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(100);
-  const [nextSeatId, setNextSeatId] = useState(1);
-  const [editorSize, setEditorSize] = useState({ width: 0, height: 0 });
-  const [selectedSection, setSelectedSection] = useState('all');
   const [selectedSeats, setSelectedSeats] = useState([]);
-  const [isMultiSelectActive, setIsMultiSelectActive] = useState(false);
-  const [selectionStart, setSelectionStart] = useState(null);
-  const [selectionEnd, setSelectionEnd] = useState(null);
-  const [movingMultipleSeats, setMovingMultipleSeats] = useState(false);
-  
-  // Estado para secciones personalizables
-  const [sections, setSections] = useState([
-    { id: 'SECTION_1', name: 'Sección 1 (Central)', x: 400, y: 110, width: 400, height: 200 },
-    { id: 'SECTION_2', name: 'Sección 2 (Izquierda)', x: 150, y: 250, width: 200, height: 200 },
-    { id: 'SECTION_3', name: 'Sección 3 (Derecha)', x: 650, y: 250, width: 200, height: 200 }
-  ]);
-  const [editingSection, setEditingSection] = useState(null);
-  const [openSectionDialog, setOpenSectionDialog] = useState(false);
-  const [draggingSection, setDraggingSectionId] = useState(null);
-  const [sectionDragOffset, setSectionDragOffset] = useState({ x: 0, y: 0 });
-  
-  // Estado para textos informativos en el mapa
-  const [texts, setTexts] = useState([
-    { id: 'text-1', content: 'Salida de emergencia', x: 100, y: 450, fontSize: 14, color: 'white' }
-  ]);
+  const [selectedSection, setSelectedSection] = useState(null);
   const [selectedText, setSelectedText] = useState(null);
-  const [openTextDialog, setOpenTextDialog] = useState(false);
-  const [draggingText, setDraggingText] = useState(null);
-  const [textDragOffset, setTextDragOffset] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [showGrid, setShowGrid] = useState(true);
+  const [editMode, setEditMode] = useState('add');
+  const [addMode, setAddMode] = useState('seat');
+  const [seatType, setSeatType] = useState('standard');
+
+  // Estado para propiedades de asientos
+  const [seatWidth, setSeatWidth] = useState(30);
+  const [seatHeight, setSeatHeight] = useState(30);
+  const [seatColor, setSeatColor] = useState('#A7C7E7');
+  const [seatBorderColor, setSeatBorderColor] = useState('#333333');
+  const [seatBorderWidth, setSeatBorderWidth] = useState(1);
+  const [seatLabelSize, setSeatLabelSize] = useState(10);
+  const [seatLabelColor, setSeatLabelColor] = useState('#000000');
+  const [seatLabelVisible, setSeatLabelVisible] = useState(true);
+  const [seatPrice, setSeatPrice] = useState(0);
+  const [seatCategory, setSeatCategory] = useState('General');
   
-  // Diálogos y notificaciones
-  const [openSaveDialog, setOpenSaveDialog] = useState(false);
-  const [openResetDialog, setOpenResetDialog] = useState(false);
+  // Estado para diálogos
   const [openEditDialog, setOpenEditDialog] = useState(false);
-  const [openBulkAddDialog, setOpenBulkAddDialog] = useState(false);
-  const [openLabelFormatDialog, setOpenLabelFormatDialog] = useState(false);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: '',
-    severity: 'success'
-  });
-  
-  // Datos del formulario para guardar y crear asientos en masa
-  const [templateName, setTemplateName] = useState(template?.name || 'Nueva Plantilla');
-  const [bulkAddConfig, setBulkAddConfig] = useState({
-    section: 'SECTION_1',
+  const [openSectionDialog, setOpenSectionDialog] = useState(false);
+  const [openTextDialog, setOpenTextDialog] = useState(false);
+  const [openBulkDialog, setOpenBulkDialog] = useState(false);
+  const [openColorPicker, setOpenColorPicker] = useState(false);
+  const [colorPickerTarget, setColorPickerTarget] = useState(null);
+  const [colorPickerPosition, setColorPickerPosition] = useState({ x: 0, y: 0 });
+
+  // Estado para bulk add (añadir en masa)
+  const [bulkConfig, setBulkConfig] = useState({
+    section: '',
     startRow: 'A',
     rows: 5,
     seatsPerRow: 10,
-    type: 'ECONOMY',
+    rowSpacing: 40,
+    seatSpacing: 35,
+    type: 'standard',
     curvature: 0,
+    customRowLabels: false,
+    useNumberPadding: true,
+    prefix: '',
     startingNumber: 1,
-    prefix: '', // Prefijo para los asientos (ej: "Fila ")
-    useNumberPadding: true, // Si se usa padding con ceros (01, 02...)
-    customRowLabels: false, // Usar letras (A,B,C) o etiquetas personalizadas (Fila 1, Fila 2...)
-    startFromRight: false, // Si comienza la numeración desde la derecha
-    useOnlyEven: false, // Usar solo números pares (2,4,6...)
-    useOnlyOdd: false, // Usar solo números impares (1,3,5...)
-    rowSuffix: ' - ', // Sufijo después del número de fila (ej: "Fila 1 - ")
-    seatPrefix: 'Asiento ' // Prefijo antes del número de asiento (ej: "Asiento 12")
-  });
-  
-  // Configuración global de formato de etiquetas
-  const [labelFormat, setLabelFormat] = useState({
-    rowPrefix: 'Fila ',
-    useRowNumbers: true, // true = "Fila 1", false = "Fila A"
+    rowSuffix: ' - ',
     seatPrefix: '',
-    usePadding: true, // true = "01", false = "1"
-    paddingDigits: 2 // Número de dígitos para el padding (01, 001, etc.)
+    useOnlyEven: false,
+    useOnlyOdd: false,
+    fixedWidth: false
   });
   
-  // Inicializar el editor cuando el componente se monta
+  // Estado para texto
+  const [textContent, setTextContent] = useState('');
+  const [textSize, setTextSize] = useState(16);
+  const [textColor, setTextColor] = useState('#000000');
+  const [textIsBold, setTextIsBold] = useState(false);
+  
+  // Estado para secciones
+  const [sectionName, setSectionName] = useState('');
+  const [sectionColor, setSectionColor] = useState('#d3d3d3');
+  const [sectionOpacity, setSectionOpacity] = useState(0.2);
+  const [sectionWidth, setSectionWidth] = useState(200);
+  const [sectionHeight, setSectionHeight] = useState(150);
+
+  // Estado para arrastrar
+  const [draggingSeat, setDraggingSeat] = useState(null);
+  const [draggingSectionId, setDraggingSectionId] = useState(null);
+  const [draggingText, setDraggingText] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [sectionDragOffset, setSectionDragOffset] = useState({ x: 0, y: 0 });
+  const [textDragOffset, setTextDragOffset] = useState({ x: 0, y: 0 });
+  const [movingMultipleSeats, setMovingMultipleSeats] = useState(false);
+  
+  // Estado para snackbar (notificaciones)
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'info'
+  });
+  
+  // Tamaño del editor
+  const [canvasWidth, setCanvasWidth] = useState(1000);
+  const [canvasHeight, setCanvasHeight] = useState(800);
+  const [canvasBackground, setCanvasBackground] = useState('#ffffff');
+  const [canvasBackgroundImage, setCanvasBackgroundImage] = useState('');
+  const [stageImageFile, setStageImageFile] = useState(null);
+  const [stageImageSrc, setStageImageSrc] = useState('');
+  const [stageImageWidth, setStageImageWidth] = useState(500);
+  const [stageImageHeight, setStageImageHeight] = useState(100);
+  const [stageImageX, setStageImageX] = useState(250);
+  const [stageImageY, setStageImageY] = useState(50);
+  
+  // Pestañas para edición
+  const [currentTab, setCurrentTab] = useState(0);
+  
+  // Referencias a elementos del DOM
+  const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  
+  // Inicialización
   useEffect(() => {
-    if (editorRef.current) {
-      const { width, height } = editorRef.current.getBoundingClientRect();
-      setEditorSize({ width, height });
-    }
-    
-    // Cargar datos de plantilla existente o inicializar nueva
-    if (template) {
-      // Si tenemos un ID de plantilla, verificamos primero si es una plantilla predefinida o personalizada
-      if (template.id) {
-        // Las plantillas personalizadas (template-custom-*) solo deberían intentar cargarse del backend si no tenemos los datos locales
-        const isCustomTemplate = template.id.startsWith('template-custom-');
-        
-        // Si es una plantilla personalizada y tenemos los datos, la cargamos directamente desde los datos locales
-        if (isCustomTemplate && template.seats) {
-          console.log('Cargando plantilla personalizada desde datos locales');
-          loadTemplateFromLocalData(template);
-          return;
-        }
-        
-        // Para las plantillas predefinidas o si no tenemos datos completos, intentamos cargar desde el backend
-        const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-        const backendURL = `${API_BASE_URL}/api/templates/${template.id}`;
-        
-        // Intentar cargar desde el backend
-        axios.get(backendURL, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        })
-        .then(response => {
-          console.log('Plantilla cargada desde el backend:', response.data);
-          const templateData = response.data.data || response.data;
-          
-          // Cargar datos
-          if (templateData.seats) {
-            setSeats(templateData.seats);
-            setNextSeatId(Math.max(...templateData.seats.map(seat => parseInt(seat.id.split('-')[1] || '0'))) + 1);
-          }
-          
-          if (templateData.sections && Array.isArray(templateData.sections)) {
-            setSections(templateData.sections);
-          }
-          
-          if (templateData.texts && Array.isArray(templateData.texts)) {
-            setTexts(templateData.texts);
-          }
-          
-          if (templateData.stageDimensions) {
-            setStageDimensions(templateData.stageDimensions);
-          }
-          
-          setTemplateName(templateData.name);
-          
-          setSnackbar({
-            open: true,
-            message: 'Plantilla cargada correctamente desde el servidor',
-            severity: 'success'
-          });
-        })
-        .catch(error => {
-          console.error('Error al cargar desde el backend, usando datos locales:', error);
-          
-          // Si falla, usamos los datos de localStorage que nos pasaron (template)
-          loadTemplateFromLocalData(template);
-          
-          // No mostrar mensaje de error para no confundir al usuario
-          // Solo registramos en consola para depuración
-        });
-      } else {
-        // No tenemos ID, usamos los datos que nos pasaron
-        loadTemplateFromLocalData(template);
-      }
-    } else {
-      // Inicializar con ejemplos para facilitar el diseño
-      initializeDefaultLayout();
-    }
+    // Código de inicialización aquí
+    console.log("Template Editor initialized");
   }, []);
   
-  // Función para cargar datos de template desde localStorage
-  const loadTemplateFromLocalData = (template) => {
-    if (template.seats) {
-      setSeats(template.seats);
-      setNextSeatId(Math.max(...template.seats.map(seat => parseInt(seat.id.split('-')[1] || '0'))) + 1);
-    }
-    
-    // Cargar secciones personalizadas si existen
-    if (template.sections && Array.isArray(template.sections)) {
-      setSections(template.sections);
-    }
-    
-    // Cargar textos informativos si existen
-    if (template.texts && Array.isArray(template.texts)) {
-      setTexts(template.texts);
-    }
-    
-    // Actualizar dimensiones del escenario
-    if (template.stageDimensions) {
-      setStageDimensions(template.stageDimensions);
-    }
-  };
+  // Función para redondear posiciones a la cuadrícula
+  const GRID_SIZE = 5;
   
-  // Inicializar un diseño por defecto para empezar
-  const initializeDefaultLayout = () => {
-    const defaultSeats = [];
-    
-    // Crear una sección VIP centrada cerca del escenario
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 8; col++) {
-        const rowLabel = String.fromCharCode(65 + row);
-        defaultSeats.push({
-          id: `vip-${defaultSeats.length + 1}`,
-          label: `${rowLabel}${col + 1}`,
-          x: 30 + col * 50,
-          y: 150 + row * 50,
-          type: 'VIP',
-          section: 'SECTION_1',
-          available: true
-        });
-      }
-    }
-    
-    // Crear dos secciones económicas a los lados
-    for (let row = 0; row < 4; row++) {
-      for (let col = 0; col < 5; col++) {
-        const rowLabel = String.fromCharCode(68 + row);
-        // Sección izquierda
-        defaultSeats.push({
-          id: `econ-${defaultSeats.length + 1}`,
-          label: `${rowLabel}${col + 1}`,
-          x: 20 + col * 45,
-          y: 300 + row * 45,
-          type: 'ECONOMY',
-          section: 'SECTION_2',
-          available: true
-        });
-        
-        // Sección derecha
-        defaultSeats.push({
-          id: `econ-${defaultSeats.length + 1}`,
-          label: `${rowLabel}${col + 6}`,
-          x: 430 - col * 45,
-          y: 300 + row * 45,
-          type: 'ECONOMY',
-          section: 'SECTION_3',
-          available: true
-        });
-      }
-    }
-    
-    setSeats(defaultSeats);
-    setNextSeatId(defaultSeats.length + 1);
-    
-    // Reiniciar secciones predeterminadas
-    setSections([
-      { id: 'SECTION_1', name: 'Sección 1 (Central)', x: 400, y: 110, width: 400, height: 200 },
-      { id: 'SECTION_2', name: 'Sección 2 (Izquierda)', x: 150, y: 250, width: 200, height: 200 },
-      { id: 'SECTION_3', name: 'Sección 3 (Derecha)', x: 650, y: 250, width: 200, height: 200 }
-    ]);
-    
-    // Reiniciar textos informativos
-    setTexts([
-      { id: 'text-1', content: 'Salida de emergencia', x: 100, y: 450, fontSize: 14, color: 'white' }
-    ]);
-  };
-  
-  // Funciones para manejar el arrastre de secciones
-  const handleSectionDragStart = (e, section) => {
-    e.stopPropagation();
-    
-    if (editMode !== 'move') return;
-    
-    setDraggingSectionId(section.id);
-    if (editorRef.current) {
-      const rect = editorRef.current.getBoundingClientRect();
-      setSectionDragOffset({
-        x: e.clientX - rect.left - section.x,
-        y: e.clientY - rect.top - section.y
-      });
-    }
-  };
-  
-  // Funciones para manejar el arrastre de textos
-  const handleTextDragStart = (e, text) => {
-    e.stopPropagation();
-    
-    if (editMode !== 'move') return;
-    
-    setDraggingText(text.id);
-    if (editorRef.current) {
-      const rect = editorRef.current.getBoundingClientRect();
-      setTextDragOffset({
-        x: e.clientX - rect.left - text.x,
-        y: e.clientY - rect.top - text.y
-      });
-    }
-  };
-  
-  // Funciones para gestionar secciones
-  const handleAddSection = () => {
-    const newSectionId = `SECTION_${sections.length + 1}`;
-    const newSection = {
-      id: newSectionId,
-      name: `Nueva Sección ${sections.length + 1}`,
-      x: 300,
-      y: 300,
-      width: 200,
-      height: 150
-    };
-    
-    setSections([...sections, newSection]);
-    
-    // Abrir el diálogo de edición para la nueva sección
-    setEditingSection(newSection);
-    setOpenSectionDialog(true);
-  };
-  
-  // Funciones para gestionar textos informativos
-  const handleAddText = () => {
-    const newTextId = `text-${texts.length + 1}`;
-    const newText = {
-      id: newTextId,
-      content: 'Nuevo texto informativo',
-      x: 300,
-      y: 500,
-      fontSize: 14,
-      color: 'white'
-    };
-    
-    setTexts([...texts, newText]);
-    
-    // Abrir el diálogo de edición para el nuevo texto
-    setSelectedText(newText);
-    setOpenTextDialog(true);
-  };
-  
-  const handleEditText = (text) => {
-    setSelectedText({...text});
-    setOpenTextDialog(true);
-  };
-  
-  const handleSaveText = () => {
-    if (!selectedText) return;
-    
-    // Actualizar el texto
-    setTexts(texts.map(text => 
-      text.id === selectedText.id ? selectedText : text
-    ));
-    
-    setOpenTextDialog(false);
-    
-    setSnackbar({
-      open: true,
-      message: 'Texto actualizado correctamente',
-      severity: 'success'
-    });
-  };
-  
-  const handleDeleteText = (textId) => {
-    setTexts(texts.filter(text => text.id !== textId));
-    
-    setSnackbar({
-      open: true,
-      message: 'Texto eliminado correctamente',
-      severity: 'success'
-    });
-  };
-  
-  const handleEditSection = (section) => {
-    setEditingSection({...section});
-    setOpenSectionDialog(true);
-  };
-  
-  const handleSaveSection = () => {
-    if (!editingSection) return;
-    
-    // Actualizar la sección
-    const updatedSections = sections.map(section => 
-      section.id === editingSection.id ? editingSection : section
-    );
-    
-    setSections(updatedSections);
-    setOpenSectionDialog(false);
-    
-    setSnackbar({
-      open: true,
-      message: 'Sección actualizada correctamente',
-      severity: 'success'
-    });
-  };
-  
-  const handleDeleteSection = (sectionId) => {
-    // No permitir eliminar si hay asientos en la sección
-    const seatsInSection = seats.filter(seat => seat.section === sectionId);
-    
-    if (seatsInSection.length > 0) {
-      setSnackbar({
-        open: true,
-        message: `No se puede eliminar: hay ${seatsInSection.length} asientos en esta sección`,
-        severity: 'error'
-      });
-      return;
-    }
-    
-    const updatedSections = sections.filter(section => section.id !== sectionId);
-    setSections(updatedSections);
-    
-    // Si la sección eliminada era la seleccionada, cambiar a 'all'
-    if (selectedSection === sectionId) {
-      setSelectedSection('all');
-    }
-    
-    setSnackbar({
-      open: true,
-      message: 'Sección eliminada correctamente',
-      severity: 'success'
-    });
-  };
-  
-  // Utilidades para el editor
   const roundToGrid = (value) => {
-    return Math.round(value / gridSize) * gridSize;
+    return Math.round(value / GRID_SIZE) * GRID_SIZE;
   };
   
-  // Manejar clic en el editor para añadir asientos o iniciar selección múltiple
-  const handleEditorClick = (e) => {
-    if (!editorRef.current) return;
-
-    // Si estamos en modo selección, simplemente limpiar la selección si no se presiona Shift
-    if (editMode === 'select') {
-      // Verificar si se está manteniendo presionada la tecla Shift
-      if (!e.shiftKey) {
-        setSelectedSeats([]);
-      }
-      return;
-    }
+  // Manejar inicio de arrastre de un asiento
+  const handleSeatDragStart = (e, seat) => {
+    e.stopPropagation();
     
-    // Si no estamos en modo dibujo, no hacer nada más
-    if (editMode !== 'draw') return;
+    if (editMode !== 'select' && editMode !== 'move') return;
     
-    const rect = editorRef.current.getBoundingClientRect();
-    const x = roundToGrid(e.clientX - rect.left);
-    const y = roundToGrid(e.clientY - rect.top);
+    const rect = canvasRef.current.getBoundingClientRect();
+    const offsetX = (e.clientX - rect.left) - seat.x;
+    const offsetY = (e.clientY - rect.top) - seat.y;
     
-    // No añadir asientos sobre el escenario
-    const stageTop = 0;
-    const stageHeight = 100;
-    if (y >= stageTop && y <= stageTop + stageHeight) {
-      return;
-    }
+    setDragOffset({ x: offsetX, y: offsetY });
     
-    // Generar etiqueta automaticamente
-    const lastSeatOfType = [...seats]
-      .filter(s => s.type === selectedSeatType && s.section === selectedSection)
-      .sort((a, b) => {
-        const aMatch = a.label.match(/([A-Z]+)(\d+)/);
-        const bMatch = b.label.match(/([A-Z]+)(\d+)/);
-        if (!aMatch || !bMatch) return 0;
-        
-        if (aMatch[1] !== bMatch[1]) {
-          return aMatch[1].localeCompare(bMatch[1]);
-        }
-        return parseInt(aMatch[2]) - parseInt(bMatch[2]);
-      })
-      .pop();
-    
-    let newLabel = '';
-    if (lastSeatOfType) {
-      const match = lastSeatOfType.label.match(/([A-Z]+)(\d+)/);
-      if (match) {
-        const row = match[1];
-        const num = parseInt(match[2]) + 1;
-        newLabel = `${row}${num}`;
-      } else {
-        newLabel = `A${nextSeatId}`;
-      }
-    } else {
-      newLabel = `A${nextSeatId}`;
-    }
-    
-    const newSeat = {
-      id: `seat-${nextSeatId}`,
-      label: newLabel,
-      x,
-      y,
-      type: selectedSeatType,
-      section: selectedSection,
-      available: true
-    };
-    
-    setSeats([...seats, newSeat]);
-    setNextSeatId(nextSeatId + 1);
-  };
-  
-  // Manejar comienzo de arrastre de asiento
-  const handleDragStart = (e, seat) => {
-    if (editMode !== 'move') return;
-    
-    // Comprobar si el asiento está en la selección actual
-    const isInSelection = selectedSeats.some(s => s.id === seat.id);
-    
-    // Si el asiento está seleccionado y hay más asientos seleccionados, 
-    // preparamos para mover todos los asientos seleccionados
-    if (isInSelection && selectedSeats.length > 1) {
+    // Si el asiento está en la selección actual, mover todos los asientos seleccionados
+    if (selectedSeats.some(s => s.id === seat.id)) {
       setMovingMultipleSeats(true);
-      setDraggingSeat(seat);
     } else {
-      // Si no está en la selección o es el único, solo movemos ese asiento
-      setMovingMultipleSeats(false);
-      setDraggingSeat(seat);
-      
-      // Y limpiamos la selección anterior
+      // Si no está en la selección y no se presiona Shift, seleccionar solo este asiento
       if (!e.shiftKey) {
-        setSelectedSeats([]);
+        setSelectedSeats([seat]);
       }
+      setMovingMultipleSeats(false);
     }
     
-    if (editorRef.current) {
-      const rect = editorRef.current.getBoundingClientRect();
-      setDragOffset({
-        x: e.clientX - rect.left - seat.x,
-        y: e.clientY - rect.top - seat.y
-      });
-    }
-    
-    // Evitar comportamiento de arrastre por defecto del navegador
-    e.preventDefault();
+    setDraggingSeat(seat);
   };
   
-  // Manejar movimiento durante el arrastre
-  const handleDragOver = (e) => {
-    if (!editorRef.current) return;
+  // Manejar inicio de arrastre de una sección
+  const handleSectionDragStart = (e, sectionId) => {
+    e.stopPropagation();
     
-    const rect = editorRef.current.getBoundingClientRect();
+    if (editMode !== 'select' && editMode !== 'move') return;
     
-    // Si estamos seleccionando (dibujando un rectángulo de selección)
-    if (isMultiSelectActive && editMode === 'select') {
-      // Actualizar el punto final de la selección
-      const currentX = e.clientX - rect.left;
-      const currentY = e.clientY - rect.top;
-      setSelectionEnd({ x: currentX, y: currentY });
-      
-      // Determinar qué asientos están dentro del rectángulo de selección
-      const selBox = {
-        left: Math.min(selectionStart.x, currentX),
-        top: Math.min(selectionStart.y, currentY),
-        right: Math.max(selectionStart.x, currentX),
-        bottom: Math.max(selectionStart.y, currentY)
-      };
-      
-      // Seleccionar asientos que estén dentro del rectángulo
-      const selectedSeats = seats.filter(seat => 
-        seat.x >= selBox.left && 
-        seat.x <= selBox.right && 
-        seat.y >= selBox.top && 
-        seat.y <= selBox.bottom
-      );
-      
-      setSelectedSeats(selectedSeats);
-      return;
-    }
+    const section = sections.find(s => s.id === sectionId);
+    const rect = canvasRef.current.getBoundingClientRect();
+    const offsetX = (e.clientX - rect.left) - section.x;
+    const offsetY = (e.clientY - rect.top) - section.y;
     
-    if (editMode !== 'move') return;
+    setSectionDragOffset({ x: offsetX, y: offsetY });
+    setDraggingSectionId(sectionId);
+    setSelectedSection(section);
+  };
+  
+  // Manejar inicio de arrastre de un texto
+  const handleTextDragStart = (e, textId) => {
+    e.stopPropagation();
+    
+    if (editMode !== 'select' && editMode !== 'move') return;
+    
+    const text = texts.find(t => t.id === textId);
+    const rect = canvasRef.current.getBoundingClientRect();
+    const offsetX = (e.clientX - rect.left) - text.x;
+    const offsetY = (e.clientY - rect.top) - text.y;
+    
+    setTextDragOffset({ x: offsetX, y: offsetY });
+    setDraggingText(textId);
+    setSelectedText(text);
+  };
+  
+  // Manejar arrastre (para todos los elementos)
+  const handleDrag = (e) => {
+    if (!draggingSeat && !draggingSectionId && !draggingText) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
     
     // Manejar arrastre de sección
-    if (draggingSection) {
+    if (draggingSectionId) {
       const x = roundToGrid(e.clientX - rect.left - sectionDragOffset.x);
       const y = roundToGrid(e.clientY - rect.top - sectionDragOffset.y);
       
       // Actualizar la posición de la sección
       setSections(sections.map(section => 
-        section.id === draggingSection 
+        section.id === draggingSectionId 
           ? { ...section, x, y } 
           : section
       ));
@@ -797,1782 +549,1518 @@ const TemplateEditor = () => {
       seatsPerRow, 
       type, 
       curvature, 
-      startingNumber,
-      prefix,
-      useNumberPadding,
-      customRowLabels,
-      startFromRight,
-      useOnlyEven,
-      useOnlyOdd,
-      rowSuffix,
-      seatPrefix
-    } = bulkAddConfig;
+      rowSpacing, 
+      seatSpacing,
+      fixedWidth
+    } = bulkConfig;
     
     const newSeats = [];
-    const rowCharCode = startRow.charCodeAt(0);
     
-    // Calcular posición inicial
-    let startX = 100;
-    let startY = 200;
+    // Calcular el centro para la curvatura
+    const centerX = canvasWidth / 2;
     
-    // Ajustar según sección para distribuir en el espacio
-    if (section === 'SECTION_2') { // Lado izquierdo
-      startX = 50;
-    } else if (section === 'SECTION_3') { // Lado derecho
-      startX = editorSize.width - 50 - (seatsPerRow * 40);
-    }
+    // Offset inicial (para centrar las filas)
+    const rowWidth = fixedWidth 
+      ? canvasWidth * 0.8 
+      : seatsPerRow * seatSpacing;
+      
+    const startX = (canvasWidth - rowWidth) / 2;
+    const startY = canvasHeight / 3;
     
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < seatsPerRow; c++) {
-        // Determinar el índice del asiento según la dirección (izquierda a derecha o viceversa)
-        const seatIndex = startFromRight ? (seatsPerRow - 1 - c) : c;
+    // Generar asientos para cada fila
+    for (let rowIndex = 0; rowIndex < rows; rowIndex++) {
+      // Determinar el ancho basado en la curvatura y el índice de fila
+      const rowOffset = rowIndex * rowSpacing;
+      
+      // Para un efecto de curva, podemos cambiar el espacio entre asientos basado en la fila
+      // Un factor más alto para filas más alejadas del escenario
+      const curveFactor = 1 + (curvature * rowIndex / 50);
+      const effectiveSeatSpacing = fixedWidth 
+        ? rowWidth / (seatsPerRow - 1) 
+        : seatSpacing * curveFactor;
+      
+      for (let seatIndex = 0; seatIndex < seatsPerRow; seatIndex++) {
+        // Calcular posición con efecto de curva si es necesario
+        let seatXPos;
         
-        // Aplicar curvatura para crear filas arqueadas
-        const curveOffset = curvature * Math.sin(Math.PI * (c / (seatsPerRow - 1)));
+        if (curvature === 0 || fixedWidth) {
+          // Sin curvatura o con ancho fijo, distribución uniforme
+          seatXPos = startX + (seatIndex * effectiveSeatSpacing);
+        } else {
+          // Con curvatura, calculamos una distribución en arco
+          const ratio = (seatIndex / (seatsPerRow - 1)) - 0.5;
+          const angle = ratio * curvature * (Math.PI / 180);
+          
+          // Radio del arco (aumenta con las filas para crear perspectiva)
+          const radius = 400 + (rowIndex * 50);
+          
+          seatXPos = centerX + Math.sin(angle) * radius - (seatWidth / 2);
+        }
         
-        // Generar etiqueta personalizada
-        const seatLabel = generateSeatLabel(r, seatIndex, {
-          customRowLabels,
-          useNumberPadding,
-          prefix,
-          startRow,
-          startingNumber,
-          useOnlyEven,
-          useOnlyOdd,
-          rowSuffix,
-          seatPrefix
-        });
+        // Calcular posición Y (filas más alejadas tienen Y mayor)
+        const seatYPos = startY + rowOffset;
         
+        // Generar etiqueta única para este asiento
+        const label = generateSeatLabel(rowIndex, seatIndex, bulkConfig);
+        
+        // Crear nuevo asiento
         const newSeat = {
-          id: `seat-${nextSeatId + newSeats.length}`,
-          label: seatLabel,
-          x: startX + c * 40,
-          y: startY + r * 40 - curveOffset,
+          id: uuidv4(),
+          x: roundToGrid(seatXPos),
+          y: roundToGrid(seatYPos),
+          width: seatWidth,
+          height: seatHeight,
           type,
-          section,
-          available: true
+          color: seatColor,
+          borderColor: seatBorderColor,
+          borderWidth: seatBorderWidth,
+          label,
+          labelSize: seatLabelSize,
+          labelColor: seatLabelColor,
+          labelVisible: seatLabelVisible,
+          price: seatPrice,
+          section: section || 'General',
+          status: 'available',
+          row: rowIndex,
+          seatNumber: seatIndex + 1
         };
         
         newSeats.push(newSeat);
       }
     }
     
+    // Añadir los nuevos asientos al estado actual
     setSeats([...seats, ...newSeats]);
-    setNextSeatId(nextSeatId + newSeats.length);
-    setOpenBulkAddDialog(false);
     
+    // Cerrar diálogo y mostrar notificación
+    setOpenBulkDialog(false);
     setSnackbar({
       open: true,
-      message: `${newSeats.length} asientos añadidos correctamente`,
+      message: `Se han añadido ${newSeats.length} asientos`,
       severity: 'success'
     });
   };
   
-  // Guardar plantilla
-  const handleSaveTemplate = () => {
-    // Verificar si estamos editando una plantilla existente o creando una nueva
-    const isEditing = Boolean(template && template.id);
-    
-    // Usar el ID existente si estamos editando, o crear uno nuevo
-    const templateId = isEditing ? template.id : `template-custom-${Date.now()}`;
-    
-    // Crear un objeto con los datos de la plantilla
-    const templateData = {
-      id: templateId,
-      name: templateName,
-      seats,
-      sections, // Guardar las secciones personalizadas
-      texts, // Guardar los textos informativos
-      stageDimensions,
-      isDefault: isEditing ? template.isDefault : false,
-      image: template?.image || 'https://via.placeholder.com/450x250?text=Custom+Template',
-      rows: Math.max(...seats.map(seat => {
-        const match = seat.label.match(/([A-Z]+)/);
-        return match ? match[1].charCodeAt(0) - 64 : 0; // A=1, B=2, etc.
-      }), 1),
-      columns: Math.max(...seats.map(seat => {
-        const match = seat.label.match(/(\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      }), 1),
-      defaultSeats: seats.length,
-      dateModified: new Date().toISOString()
+  // Crear una nueva sección
+  const handleAddSection = () => {
+    const newSection = {
+      id: uuidv4(),
+      name: sectionName || `Sección ${sections.length + 1}`,
+      x: roundToGrid((canvasWidth - sectionWidth) / 2),
+      y: roundToGrid(canvasHeight / 3),
+      width: sectionWidth,
+      height: sectionHeight,
+      color: sectionColor,
+      opacity: sectionOpacity
     };
     
-    console.log(`${isEditing ? 'Actualizando' : 'Guardando'} plantilla:`, templateData);
-    
-    // Guardar en el backend y tener localStorage como respaldo
-    try {
-      // Usar la variable de entorno para la URL del backend
-      const API_BASE_URL = import.meta.env.VITE_REACT_APP_BACKEND_BASEURL;
-      const backendURL = `${API_BASE_URL}/api/templates`;
-      const endpoint = isEditing ? `${backendURL}/${templateId}` : backendURL;
-      const method = isEditing ? 'PUT' : 'POST';
-      
-      // Iniciamos el guardado en el backend y en localStorage en paralelo
-      setOpenSaveDialog(false);
-      setSnackbar({
-        open: true,
-        message: 'Guardando plantilla...',
-        severity: 'info'
-      });
-      
-      // Guardar en localStorage como respaldo
-      const existingTemplatesJSON = localStorage.getItem('allTemplates');
-      const existingTemplates = existingTemplatesJSON ? JSON.parse(existingTemplatesJSON) : [];
-      const existingIndex = existingTemplates.findIndex(t => t.id === templateId);
-      
-      if (existingIndex >= 0) {
-        existingTemplates[existingIndex] = templateData;
-      } else {
-        existingTemplates.push(templateData);
-      }
-      localStorage.setItem('allTemplates', JSON.stringify(existingTemplates));
-      
-      // Enviar al backend
-      axios({
-        method,
-        url: endpoint,
-        data: templateData,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      .then(response => {
-        console.log('Plantilla guardada en el backend:', response.data);
-        
-        setSnackbar({
-          open: true,
-          message: isEditing 
-            ? 'Plantilla actualizada correctamente en el servidor.' 
-            : 'Plantilla guardada correctamente en el servidor.',
-          severity: 'success'
-        });
-        
-        // Redirigir a la lista de plantillas después de guardar
-        setTimeout(() => {
-          navigate('/template-manager');
-        }, 1500);
-      })
-      .catch(error => {
-        console.error('Error al guardar en el backend:', error);
-        
-        setSnackbar({
-          open: true,
-          message: `Guardado en el servidor fallido, pero se ha guardado localmente: ${error.message}`,
-          severity: 'warning'
-        });
-        
-        // Redirigir a la lista de plantillas después de guardar
-        setTimeout(() => {
-          navigate('/template-manager');
-        }, 2500);
-      });
-    } catch (error) {
-      console.error('Error al guardar la plantilla:', error);
-      setSnackbar({
-        open: true,
-        message: 'Error al guardar la plantilla',
-        severity: 'error'
-      });
-    }
-  };
-  
-  // Restablecer configuración
-  const handleResetTemplate = () => {
-    initializeDefaultLayout();
-    setOpenResetDialog(false);
-    
+    setSections([...sections, newSection]);
+    setOpenSectionDialog(false);
     setSnackbar({
       open: true,
-      message: 'Plantilla restablecida',
-      severity: 'info'
+      message: 'Sección añadida correctamente',
+      severity: 'success'
     });
   };
   
-  // Cerrar snackbar
+  // Manejar cambios en el zoom
+  const handleZoomChange = (newZoom) => {
+    setZoom(Math.max(0.2, Math.min(3, newZoom)));
+  };
+  
+  // Añadir un nuevo texto
+  const handleAddText = () => {
+    if (!textContent) return;
+    
+    const newText = {
+      id: uuidv4(),
+      content: textContent,
+      x: roundToGrid((canvasWidth - 100) / 2),
+      y: roundToGrid(canvasHeight / 2),
+      size: textSize,
+      color: textColor,
+      bold: textIsBold
+    };
+    
+    setTexts([...texts, newText]);
+    setOpenTextDialog(false);
+    setSnackbar({
+      open: true,
+      message: 'Texto añadido correctamente',
+      severity: 'success'
+    });
+  };
+  
+  // Manejar clic en el canvas
+  const handleCanvasClick = (e) => {
+    if (editMode !== 'add') {
+      // Deseleccionar si hacemos clic en el canvas con modo diferente a "añadir"
+      setSelectedSeats([]);
+      setSelectedSection(null);
+      setSelectedText(null);
+      return;
+    }
+    
+    // Obtener la posición relativa al canvas
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = roundToGrid(e.clientX - rect.left);
+    const y = roundToGrid(e.clientY - rect.top);
+    
+    if (addMode === 'seat') {
+      // Añadir un nuevo asiento donde se hizo clic
+      const newSeat = {
+        id: uuidv4(),
+        x,
+        y,
+        width: seatWidth,
+        height: seatHeight,
+        type: seatType,
+        color: seatColor,
+        borderColor: seatBorderColor,
+        borderWidth: seatBorderWidth,
+        label: `Asiento ${seats.length + 1}`,
+        labelSize: seatLabelSize,
+        labelColor: seatLabelColor,
+        labelVisible: seatLabelVisible,
+        price: seatPrice,
+        section: seatCategory,
+        status: 'available'
+      };
+      
+      setSeats([...seats, newSeat]);
+    }
+  };
+  
+  // Cerrar el snackbar
   const handleCloseSnackbar = () => {
-    setSnackbar(prev => ({
-      ...prev,
-      open: false
-    }));
+    setSnackbar({ ...snackbar, open: false });
   };
   
-  // Generar colores para tipos de asientos
-  const getSeatColor = (type) => {
-    switch (type) {
-      case 'VIP':
-        return { bgcolor: '#ff0e0e', color: 'white' };
-      case 'ECONOMY':
-        return { bgcolor: '#3960ba', color: 'white' };
-      case 'DISABLED':
-        return { bgcolor: '#565656', color: 'white' };
+  // Abrir y posicionar el selector de color
+  const handleOpenColorPicker = (target, position) => {
+    setColorPickerTarget(target);
+    setColorPickerPosition(position);
+    setOpenColorPicker(true);
+  };
+  
+  // Cerrar el selector de color
+  const handleCloseColorPicker = () => {
+    setOpenColorPicker(false);
+    setColorPickerTarget(null);
+  };
+  
+  // Cambiar el color según el objetivo seleccionado
+  const handleColorChange = (color) => {
+    const { hex } = color;
+    
+    switch (colorPickerTarget) {
+      case 'seat':
+        setSeatColor(hex);
+        break;
+      case 'border':
+        setSeatBorderColor(hex);
+        break;
+      case 'label':
+        setSeatLabelColor(hex);
+        break;
+      case 'section':
+        setSectionColor(hex);
+        break;
+      case 'text':
+        setTextColor(hex);
+        break;
+      case 'canvas':
+        setCanvasBackground(hex);
+        break;
       default:
-        return { bgcolor: '#3960ba', color: 'white' };
+        break;
     }
   };
   
-  // Filtrar asientos por sección seleccionada
-  const filteredSeats = selectedSection === 'all' 
-    ? seats 
-    : seats.filter(seat => seat.section === selectedSection);
+  // Eliminar todos los elementos seleccionados
+  const handleDeleteSelected = () => {
+    if (selectedSeats.length > 0) {
+      const idsToRemove = new Set(selectedSeats.map(s => s.id));
+      setSeats(seats.filter(s => !idsToRemove.has(s.id)));
+      setSelectedSeats([]);
+      
+      setSnackbar({
+        open: true,
+        message: `${selectedSeats.length} asientos eliminados`,
+        severity: 'success'
+      });
+    }
+    
+    if (selectedSection) {
+      setSections(sections.filter(s => s.id !== selectedSection.id));
+      setSelectedSection(null);
+      
+      setSnackbar({
+        open: true,
+        message: 'Sección eliminada',
+        severity: 'success'
+      });
+    }
+    
+    if (selectedText) {
+      setTexts(texts.filter(t => t.id !== selectedText.id));
+      setSelectedText(null);
+      
+      setSnackbar({
+        open: true,
+        message: 'Texto eliminado',
+        severity: 'success'
+      });
+    }
+  };
   
-  // Renderizar líneas de la cuadrícula si está activada
-  const renderGridLines = () => {
-    if (!showGrid) return null;
+  // Exportar el diseño como JSON
+  const handleExportTemplate = () => {
+    const template = {
+      id: uuidv4(),
+      name: "Template de ejemplo",
+      canvasWidth,
+      canvasHeight,
+      canvasBackground,
+      stageImage: stageImageSrc ? {
+        src: stageImageSrc,
+        x: stageImageX,
+        y: stageImageY,
+        width: stageImageWidth,
+        height: stageImageHeight
+      } : null,
+      sections,
+      seats,
+      texts
+    };
     
-    const lines = [];
-    const width = editorSize.width;
-    const height = editorSize.height;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(template, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "template.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
     
-    // Líneas verticales
-    for (let x = 0; x <= width; x += gridSize) {
-      lines.push(
-        <line 
-          key={`v-${x}`} 
-          x1={x} 
-          y1={0} 
-          x2={x} 
-          y2={height} 
-          stroke="#555" 
-          strokeWidth="0.5" 
-          strokeDasharray="2,2"
-        />
+    setSnackbar({
+      open: true,
+      message: 'Plantilla exportada correctamente',
+      severity: 'success'
+    });
+  };
+  
+  // Cambiar entre pestañas de propiedades
+  const handleTabChange = (event, newValue) => {
+    setCurrentTab(newValue);
+  };
+  
+  // Manejar cargar imagen del escenario
+  const handleStageImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setStageImageSrc(e.target.result);
+      setStageImageFile(file);
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  // Renderizar asientos
+  const renderSeats = () => {
+    return seats.map(seat => {
+      const isSelected = selectedSeats.some(s => s.id === seat.id);
+      
+      // Estilo básico del asiento
+      const seatStyle = {
+        left: `${seat.x}px`,
+        top: `${seat.y}px`,
+        width: `${seat.width}px`,
+        height: `${seat.height}px`,
+        backgroundColor: seat.color || seatColor,
+        border: `${seat.borderWidth || seatBorderWidth}px solid ${seat.borderColor || seatBorderColor}`,
+        borderRadius: seat.type === 'rounded' ? '50%' : '4px',
+        transform: isSelected ? 'scale(1.05)' : 'scale(1)'
+      };
+      
+      return (
+        <div
+          key={seat.id}
+          style={{
+            ...styles.seat,
+            ...seatStyle,
+            ...(isSelected ? styles.selectedSeat : {})
+          }}
+          onMouseDown={(e) => handleSeatDragStart(e, seat)}
+          onClick={(e) => handleSeatClick(e, seat)}
+        >
+          {seat.labelVisible !== false && (
+            <span style={{ 
+              fontSize: `${seat.labelSize || seatLabelSize}px`,
+              color: seat.labelColor || seatLabelColor,
+              fontWeight: 'bold',
+              textShadow: '0px 0px 2px rgba(255,255,255,0.5)',
+              display: 'block',
+              textAlign: 'center',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '100%'
+            }}>
+              {seat.label}
+            </span>
+          )}
+        </div>
       );
-    }
-    
-    // Líneas horizontales
-    for (let y = 0; y <= height; y += gridSize) {
-      lines.push(
-        <line 
-          key={`h-${y}`} 
-          x1={0} 
-          y1={y} 
-          x2={width} 
-          y2={y} 
-          stroke="#555" 
-          strokeWidth="0.5" 
-          strokeDasharray="2,2"
-        />
+    });
+  };
+  
+  // Renderizar secciones
+  const renderSections = () => {
+    return sections.map(section => {
+      const isSelected = selectedSection && selectedSection.id === section.id;
+      
+      return (
+        <div
+          key={section.id}
+          style={{
+            ...styles.sectionBox,
+            left: `${section.x}px`,
+            top: `${section.y}px`,
+            width: `${section.width}px`,
+            height: `${section.height}px`,
+            backgroundColor: `${section.color}${Math.round(section.opacity * 255).toString(16).padStart(2, '0')}`,
+            border: isSelected ? '2px dashed blue' : '2px solid #333'
+          }}
+          onMouseDown={(e) => handleSectionDragStart(e, section.id)}
+        >
+          <div style={{ 
+            fontSize: '14px', 
+            fontWeight: 'bold', 
+            marginBottom: '5px',
+            color: '#000',
+            textShadow: '0px 0px 2px rgba(255,255,255,0.8)'
+          }}>
+            {section.name}
+          </div>
+        </div>
       );
-    }
+    });
+  };
+  
+  // Renderizar textos
+  const renderTexts = () => {
+    return texts.map(text => {
+      const isSelected = selectedText && selectedText.id === text.id;
+      
+      return (
+        <div
+          key={text.id}
+          style={{
+            ...styles.textElement,
+            left: `${text.x}px`,
+            top: `${text.y}px`,
+            fontSize: `${text.size}px`,
+            color: text.color,
+            fontWeight: text.bold ? 'bold' : 'normal',
+            border: isSelected ? '1px dashed blue' : 'none'
+          }}
+          onMouseDown={(e) => handleTextDragStart(e, text.id)}
+        >
+          {text.content}
+        </div>
+      );
+    });
+  };
+  
+  // Renderizar diálogo de edición de asiento
+  const renderSeatEditDialog = () => {
+    if (!selectedSeat) return null;
     
-    return lines;
+    return (
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
+        <DialogTitle>Editar Asiento</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                label="Etiqueta"
+                fullWidth
+                value={selectedSeat.label || ''}
+                onChange={(e) => setSelectedSeat({...selectedSeat, label: e.target.value})}
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <TextField
+                label="Precio"
+                type="number"
+                fullWidth
+                value={selectedSeat.price || 0}
+                onChange={(e) => setSelectedSeat({...selectedSeat, price: parseFloat(e.target.value)})}
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <TextField
+                label="Categoría"
+                fullWidth
+                value={selectedSeat.section || 'General'}
+                onChange={(e) => setSelectedSeat({...selectedSeat, section: e.target.value})}
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <FormControl fullWidth>
+                <InputLabel id="seat-type-label">Tipo</InputLabel>
+                <Select
+                  labelId="seat-type-label"
+                  value={selectedSeat.type || 'standard'}
+                  onChange={(e) => setSelectedSeat({...selectedSeat, type: e.target.value})}
+                >
+                  <MenuItem value="standard">Estándar</MenuItem>
+                  <MenuItem value="rounded">Redondeado</MenuItem>
+                  <MenuItem value="vip">VIP</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={6}>
+              <TextField
+                label="Estado"
+                fullWidth
+                select
+                value={selectedSeat.status || 'available'}
+                onChange={(e) => setSelectedSeat({...selectedSeat, status: e.target.value})}
+              >
+                <MenuItem value="available">Disponible</MenuItem>
+                <MenuItem value="reserved">Reservado</MenuItem>
+                <MenuItem value="sold">Vendido</MenuItem>
+                <MenuItem value="disabled">Deshabilitado</MenuItem>
+              </TextField>
+            </Grid>
+            
+            <Grid item xs={6}>
+              <TextField
+                label="Ancho"
+                type="number"
+                fullWidth
+                value={selectedSeat.width || seatWidth}
+                onChange={(e) => setSelectedSeat({...selectedSeat, width: parseInt(e.target.value)})}
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <TextField
+                label="Alto"
+                type="number"
+                fullWidth
+                value={selectedSeat.height || seatHeight}
+                onChange={(e) => setSelectedSeat({...selectedSeat, height: parseInt(e.target.value)})}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Typography gutterBottom>Color del asiento</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box 
+                  sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    bgcolor: selectedSeat.color || seatColor,
+                    border: '1px solid gray',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => handleOpenColorPicker('seat', { x: e.clientX, y: e.clientY })}
+                />
+                <TextField
+                  size="small"
+                  value={selectedSeat.color || seatColor}
+                  onChange={(e) => setSelectedSeat({...selectedSeat, color: e.target.value})}
+                  sx={{ flexGrow: 1 }}
+                />
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Typography gutterBottom>Color del borde</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box 
+                  sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    bgcolor: selectedSeat.borderColor || seatBorderColor,
+                    border: '1px solid gray',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => handleOpenColorPicker('border', { x: e.clientX, y: e.clientY })}
+                />
+                <TextField
+                  size="small"
+                  value={selectedSeat.borderColor || seatBorderColor}
+                  onChange={(e) => setSelectedSeat({...selectedSeat, borderColor: e.target.value})}
+                  sx={{ flexGrow: 1 }}
+                />
+              </Box>
+            </Grid>
+            
+            <Grid item xs={6}>
+              <Typography gutterBottom>Grosor del borde</Typography>
+              <Slider
+                value={selectedSeat.borderWidth || seatBorderWidth}
+                onChange={(e, newValue) => setSelectedSeat({...selectedSeat, borderWidth: newValue})}
+                min={0}
+                max={5}
+                step={1}
+                valueLabelDisplay="auto"
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={selectedSeat.labelVisible !== false}
+                    onChange={(e) => setSelectedSeat({...selectedSeat, labelVisible: e.target.checked})}
+                  />
+                }
+                label="Mostrar etiqueta"
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <Typography gutterBottom>Tamaño de etiqueta</Typography>
+              <Slider
+                value={selectedSeat.labelSize || seatLabelSize}
+                onChange={(e, newValue) => setSelectedSeat({...selectedSeat, labelSize: newValue})}
+                min={8}
+                max={20}
+                step={1}
+                valueLabelDisplay="auto"
+                disabled={selectedSeat.labelVisible === false}
+              />
+            </Grid>
+            
+            <Grid item xs={6}>
+              <Typography gutterBottom>Color de etiqueta</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box 
+                  sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    bgcolor: selectedSeat.labelColor || seatLabelColor,
+                    border: '1px solid gray',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => handleOpenColorPicker('label', { x: e.clientX, y: e.clientY })}
+                />
+                <TextField
+                  size="small"
+                  value={selectedSeat.labelColor || seatLabelColor}
+                  onChange={(e) => setSelectedSeat({...selectedSeat, labelColor: e.target.value})}
+                  sx={{ flexGrow: 1 }}
+                  disabled={selectedSeat.labelVisible === false}
+                />
+              </Box>
+            </Grid>
+            
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditDialog(false)}>Cancelar</Button>
+          <Button onClick={handleUpdateSeat} variant="contained" color="primary">Guardar</Button>
+        </DialogActions>
+      </Dialog>
+    );
   };
   
   return (
-    <Container maxWidth="lg" sx={{ mt: 12, mb: 8 }}>
-      {/* Encabezado */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-        <IconButton 
-          onClick={() => navigate('/template-manager')} 
-          sx={{ mr: 2 }}
-          aria-label="volver"
-        >
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Editor Avanzado de Plantillas
-        </Typography>
+    <Box sx={styles.editorContainer}>
+      {/* Barra de herramientas superior */}
+      <Box sx={styles.toolbar}>
+        <Box sx={styles.toolbarGroup}>
+          <Tooltip title="Volver">
+            <IconButton>
+              <ArrowBack />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Guardar plantilla">
+            <IconButton onClick={handleExportTemplate}>
+              <Save />
+            </IconButton>
+          </Tooltip>
+          
+          <Divider orientation="vertical" flexItem />
+          
+          <Box sx={{ marginRight: 2 }}>
+            <Tooltip title="Aumentar zoom">
+              <IconButton onClick={() => handleZoomChange(zoom + 0.1)}>
+                <ZoomIn />
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title="Reducir zoom">
+              <IconButton onClick={() => handleZoomChange(zoom - 0.1)}>
+                <ZoomOut />
+              </IconButton>
+            </Tooltip>
+            
+            <Typography component="span" sx={{ mx: 1 }}>
+              {Math.round(zoom * 100)}%
+            </Typography>
+          </Box>
+          
+          <Divider orientation="vertical" flexItem />
+          
+          <Tooltip title="Mostrar/ocultar cuadrícula">
+            <IconButton onClick={() => setShowGrid(!showGrid)}>
+              {showGrid ? <GridOn /> : <GridOff />}
+            </IconButton>
+          </Tooltip>
+        </Box>
+        
+        <Box sx={styles.toolbarGroup}>
+          <Chip
+            icon={<AddBox />}
+            label="Añadir"
+            color={editMode === 'add' ? 'primary' : 'default'}
+            onClick={() => setEditMode('add')}
+            sx={{ mx: 0.5 }}
+          />
+          
+          <Chip
+            icon={<Edit />}
+            label="Editar"
+            color={editMode === 'edit' ? 'primary' : 'default'}
+            onClick={() => setEditMode('edit')}
+            sx={{ mx: 0.5 }}
+          />
+          
+          <Chip
+            icon={<Delete />}
+            label="Eliminar"
+            color={editMode === 'delete' ? 'primary' : 'default'}
+            onClick={() => setEditMode('delete')}
+            sx={{ mx: 0.5 }}
+          />
+          
+          <Chip
+            icon={<PanTool />}
+            label="Mover"
+            color={editMode === 'move' ? 'primary' : 'default'}
+            onClick={() => setEditMode('move')}
+            sx={{ mx: 0.5 }}
+          />
+          
+          <Chip
+            icon={<Search />}
+            label="Seleccionar"
+            color={editMode === 'select' ? 'primary' : 'default'}
+            onClick={() => setEditMode('select')}
+            sx={{ mx: 0.5 }}
+          />
+        </Box>
+        
+        <Box sx={styles.toolbarGroup}>
+          {editMode === 'add' && (
+            <>
+              <ToggleButtonGroup
+                value={addMode}
+                exclusive
+                onChange={(e, newMode) => newMode && setAddMode(newMode)}
+                aria-label="add mode"
+                size="small"
+              >
+                <Button variant={addMode === 'seat' ? 'contained' : 'outlined'} onClick={() => setAddMode('seat')}>
+                  <EventSeat fontSize="small" sx={{ mr: 1 }} />
+                  Asiento
+                </Button>
+                
+                <Button variant={addMode === 'section' ? 'contained' : 'outlined'} onClick={() => setOpenSectionDialog(true)}>
+                  <ViewColumn fontSize="small" sx={{ mr: 1 }} />
+                  Sección
+                </Button>
+                
+                <Button variant={addMode === 'text' ? 'contained' : 'outlined'} onClick={() => setOpenTextDialog(true)}>
+                  <TextFields fontSize="small" sx={{ mr: 1 }} />
+                  Texto
+                </Button>
+                
+                <Button color="secondary" variant="outlined" onClick={() => setOpenBulkDialog(true)}>
+                  <Dashboard fontSize="small" sx={{ mr: 1 }} />
+                  Filas
+                </Button>
+              </ToggleButtonGroup>
+            </>
+          )}
+          
+          {selectedSeats.length > 0 && editMode !== 'add' && (
+            <Tooltip title="Eliminar seleccionados">
+              <Button 
+                variant="outlined" 
+                color="error"
+                onClick={handleDeleteSelected}
+                startIcon={<Delete />}
+              >
+                Eliminar ({selectedSeats.length})
+              </Button>
+            </Tooltip>
+          )}
+        </Box>
       </Box>
       
-      {/* Panel de control */}
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Typography variant="h6" gutterBottom>
-              {template ? `Editar: ${templateName}` : 'Nueva Plantilla'}
-            </Typography>
+      {/* Contenedor principal */}
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Área principal del canvas */}
+        <Box 
+          sx={styles.canvasContainer}
+          ref={containerRef}
+          onMouseMove={handleDrag}
+          onMouseUp={handleDragEnd}
+          onMouseLeave={handleDragEnd}
+        >
+          <Box
+            ref={canvasRef}
+            sx={{
+              ...styles.canvas,
+              width: `${canvasWidth}px`,
+              height: `${canvasHeight}px`,
+              transform: `scale(${zoom})`,
+              backgroundColor: canvasBackground,
+              backgroundImage: stageImageSrc ? 'none' : undefined
+            }}
+            onClick={handleCanvasClick}
+          >
+            {/* Mostrar cuadrícula si está activada */}
+            {showGrid && <Box sx={styles.grid} />}
             
-            <TextField
-              fullWidth
-              label="Nombre de la Plantilla"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              sx={{ mb: 2 }}
-            />
+            {/* Mostrar imagen del escenario si existe */}
+            {stageImageSrc && (
+              <Box 
+                component="img"
+                src={stageImageSrc}
+                sx={{
+                  position: 'absolute',
+                  left: `${stageImageX}px`,
+                  top: `${stageImageY}px`,
+                  width: `${stageImageWidth}px`,
+                  height: `${stageImageHeight}px`,
+                  objectFit: 'contain'
+                }}
+              />
+            )}
             
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Sección Activa</InputLabel>
-              <Select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                label="Sección Activa"
+            {/* Renderizar secciones */}
+            {renderSections()}
+            
+            {/* Renderizar asientos */}
+            {renderSeats()}
+            
+            {/* Renderizar textos */}
+            {renderTexts()}
+          </Box>
+        </Box>
+        
+        {/* Panel de propiedades */}
+        <Paper sx={styles.properties} elevation={3}>
+          <Typography variant="h6" gutterBottom>Propiedades</Typography>
+          
+          <Tabs value={currentTab} onChange={handleTabChange} sx={{ mb: 2 }}>
+            <Tab label="General" />
+            <Tab label="Asientos" />
+            <Tab label="Apariencia" />
+          </Tabs>
+          
+          {currentTab === 0 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>Propiedades generales</Typography>
+              
+              <TextField
+                label="Ancho del canvas"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={canvasWidth}
+                onChange={(e) => setCanvasWidth(parseInt(e.target.value))}
+              />
+              
+              <TextField
+                label="Alto del canvas"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={canvasHeight}
+                onChange={(e) => setCanvasHeight(parseInt(e.target.value))}
+              />
+              
+              <Typography gutterBottom sx={{ mt: 2 }}>Color de fondo</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    bgcolor: canvasBackground,
+                    border: '1px solid gray',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => handleOpenColorPicker('canvas', { x: e.clientX, y: e.clientY })}
+                />
+                <TextField
+                  size="small"
+                  value={canvasBackground}
+                  onChange={(e) => setCanvasBackground(e.target.value)}
+                  sx={{ flexGrow: 1 }}
+                />
+              </Box>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Typography variant="subtitle1" gutterBottom>Imagen del escenario</Typography>
+              
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                sx={{ mb: 2 }}
               >
-                <MenuItem value="all">Todas las secciones</MenuItem>
-                {sections.map(section => (
-                  <MenuItem key={section.id} value={section.id}>
-                    {section.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            
-            <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-              <Button 
-                size="small" 
-                variant="outlined" 
-                startIcon={<Add />}
-                onClick={handleAddSection}
-              >
-                Añadir Sección
+                Subir imagen
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleStageImageUpload}
+                />
               </Button>
-              {selectedSection !== 'all' && (
+              
+              {stageImageSrc && (
                 <>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                    <TextField
+                      label="X"
+                      type="number"
+                      size="small"
+                      value={stageImageX}
+                      onChange={(e) => setStageImageX(parseInt(e.target.value))}
+                    />
+                    
+                    <TextField
+                      label="Y"
+                      type="number"
+                      size="small"
+                      value={stageImageY}
+                      onChange={(e) => setStageImageY(parseInt(e.target.value))}
+                    />
+                  </Box>
+                  
+                  <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                    <TextField
+                      label="Ancho"
+                      type="number"
+                      size="small"
+                      value={stageImageWidth}
+                      onChange={(e) => setStageImageWidth(parseInt(e.target.value))}
+                    />
+                    
+                    <TextField
+                      label="Alto"
+                      type="number"
+                      size="small"
+                      value={stageImageHeight}
+                      onChange={(e) => setStageImageHeight(parseInt(e.target.value))}
+                    />
+                  </Box>
+                  
                   <Button
-                    size="small"
-                    variant="outlined"
-                    color="primary"
-                    onClick={() => {
-                      const section = sections.find(s => s.id === selectedSection);
-                      if (section) {
-                        handleEditSection(section);
-                      }
-                    }}
-                  >
-                    Editar Sección
-                  </Button>
-                  <Button
-                    size="small"
                     variant="outlined"
                     color="error"
-                    onClick={() => handleDeleteSection(selectedSection)}
+                    size="small"
+                    onClick={() => setStageImageSrc('')}
+                    sx={{ mb: 2 }}
                   >
-                    Eliminar Sección
+                    Eliminar imagen
                   </Button>
                 </>
               )}
             </Box>
-            
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Tipo de Asiento</InputLabel>
-              <Select
-                value={selectedSeatType}
-                onChange={(e) => setSelectedSeatType(e.target.value)}
-                label="Tipo de Asiento"
-              >
-                <MenuItem value="VIP">VIP</MenuItem>
-                <MenuItem value="ECONOMY">Económico</MenuItem>
-                <MenuItem value="DISABLED">No Disponible</MenuItem>
-              </Select>
-            </FormControl>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Typography variant="body2" sx={{ mr: 2 }}>Tamaño de cuadrícula: {gridSize}px</Typography>
-              <Slider
-                value={gridSize}
-                onChange={(e, newValue) => setGridSize(newValue)}
-                min={5}
-                max={20}
-                step={5}
-                sx={{ width: '50%' }}
-              />
-              <IconButton 
-                color={showGrid ? "primary" : "default"}
-                onClick={() => setShowGrid(!showGrid)}
-                sx={{ ml: 2 }}
-              >
-                <GridOn />
-              </IconButton>
-            </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="body2" sx={{ mr: 2 }}>Zoom: {zoom}%</Typography>
-              <Slider
-                value={zoom}
-                onChange={(e, newValue) => setZoom(newValue)}
-                min={50}
-                max={150}
-                step={10}
-                sx={{ width: '50%' }}
-              />
-            </Box>
-          </Grid>
+          )}
           
-          <Grid item xs={12} md={6}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 1 }}>
-                Modo de Edición
-              </Typography>
-              <ToggleButtonGroup
-                value={editMode}
-                exclusive
-                onChange={(e, newMode) => {
-                  if (newMode) {
-                    setEditMode(newMode);
-                    // Limpiar selección al cambiar de modo
-                    if (newMode !== 'select') {
-                      setSelectedSeats([]);
-                    }
-                  }
-                }}
-                aria-label="modo de edición"
-                sx={{ mb: 2 }}
-              >
-                <ToggleButton value="draw" aria-label="dibujar">
-                  <Tooltip title="Dibujar Asientos">
-                    <Add />
-                  </Tooltip>
-                </ToggleButton>
-                <ToggleButton value="select" aria-label="seleccionar">
-                  <Tooltip title="Seleccionar Asientos (Shift para selección múltiple)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                      <path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2z"/>
-                    </svg>
-                  </Tooltip>
-                </ToggleButton>
-                <ToggleButton value="move" aria-label="mover">
-                  <Tooltip title="Mover Asientos (Selecciona múltiples y muévelos a la vez)">
-                    <DragIndicator />
-                  </Tooltip>
-                </ToggleButton>
-                <ToggleButton value="edit" aria-label="editar">
-                  <Tooltip title="Editar Asientos">
-                    <Edit />
-                  </Tooltip>
-                </ToggleButton>
-                <ToggleButton value="delete" aria-label="eliminar">
-                  <Tooltip title="Eliminar Asientos">
-                    <DeleteForever />
-                  </Tooltip>
-                </ToggleButton>
-              </ToggleButtonGroup>
+          {currentTab === 1 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>Propiedades de asientos</Typography>
               
-              {selectedSeats.length > 0 && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <Typography variant="body2" sx={{ mr: 2 }}>
-                    {selectedSeats.length} asientos seleccionados
-                  </Typography>
-                  <Button 
-                    size="small" 
-                    variant="outlined" 
-                    color="error" 
-                    startIcon={<DeleteForever />}
-                    onClick={() => {
-                      const idsToRemove = new Set(selectedSeats.map(s => s.id));
-                      setSeats(seats.filter(s => !idsToRemove.has(s.id)));
-                      setSelectedSeats([]);
-                    }}
-                  >
-                    Eliminar seleccionados
-                  </Button>
-                </Box>
-              )}
-            </Box>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1" fontWeight="bold" sx={{ mr: 2 }}>
-                Leyenda:
-              </Typography>
-              <Chip 
-                icon={<EventSeat />} 
-                label="VIP" 
-                sx={{ ...getSeatColor('VIP'), mr: 1 }}
-              />
-              <Chip 
-                icon={<EventSeat />} 
-                label="Económico" 
-                sx={{ ...getSeatColor('ECONOMY'), mr: 1 }}
-              />
-              <Chip 
-                icon={<EventSeat />} 
-                label="No Disponible" 
-                sx={{ ...getSeatColor('DISABLED') }}
-              />
-            </Box>
-            
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', mt: 4, gap: 1 }}>
-              <Button 
-                variant="contained" 
-                color="primary"
-                startIcon={<Save />}
-                onClick={() => setOpenSaveDialog(true)}
-              >
-                Guardar Plantilla
-              </Button>
-              <Button 
-                variant="contained" 
-                color="secondary" 
-                startIcon={<Add />}
-                onClick={() => setOpenBulkAddDialog(true)}
-              >
-                Añadir Filas de Asientos
-              </Button>
-              <Button 
-                variant="outlined" 
-                color="error" 
-                startIcon={<Replay />}
-                onClick={() => setOpenResetDialog(true)}
-              >
-                Restablecer
-              </Button>
-            </Box>
-            
-            {selectedSeats.length > 0 && (
-              <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={() => {
-                    // Recorremos y alineamos los asientos seleccionados en una fila perfecta
-                    if (selectedSeats.length < 2) return;
-                    
-                    // Calculamos la dirección predominante (horizontal o vertical)
-                    const xCoords = selectedSeats.map(s => s.x);
-                    const yCoords = selectedSeats.map(s => s.y);
-                    const xRange = Math.max(...xCoords) - Math.min(...xCoords);
-                    const yRange = Math.max(...yCoords) - Math.min(...yCoords);
-                    
-                    // Si el rango en X es mayor que en Y, alineamos horizontalmente
-                    const isHorizontal = xRange > yRange;
-                    
-                    if (isHorizontal) {
-                      // Ordenamos por X para alinear horizontalmente
-                      const sortedSeats = [...selectedSeats].sort((a, b) => a.x - b.x);
-                      const avgY = sortedSeats.reduce((sum, s) => sum + s.y, 0) / sortedSeats.length;
-                      const roundedY = roundToGrid(avgY);
-                      
-                      // Actualizar posiciones manteniendo X pero alineando Y
-                      setSeats(seats.map(seat => {
-                        if (selectedSeats.some(s => s.id === seat.id)) {
-                          return { ...seat, y: roundedY };
-                        }
-                        return seat;
-                      }));
-                      
-                      // Actualizar selección
-                      setSelectedSeats(selectedSeats.map(seat => ({ ...seat, y: roundedY })));
-                    } else {
-                      // Ordenamos por Y para alinear verticalmente
-                      const sortedSeats = [...selectedSeats].sort((a, b) => a.y - b.y);
-                      const avgX = sortedSeats.reduce((sum, s) => sum + s.x, 0) / sortedSeats.length;
-                      const roundedX = roundToGrid(avgX);
-                      
-                      // Actualizar posiciones manteniendo Y pero alineando X
-                      setSeats(seats.map(seat => {
-                        if (selectedSeats.some(s => s.id === seat.id)) {
-                          return { ...seat, x: roundedX };
-                        }
-                        return seat;
-                      }));
-                      
-                      // Actualizar selección
-                      setSelectedSeats(selectedSeats.map(seat => ({ ...seat, x: roundedX })));
-                    }
-                    
-                    setSnackbar({
-                      open: true,
-                      message: `Asientos alineados ${isHorizontal ? 'horizontalmente' : 'verticalmente'}`,
-                      severity: 'success'
-                    });
-                  }}
-                >
-                  Alinear Seleccionados
-                </Button>
-                
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  onClick={() => {
-                    // Distribuir uniformemente los asientos seleccionados
-                    if (selectedSeats.length < 2) return;
-                    
-                    // Calculamos la dirección predominante
-                    const xCoords = selectedSeats.map(s => s.x);
-                    const yCoords = selectedSeats.map(s => s.y);
-                    const xRange = Math.max(...xCoords) - Math.min(...xCoords);
-                    const yRange = Math.max(...yCoords) - Math.min(...yCoords);
-                    
-                    // Si el rango en X es mayor que en Y, distribuimos horizontalmente
-                    const isHorizontal = xRange > yRange;
-                    
-                    if (isHorizontal) {
-                      // Ordenamos por X para distribuir horizontalmente
-                      const sortedSeats = [...selectedSeats].sort((a, b) => a.x - b.x);
-                      const minX = sortedSeats[0].x;
-                      const maxX = sortedSeats[sortedSeats.length - 1].x;
-                      const step = (maxX - minX) / (sortedSeats.length - 1);
-                      
-                      // Actualizar posiciones distribuyendo uniformemente en X
-                      const updatedSeats = seats.map(seat => {
-                        const index = sortedSeats.findIndex(s => s.id === seat.id);
-                        if (index >= 0) {
-                          return { ...seat, x: minX + index * step };
-                        }
-                        return seat;
-                      });
-                      
-                      setSeats(updatedSeats);
-                      
-                      // Actualizar selección
-                      setSelectedSeats(sortedSeats.map((seat, index) => ({ 
-                        ...seat, 
-                        x: minX + index * step 
-                      })));
-                    } else {
-                      // Ordenamos por Y para distribuir verticalmente
-                      const sortedSeats = [...selectedSeats].sort((a, b) => a.y - b.y);
-                      const minY = sortedSeats[0].y;
-                      const maxY = sortedSeats[sortedSeats.length - 1].y;
-                      const step = (maxY - minY) / (sortedSeats.length - 1);
-                      
-                      // Actualizar posiciones distribuyendo uniformemente en Y
-                      const updatedSeats = seats.map(seat => {
-                        const index = sortedSeats.findIndex(s => s.id === seat.id);
-                        if (index >= 0) {
-                          return { ...seat, y: minY + index * step };
-                        }
-                        return seat;
-                      });
-                      
-                      setSeats(updatedSeats);
-                      
-                      // Actualizar selección
-                      setSelectedSeats(sortedSeats.map((seat, index) => ({ 
-                        ...seat, 
-                        y: minY + index * step 
-                      })));
-                    }
-                    
-                    setSnackbar({
-                      open: true,
-                      message: `Asientos distribuidos uniformemente ${isHorizontal ? 'horizontalmente' : 'verticalmente'}`,
-                      severity: 'success'
-                    });
-                  }}
-                >
-                  Distribuir Uniformemente
-                </Button>
-              </Box>
-            )}
-          </Grid>
-        </Grid>
-        
-        <Divider sx={{ my: 2 }} />
-        
-        <Typography variant="body2" color="text.secondary">
-          {editMode === 'draw' && "Haz clic en el editor para añadir nuevos asientos."}
-          {editMode === 'select' && "Dibuja un rectángulo para seleccionar múltiples asientos. Usa la tecla Shift para añadir a la selección."}
-          {editMode === 'move' && "Arrastra los asientos para cambiar su posición. Selecciona múltiples asientos previamente para moverlos en grupo."}
-          {editMode === 'edit' && "Haz clic en un asiento para editar sus propiedades."}
-          {editMode === 'delete' && "Haz clic en un asiento para eliminarlo. Si hay asientos seleccionados, se eliminarán todos a la vez."}
-        </Typography>
-      </Paper>
-      
-      {/* Barra de herramientas flotante */}
-      <Paper 
-        elevation={8}
-        sx={{
-          position: 'sticky', 
-          top: '70px',
-          zIndex: 10,
-          mb: 2,
-          p: 2,
-          borderRadius: '8px',
-          backgroundColor: 'rgba(25, 25, 112, 0.9)', // Azul oscuro más visible
-          backdropFilter: 'blur(10px)',
-          border: '2px solid #6495ED', // Borde azul claro para destacar
-          boxShadow: '0 0 15px rgba(100, 149, 237, 0.7)', // Brillo azul alrededor
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 1.5,
-          justifyContent: 'center'
-        }}
-      >
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-          <Typography variant="subtitle2" sx={{ mr: 1, color: 'white' }}>
-            Modo:
-          </Typography>
-          <ToggleButtonGroup
-            value={editMode}
-            exclusive
-            size="medium" // Botones más grandes
-            onChange={(e, newMode) => {
-              if (newMode) {
-                setEditMode(newMode);
-                if (newMode !== 'select') {
-                  setSelectedSeats([]);
-                }
-              }
-            }}
-            aria-label="modo de edición"
-            sx={{ 
-              background: 'rgba(30,30,30,0.8)',
-              '& .MuiToggleButton-root': {
-                color: 'white',
-                padding: '8px 12px',
-                '&.Mui-selected': {
-                  backgroundColor: '#4caf50', // Verde para el botón seleccionado
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: '#3d8b40', // Verde más oscuro al hover
-                  }
-                }
-              }
-            }}
-          >
-            <ToggleButton value="draw" aria-label="dibujar">
-              <Tooltip title="Dibujar Asientos">
-                <Add />
-              </Tooltip>
-            </ToggleButton>
-            <ToggleButton value="select" aria-label="seleccionar">
-              <Tooltip title="Seleccionar Asientos (Shift para selección múltiple)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                  <path d="M3 5h2V3c-1.1 0-2 .9-2 2zm0 8h2v-2H3v2zm4 8h2v-2H7v2zM3 9h2V7H3v2zm10-6h-2v2h2V3zm6 0v2h2c0-1.1-.9-2-2-2zM5 21v-2H3c0 1.1.9 2 2 2zm-2-4h2v-2H3v2zM9 3H7v2h2V3zm2 18h2v-2h-2v2zm8-8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2zm0-12h2V7h-2v2zm0 8h2v-2h-2v2zm-4 4h2v-2h-2v2zm0-16h2V3h-2v2z"/>
-                </svg>
-              </Tooltip>
-            </ToggleButton>
-            <ToggleButton value="move" aria-label="mover">
-              <Tooltip title="Mover Asientos (Selecciona múltiples y muévelos a la vez)">
-                <DragIndicator />
-              </Tooltip>
-            </ToggleButton>
-            <ToggleButton value="edit" aria-label="editar">
-              <Tooltip title="Editar Asientos">
-                <Edit />
-              </Tooltip>
-            </ToggleButton>
-            <ToggleButton value="delete" aria-label="eliminar">
-              <Tooltip title="Eliminar Asientos">
-                <DeleteForever />
-              </Tooltip>
-            </ToggleButton>
-          </ToggleButtonGroup>
-          
-          <Button
-            variant="contained"
-            size="medium"
-            color="secondary"
-            startIcon={<Add />}
-            onClick={() => setOpenBulkAddDialog(true)}
-            sx={{ 
-              ml: 2,
-              fontWeight: 'bold',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-              '&:hover': {
-                boxShadow: '0 6px 12px rgba(0,0,0,0.4)'
-              }
-            }}
-          >
-            AÑADIR FILA
-          </Button>
-          
-          <Button
-            variant="contained"
-            size="medium"
-            color="info"
-            startIcon={<Add />}
-            onClick={handleAddText}
-            sx={{ 
-              ml: 1,
-              fontWeight: 'bold',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
-              '&:hover': {
-                boxShadow: '0 6px 12px rgba(0,0,0,0.4)'
-              }
-            }}
-          >
-            AÑADIR TEXTO
-          </Button>
-        </Box>
-        
-        {selectedSeats.length > 0 && (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
-            <Chip 
-              label={`${selectedSeats.length} seleccionados`} 
-              variant="outlined" 
-              color="primary"
-              size="small"
-            />
-            
-            <Button
-              size="small"
-              variant="contained"
-              color="primary"
-              onClick={() => {
-                // Alinear asientos seleccionados
-                if (selectedSeats.length < 2) return;
-                
-                // Calculamos la dirección predominante
-                const xCoords = selectedSeats.map(s => s.x);
-                const yCoords = selectedSeats.map(s => s.y);
-                const xRange = Math.max(...xCoords) - Math.min(...xCoords);
-                const yRange = Math.max(...yCoords) - Math.min(...yCoords);
-                
-                // Si el rango en X es mayor que en Y, alineamos horizontalmente
-                const isHorizontal = xRange > yRange;
-                
-                if (isHorizontal) {
-                  // Ordenamos por X para alinear horizontalmente
-                  const sortedSeats = [...selectedSeats].sort((a, b) => a.x - b.x);
-                  const avgY = sortedSeats.reduce((sum, s) => sum + s.y, 0) / sortedSeats.length;
-                  const roundedY = roundToGrid(avgY);
-                  
-                  // Actualizar posiciones manteniendo X pero alineando Y
-                  setSeats(seats.map(seat => {
-                    if (selectedSeats.some(s => s.id === seat.id)) {
-                      return { ...seat, y: roundedY };
-                    }
-                    return seat;
-                  }));
-                  
-                  // Actualizar selección
-                  setSelectedSeats(selectedSeats.map(seat => ({ ...seat, y: roundedY })));
-                } else {
-                  // Ordenamos por Y para alinear verticalmente
-                  const sortedSeats = [...selectedSeats].sort((a, b) => a.y - b.y);
-                  const avgX = sortedSeats.reduce((sum, s) => sum + s.x, 0) / sortedSeats.length;
-                  const roundedX = roundToGrid(avgX);
-                  
-                  // Actualizar posiciones manteniendo Y pero alineando X
-                  setSeats(seats.map(seat => {
-                    if (selectedSeats.some(s => s.id === seat.id)) {
-                      return { ...seat, x: roundedX };
-                    }
-                    return seat;
-                  }));
-                  
-                  // Actualizar selección
-                  setSelectedSeats(selectedSeats.map(seat => ({ ...seat, x: roundedX })));
-                }
-                
-                setSnackbar({
-                  open: true,
-                  message: `Asientos alineados ${isHorizontal ? 'horizontalmente' : 'verticalmente'}`,
-                  severity: 'success'
-                });
-              }}
-            >
-              Alinear
-            </Button>
-            
-            <Button
-              size="small"
-              variant="contained"
-              color="secondary"
-              onClick={() => {
-                // Distribuir uniformemente los asientos seleccionados
-                if (selectedSeats.length < 2) return;
-                
-                // Calculamos la dirección predominante
-                const xCoords = selectedSeats.map(s => s.x);
-                const yCoords = selectedSeats.map(s => s.y);
-                const xRange = Math.max(...xCoords) - Math.min(...xCoords);
-                const yRange = Math.max(...yCoords) - Math.min(...yCoords);
-                
-                // Si el rango en X es mayor que en Y, distribuimos horizontalmente
-                const isHorizontal = xRange > yRange;
-                
-                if (isHorizontal) {
-                  // Ordenamos por X para distribuir horizontalmente
-                  const sortedSeats = [...selectedSeats].sort((a, b) => a.x - b.x);
-                  const minX = sortedSeats[0].x;
-                  const maxX = sortedSeats[sortedSeats.length - 1].x;
-                  const step = (maxX - minX) / (sortedSeats.length - 1);
-                  
-                  // Actualizar posiciones distribuyendo uniformemente en X
-                  const updatedSeats = seats.map(seat => {
-                    const index = sortedSeats.findIndex(s => s.id === seat.id);
-                    if (index >= 0) {
-                      return { ...seat, x: minX + index * step };
-                    }
-                    return seat;
-                  });
-                  
-                  setSeats(updatedSeats);
-                  
-                  // Actualizar selección
-                  setSelectedSeats(sortedSeats.map((seat, index) => ({ 
-                    ...seat, 
-                    x: minX + index * step 
-                  })));
-                } else {
-                  // Ordenamos por Y para distribuir verticalmente
-                  const sortedSeats = [...selectedSeats].sort((a, b) => a.y - b.y);
-                  const minY = sortedSeats[0].y;
-                  const maxY = sortedSeats[sortedSeats.length - 1].y;
-                  const step = (maxY - minY) / (sortedSeats.length - 1);
-                  
-                  // Actualizar posiciones distribuyendo uniformemente en Y
-                  const updatedSeats = seats.map(seat => {
-                    const index = sortedSeats.findIndex(s => s.id === seat.id);
-                    if (index >= 0) {
-                      return { ...seat, y: minY + index * step };
-                    }
-                    return seat;
-                  });
-                  
-                  setSeats(updatedSeats);
-                  
-                  // Actualizar selección
-                  setSelectedSeats(sortedSeats.map((seat, index) => ({ 
-                    ...seat, 
-                    y: minY + index * step 
-                  })));
-                }
-                
-                setSnackbar({
-                  open: true,
-                  message: `Asientos distribuidos ${isHorizontal ? 'horizontalmente' : 'verticalmente'}`,
-                  severity: 'success'
-                });
-              }}
-            >
-              Distribuir
-            </Button>
-            
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              onClick={() => {
-                const idsToRemove = new Set(selectedSeats.map(s => s.id));
-                setSeats(seats.filter(s => !idsToRemove.has(s.id)));
-                setSelectedSeats([]);
-              }}
-            >
-              Eliminar
-            </Button>
-          </Box>
-        )}
-      </Paper>
-      
-      {/* Editor de mapas de asientos */}
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          mb: 4, 
-          overflow: 'hidden',
-          position: 'relative',
-          height: '70vh',
-          backgroundColor: '#1c1c1c',
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.pexels.com/photos/7991158/pexels-photo-7991158.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <Box 
-          ref={editorRef}
-          onClick={handleEditorClick}
-          onMouseMove={handleDragOver}
-          onMouseUp={handleDragEnd}
-          sx={{ 
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            transform: `scale(${zoom/100})`,
-            transformOrigin: 'center top',
-            transition: 'transform 0.2s ease',
-          }}
-        >
-          {/* Escenario */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: `${stageDimensions.width}%`,
-              height: `${stageDimensions.height}%`,
-              maxHeight: '100px',
-              backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRa9a29gnDVHA3V9PfL9-ciX4M69VSknuiP6w&s')`,
-              backgroundSize: "contain",
-              backgroundPosition: "center",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              borderRadius: "10px",
-              boxShadow: "0px 4px 20px rgba(255, 255, 0, 0.4)",
-            }}
-          >
-            <Typography
-              sx={{
-                color: "white",
-                fontWeight: "bold",
-                fontSize: "24px",
-                backgroundColor: "rgba(0, 0, 0, 0.5)",
-                padding: "10px 20px",
-                borderRadius: "5px",
-              }}
-            >
-              Escenario
-            </Typography>
-          </Box>
-          
-          {/* Cuadrícula y elementos SVG */}
-          <svg 
-            width="100%" 
-            height="100%" 
-            style={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              pointerEvents: 'none'
-            }}
-          >
-            {/* Líneas de cuadrícula */}
-            {renderGridLines()}
-          </svg>
-          
-          {/* Control flotante de secciones */}
-          <Box
-            sx={{
-              position: 'absolute',
-              top: '10px',
-              right: '10px',
-              zIndex: 100,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              borderRadius: '8px',
-              padding: '10px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 1,
-              maxWidth: '200px',
-            }}
-          >
-            <Typography variant="subtitle2" sx={{ color: 'white', mb: 1 }}>
-              Secciones
-            </Typography>
-            
-            <FormControl size="small" fullWidth>
-              <Select
-                value={selectedSection}
-                onChange={(e) => setSelectedSection(e.target.value)}
-                size="small"
-                sx={{ 
-                  color: 'white', 
-                  '.MuiOutlinedInput-notchedOutline': { 
-                    borderColor: 'rgba(255, 255, 255, 0.3)' 
-                  } 
-                }}
-              >
-                <MenuItem value="all">Todas las secciones</MenuItem>
-                {sections.map(section => (
-                  <MenuItem key={section.id} value={section.id}>
-                    {section.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Button 
-                size="small" 
-                variant="contained" 
-                color="primary"
-                fullWidth
-                onClick={handleAddSection}
-              >
-                Añadir
-              </Button>
-              {selectedSection !== 'all' && (
-                <Button
+              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <TextField
+                  label="Ancho"
+                  type="number"
                   size="small"
-                  variant="contained"
-                  color="secondary"
-                  fullWidth
-                  onClick={() => {
-                    const section = sections.find(s => s.id === selectedSection);
-                    if (section) {
-                      handleEditSection(section);
-                    }
-                  }}
-                >
-                  Editar
-                </Button>
-              )}
-            </Box>
-          </Box>
-          
-          {/* Secciones */}
-          {sections.map(section => {
-            // Mostrar solo si todas las secciones están seleccionadas o esta sección específica
-            if (selectedSection !== 'all' && selectedSection !== section.id) return null;
-            
-            let sectionStyle = {
-              position: 'absolute',
-              left: section.x,
-              top: section.y,
-              width: section.width,
-              height: section.height,
-              border: '1px dashed rgba(255, 255, 255, 0.3)',
-              borderRadius: '5px',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'flex-start',
-              pt: 1,
-              cursor: editMode === 'move' ? 'move' : 'pointer',
-              pointerEvents: 'auto', // Permitir interacción
-            };
-            
-            // Destacar sección seleccionada
-            if (selectedSection === section.id) {
-              sectionStyle.border = '2px dashed rgba(255, 255, 255, 0.8)';
-              sectionStyle.boxShadow = '0 0 15px rgba(255, 255, 255, 0.3)';
-            }
-            
-            return (
-              <Box
-                key={section.id}
-                sx={sectionStyle}
-                onClick={() => setSelectedSection(section.id)}
-                onMouseDown={(e) => editMode === 'move' && handleSectionDragStart(e, section)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  handleEditSection(section);
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: selectedSection === section.id ? 'white' : 'rgba(255, 255, 255, 0.5)',
-                    fontSize: '14px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: '3px',
-                    fontWeight: selectedSection === section.id ? 'bold' : 'normal',
-                    userSelect: 'none',
-                  }}
-                >
-                  {section.name}
-                </Typography>
+                  value={seatWidth}
+                  onChange={(e) => setSeatWidth(parseInt(e.target.value))}
+                />
+                
+                <TextField
+                  label="Alto"
+                  type="number"
+                  size="small"
+                  value={seatHeight}
+                  onChange={(e) => setSeatHeight(parseInt(e.target.value))}
+                />
               </Box>
-            );
-          })}
-          
-          {/* Textos informativos */}
-          {texts.map(text => (
-            <Box
-              key={text.id}
-              sx={{
-                position: 'absolute',
-                left: text.x,
-                top: text.y,
-                cursor: editMode === 'move' ? 'move' : 'pointer',
-                pointerEvents: 'auto',
-                userSelect: 'none',
-                padding: '5px 10px',
-                borderRadius: '3px',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                border: '1px dashed rgba(255, 255, 255, 0.3)',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                  border: '1px dashed rgba(255, 255, 255, 0.8)',
-                }
-              }}
-              onClick={() => handleEditText(text)}
-              onMouseDown={(e) => editMode === 'move' && handleTextDragStart(e, text)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                handleDeleteText(text.id);
-              }}
-            >
-              <Typography
-                sx={{
-                  color: text.color || 'white',
-                  fontSize: `${text.fontSize || 14}px`,
-                  fontWeight: 'normal',
-                }}
-              >
-                {text.content}
-              </Typography>
+              
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="seat-type-global-label">Tipo de asiento</InputLabel>
+                <Select
+                  labelId="seat-type-global-label"
+                  value={seatType}
+                  onChange={(e) => setSeatType(e.target.value)}
+                >
+                  <MenuItem value="standard">Estándar</MenuItem>
+                  <MenuItem value="rounded">Redondeado</MenuItem>
+                  <MenuItem value="vip">VIP</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <TextField
+                label="Precio por defecto"
+                type="number"
+                fullWidth
+                margin="normal"
+                value={seatPrice}
+                onChange={(e) => setSeatPrice(parseFloat(e.target.value))}
+              />
+              
+              <TextField
+                label="Categoría por defecto"
+                fullWidth
+                margin="normal"
+                value={seatCategory}
+                onChange={(e) => setSeatCategory(e.target.value)}
+              />
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Typography gutterBottom>Estadísticas</Typography>
+              <Typography variant="body2">Total de asientos: {seats.length}</Typography>
+              <Typography variant="body2">Categorías: {
+                Array.from(new Set(seats.map(s => s.section))).join(', ')
+              }</Typography>
             </Box>
-          ))}
+          )}
           
-          {/* Asientos */}
-          {filteredSeats.map((seat) => (
-            <Box
-              key={seat.id}
-              onMouseDown={(e) => handleDragStart(e, seat)}
-              onClick={(e) => handleSeatClick(e, seat)}
-              sx={{
-                position: 'absolute',
-                left: `${seat.x}px`,
-                top: `${seat.y}px`,
-                width: '30px',
-                height: '30px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                ...getSeatColor(seat.type),
-                borderRadius: '5px',
-                cursor: editMode === 'move' ? 'move' : 'pointer',
-                opacity: seat.available ? 1 : 0.5,
-                transition: 'transform 0.1s ease, box-shadow 0.1s ease',
-                border: selectedSeats.some(s => s.id === seat.id) ? '2px solid white' : 'none',
-                boxShadow: selectedSeats.some(s => s.id === seat.id) ? '0 0 8px 3px rgba(255, 255, 255, 0.7)' : 'none',
-                transform: selectedSeats.some(s => s.id === seat.id) ? 'scale(1.1)' : 'scale(1)',
-                zIndex: selectedSeats.some(s => s.id === seat.id) ? 20 : 1,
-                '&:hover': {
-                  transform: 'scale(1.1)',
-                  boxShadow: '0 0 5px 2px rgba(255, 255, 255, 0.3)',
-                  zIndex: 10
+          {currentTab === 2 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>Apariencia de asientos</Typography>
+              
+              <Typography gutterBottom>Color del asiento</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    bgcolor: seatColor,
+                    border: '1px solid gray',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => handleOpenColorPicker('seat', { x: e.clientX, y: e.clientY })}
+                />
+                <TextField
+                  size="small"
+                  value={seatColor}
+                  onChange={(e) => setSeatColor(e.target.value)}
+                  sx={{ flexGrow: 1 }}
+                />
+              </Box>
+              
+              <Typography gutterBottom>Color del borde</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    bgcolor: seatBorderColor,
+                    border: '1px solid gray',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => handleOpenColorPicker('border', { x: e.clientX, y: e.clientY })}
+                />
+                <TextField
+                  size="small"
+                  value={seatBorderColor}
+                  onChange={(e) => setSeatBorderColor(e.target.value)}
+                  sx={{ flexGrow: 1 }}
+                />
+              </Box>
+              
+              <Typography gutterBottom>Grosor del borde</Typography>
+              <Slider
+                value={seatBorderWidth}
+                onChange={(e, newValue) => setSeatBorderWidth(newValue)}
+                min={0}
+                max={5}
+                step={1}
+                valueLabelDisplay="auto"
+                sx={{ mb: 2 }}
+              />
+              
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={seatLabelVisible}
+                    onChange={(e) => setSeatLabelVisible(e.target.checked)}
+                  />
                 }
-              }}
-            >
-              <EventSeat fontSize="small" />
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  fontSize: '8px', 
-                  lineHeight: 1, 
-                  fontWeight: 'bold',
-                  userSelect: 'none'
-                }}
-              >
-                {seat.label}
-              </Typography>
+                label="Mostrar etiquetas"
+                sx={{ mb: 1 }}
+              />
+              
+              <Typography gutterBottom>Tamaño de etiqueta</Typography>
+              <Slider
+                value={seatLabelSize}
+                onChange={(e, newValue) => setSeatLabelSize(newValue)}
+                min={8}
+                max={20}
+                step={1}
+                valueLabelDisplay="auto"
+                disabled={!seatLabelVisible}
+                sx={{ mb: 2 }}
+              />
+              
+              <Typography gutterBottom>Color de etiqueta</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Box 
+                  sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    bgcolor: seatLabelColor,
+                    border: '1px solid gray',
+                    cursor: 'pointer'
+                  }}
+                  onClick={(e) => handleOpenColorPicker('label', { x: e.clientX, y: e.clientY })}
+                />
+                <TextField
+                  size="small"
+                  value={seatLabelColor}
+                  onChange={(e) => setSeatLabelColor(e.target.value)}
+                  sx={{ flexGrow: 1 }}
+                  disabled={!seatLabelVisible}
+                />
+              </Box>
             </Box>
-          ))}
-        </Box>
-      </Paper>
+          )}
+        </Paper>
+      </Box>
       
-      {/* Diálogo de guardado */}
-      <Dialog open={openSaveDialog} onClose={() => setOpenSaveDialog(false)}>
-        <DialogTitle>Guardar Plantilla</DialogTitle>
+      {/* Barra de estado */}
+      <Box sx={styles.statusBar}>
+        <span>Modo: {editMode.charAt(0).toUpperCase() + editMode.slice(1)}</span>
+        <span>Asientos: {seats.length}</span>
+      </Box>
+      
+      {/* Diálogo para editar asiento */}
+      {renderSeatEditDialog()}
+      
+      {/* Diálogo para añadir sección */}
+      <Dialog open={openSectionDialog} onClose={() => setOpenSectionDialog(false)}>
+        <DialogTitle>Añadir nueva sección</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas guardar esta plantilla? Estará disponible para todos los organizadores.
-          </DialogContentText>
-          <DialogContentText sx={{ mt: 2, color: 'green' }}>
-            La plantilla se guardará en el servidor y también localmente como respaldo.
-          </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
-            label="Nombre de la Plantilla"
-            type="text"
+            label="Nombre de la sección"
             fullWidth
-            variant="outlined"
-            value={templateName}
-            onChange={(e) => setTemplateName(e.target.value)}
+            value={sectionName}
+            onChange={(e) => setSectionName(e.target.value)}
+          />
+          
+          <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+            <TextField
+              label="Ancho"
+              type="number"
+              value={sectionWidth}
+              onChange={(e) => setSectionWidth(parseInt(e.target.value))}
+            />
+            
+            <TextField
+              label="Alto"
+              type="number"
+              value={sectionHeight}
+              onChange={(e) => setSectionHeight(parseInt(e.target.value))}
+            />
+          </Box>
+          
+          <Typography gutterBottom sx={{ mt: 2 }}>Color de la sección</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box 
+              sx={{ 
+                width: 24, 
+                height: 24, 
+                bgcolor: sectionColor,
+                border: '1px solid gray',
+                cursor: 'pointer'
+              }}
+              onClick={(e) => handleOpenColorPicker('section', { x: e.clientX, y: e.clientY })}
+            />
+            <TextField
+              size="small"
+              value={sectionColor}
+              onChange={(e) => setSectionColor(e.target.value)}
+              sx={{ flexGrow: 1 }}
+            />
+          </Box>
+          
+          <Typography gutterBottom sx={{ mt: 2 }}>Opacidad</Typography>
+          <Slider
+            value={sectionOpacity}
+            onChange={(e, newValue) => setSectionOpacity(newValue)}
+            min={0}
+            max={1}
+            step={0.1}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(value) => `${Math.round(value * 100)}%`}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenSaveDialog(false)}>Cancelar</Button>
-          <Button onClick={handleSaveTemplate} variant="contained">
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
-      
-      {/* Diálogo de restablecer */}
-      <Dialog open={openResetDialog} onClose={() => setOpenResetDialog(false)}>
-        <DialogTitle>Restablecer Plantilla</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ¿Estás seguro de que deseas restablecer esta plantilla? Se perderán todos los cambios no guardados.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenResetDialog(false)}>Cancelar</Button>
-          <Button onClick={handleResetTemplate} color="error" variant="contained">
-            Restablecer
-          </Button>
-        </DialogActions>
-      </Dialog>
-      
-      {/* Diálogo de edición de asiento */}
-      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)}>
-        <DialogTitle>Editar Asiento</DialogTitle>
-        <DialogContent>
-          {selectedSeat && (
-            <Box sx={{ pt: 1 }}>
-              <TextField
-                margin="dense"
-                label="Etiqueta del Asiento"
-                type="text"
-                fullWidth
-                variant="outlined"
-                value={selectedSeat.label}
-                onChange={(e) => setSelectedSeat({...selectedSeat, label: e.target.value})}
-                sx={{ mb: 2 }}
-              />
-              
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Tipo de Asiento</InputLabel>
-                <Select
-                  value={selectedSeat.type}
-                  onChange={(e) => setSelectedSeat({...selectedSeat, type: e.target.value})}
-                  label="Tipo de Asiento"
-                >
-                  <MenuItem value="VIP">VIP</MenuItem>
-                  <MenuItem value="ECONOMY">Económico</MenuItem>
-                  <MenuItem value="DISABLED">No Disponible</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Sección</InputLabel>
-                <Select
-                  value={selectedSeat.section}
-                  onChange={(e) => setSelectedSeat({...selectedSeat, section: e.target.value})}
-                  label="Sección"
-                >
-                  <MenuItem value="SECTION_1">Sección 1 (Central)</MenuItem>
-                  <MenuItem value="SECTION_2">Sección 2 (Izquierda)</MenuItem>
-                  <MenuItem value="SECTION_3">Sección 3 (Derecha)</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <FormControl fullWidth>
-                <InputLabel>Disponibilidad</InputLabel>
-                <Select
-                  value={selectedSeat.available}
-                  onChange={(e) => setSelectedSeat({...selectedSeat, available: e.target.value})}
-                  label="Disponibilidad"
-                >
-                  <MenuItem value={true}>Disponible</MenuItem>
-                  <MenuItem value={false}>No Disponible</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenEditDialog(false)}>Cancelar</Button>
-          <Button 
-            onClick={handleUpdateSeat} 
-            variant="contained"
-          >
-            Actualizar
-          </Button>
-        </DialogActions>
-      </Dialog>
-      
-      {/* Diálogo para editar secciones */}
-      <Dialog 
-        open={openSectionDialog} 
-        onClose={() => setOpenSectionDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {editingSection?.id.includes('SECTION_') ? 'Editar Sección' : 'Añadir Sección'}
-        </DialogTitle>
-        <DialogContent>
-          {editingSection && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Nombre de la Sección"
-                  value={editingSection.name}
-                  onChange={(e) => setEditingSection({...editingSection, name: e.target.value})}
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Posición X"
-                  value={editingSection.x}
-                  onChange={(e) => setEditingSection({...editingSection, x: e.target.value})}
-                  helperText="Ejemplo: '20%', '150px', 'right:20%'"
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Posición Y"
-                  value={editingSection.y}
-                  onChange={(e) => setEditingSection({...editingSection, y: e.target.value})}
-                  helperText="Ejemplo: '100px', '30%'"
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Ancho"
-                  value={editingSection.width}
-                  onChange={(e) => setEditingSection({...editingSection, width: e.target.value})}
-                  helperText="Ejemplo: '40%', '300px'"
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Alto"
-                  value={editingSection.height}
-                  onChange={(e) => setEditingSection({...editingSection, height: e.target.value})}
-                  helperText="Ejemplo: '30%', '200px'"
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Nota: Al editar una sección, los asientos asociados a ella seguirán perteneciendo a la misma.
-                </Typography>
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
           <Button onClick={() => setOpenSectionDialog(false)}>Cancelar</Button>
-          <Button 
-            onClick={handleSaveSection} 
-            variant="contained"
-            disabled={!editingSection?.name}
-          >
-            Guardar
-          </Button>
+          <Button onClick={handleAddSection} variant="contained" color="primary">Añadir</Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Diálogo para añadir texto */}
+      <Dialog open={openTextDialog} onClose={() => setOpenTextDialog(false)}>
+        <DialogTitle>Añadir texto</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Contenido del texto"
+            fullWidth
+            multiline
+            rows={3}
+            value={textContent}
+            onChange={(e) => setTextContent(e.target.value)}
+          />
+          
+          <Typography gutterBottom sx={{ mt: 2 }}>Tamaño del texto</Typography>
+          <Slider
+            value={textSize}
+            onChange={(e, newValue) => setTextSize(newValue)}
+            min={10}
+            max={48}
+            step={1}
+            valueLabelDisplay="auto"
+            sx={{ mb: 2 }}
+          />
+          
+          <Typography gutterBottom>Color del texto</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box 
+              sx={{ 
+                width: 24, 
+                height: 24, 
+                bgcolor: textColor,
+                border: '1px solid gray',
+                cursor: 'pointer'
+              }}
+              onClick={(e) => handleOpenColorPicker('text', { x: e.clientX, y: e.clientY })}
+            />
+            <TextField
+              size="small"
+              value={textColor}
+              onChange={(e) => setTextColor(e.target.value)}
+              sx={{ flexGrow: 1 }}
+            />
+          </Box>
+          
+          <FormControlLabel
+            control={
+              <Switch
+                checked={textIsBold}
+                onChange={(e) => setTextIsBold(e.target.checked)}
+              />
+            }
+            label="Texto en negrita"
+            sx={{ mt: 2 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenTextDialog(false)}>Cancelar</Button>
+          <Button onClick={handleAddText} variant="contained" color="primary">Añadir</Button>
         </DialogActions>
       </Dialog>
       
       {/* Diálogo para añadir asientos en masa */}
-      <Dialog 
-        open={openBulkAddDialog} 
-        onClose={() => setOpenBulkAddDialog(false)}
+      <Dialog
+        open={openBulkDialog}
+        onClose={() => setOpenBulkDialog(false)}
         maxWidth="md"
         fullWidth
       >
-        <DialogTitle>Añadir Fila de Asientos</DialogTitle>
+        <DialogTitle>Añadir filas de asientos</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            Crea múltiples asientos en una disposición ordenada. Puedes crear filas rectas o con curvatura.
-          </DialogContentText>
-          
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>Ubicación y tamaño</Typography>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Sección"
+                fullWidth
+                value={bulkConfig.section}
+                onChange={(e) => setBulkConfig({...bulkConfig, section: e.target.value})}
+                helperText="Dejar en blanco para usar la categoría por defecto"
+              />
             </Grid>
-          
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Sección</InputLabel>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>Tipo de asiento</InputLabel>
                 <Select
-                  value={bulkAddConfig.section}
-                  onChange={(e) => setBulkAddConfig({...bulkAddConfig, section: e.target.value})}
-                  label="Sección"
+                  value={bulkConfig.type}
+                  onChange={(e) => setBulkConfig({...bulkConfig, type: e.target.value})}
                 >
-                  {sections.map(section => (
-                    <MenuItem key={section.id} value={section.id}>
-                      {section.name}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="standard">Estándar</MenuItem>
+                  <MenuItem value="rounded">Redondeado</MenuItem>
+                  <MenuItem value="vip">VIP</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={6} sm={3}>
               <TextField
                 label="Número de filas"
                 type="number"
                 fullWidth
-                value={bulkAddConfig.rows}
-                onChange={(e) => setBulkAddConfig({...bulkAddConfig, rows: Math.max(1, parseInt(e.target.value) || 1)})}
-                inputProps={{ min: 1, max: 20 }}
-                sx={{ mb: 2 }}
+                value={bulkConfig.rows}
+                onChange={(e) => setBulkConfig({...bulkConfig, rows: parseInt(e.target.value)})}
+                InputProps={{ inputProps: { min: 1 } }}
               />
             </Grid>
             
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={6} sm={3}>
               <TextField
                 label="Asientos por fila"
                 type="number"
                 fullWidth
-                value={bulkAddConfig.seatsPerRow}
-                onChange={(e) => setBulkAddConfig({...bulkAddConfig, seatsPerRow: Math.max(1, parseInt(e.target.value) || 1)})}
-                inputProps={{ min: 1, max: 30 }}
-                sx={{ mb: 2 }}
+                value={bulkConfig.seatsPerRow}
+                onChange={(e) => setBulkConfig({...bulkConfig, seatsPerRow: parseInt(e.target.value)})}
+                InputProps={{ inputProps: { min: 1 } }}
               />
             </Grid>
             
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Tipo de Asiento</InputLabel>
-                <Select
-                  value={bulkAddConfig.type}
-                  onChange={(e) => setBulkAddConfig({...bulkAddConfig, type: e.target.value})}
-                  label="Tipo de Asiento"
-                >
-                  <MenuItem value="VIP">VIP</MenuItem>
-                  <MenuItem value="ECONOMY">Económico</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6} md={8}>
-              <Typography gutterBottom>Curvatura de la fila</Typography>
-              <Slider
-                value={bulkAddConfig.curvature}
-                onChange={(e, newValue) => setBulkAddConfig({...bulkAddConfig, curvature: newValue})}
-                min={0}
-                max={30}
-                step={5}
-                marks={[
-                  { value: 0, label: 'Recto' },
-                  { value: 15, label: 'Medio' },
-                  { value: 30, label: 'Curvo' }
-                ]}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Formato de etiquetas</Typography>
-            </Grid>
-            
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Estilo de etiquetas</InputLabel>
-                <Select
-                  value={bulkAddConfig.customRowLabels}
-                  onChange={(e) => setBulkAddConfig({...bulkAddConfig, customRowLabels: e.target.value})}
-                  label="Estilo de etiquetas"
-                >
-                  <MenuItem value={false}>Letras (A, B, C...)</MenuItem>
-                  <MenuItem value={true}>Números (1, 2, 3...)</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={6} sm={3}>
               <TextField
-                label={bulkAddConfig.customRowLabels ? "Fila inicial (número)" : "Fila inicial (letra)"}
-                type={bulkAddConfig.customRowLabels ? "number" : "text"}
-                fullWidth
-                value={bulkAddConfig.customRowLabels ? 1 : bulkAddConfig.startRow}
-                onChange={(e) => {
-                  if (bulkAddConfig.customRowLabels) {
-                    setBulkAddConfig({...bulkAddConfig, startingRow: Math.max(1, parseInt(e.target.value) || 1)});
-                  } else {
-                    setBulkAddConfig({...bulkAddConfig, startRow: e.target.value.toUpperCase()});
-                  }
-                }}
-                inputProps={bulkAddConfig.customRowLabels ? { min: 1 } : { maxLength: 1 }}
-                disabled={bulkAddConfig.customRowLabels}
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6} md={4}>
-              <TextField
-                label="Prefijo de fila"
-                type="text"
-                fullWidth
-                value={bulkAddConfig.prefix}
-                onChange={(e) => setBulkAddConfig({...bulkAddConfig, prefix: e.target.value})}
-                placeholder="Ej: Fila "
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6} md={4}>
-              <TextField
-                label="Número inicial de asiento"
+                label="Espacio entre filas"
                 type="number"
                 fullWidth
-                value={bulkAddConfig.startingNumber}
-                onChange={(e) => setBulkAddConfig({...bulkAddConfig, startingNumber: Math.max(1, parseInt(e.target.value) || 1)})}
-                inputProps={{ min: 1 }}
+                value={bulkConfig.rowSpacing}
+                onChange={(e) => setBulkConfig({...bulkConfig, rowSpacing: parseInt(e.target.value)})}
+                InputProps={{ inputProps: { min: 20 } }}
               />
             </Grid>
             
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Formato de números</InputLabel>
-                <Select
-                  value={bulkAddConfig.useNumberPadding}
-                  onChange={(e) => setBulkAddConfig({...bulkAddConfig, useNumberPadding: e.target.value})}
-                  label="Formato de números"
-                >
-                  <MenuItem value={true}>Con ceros (01, 02, 03...)</MenuItem>
-                  <MenuItem value={false}>Sin ceros (1, 2, 3...)</MenuItem>
-                </Select>
-              </FormControl>
+            <Grid item xs={6} sm={3}>
+              <TextField
+                label="Espacio entre asientos"
+                type="number"
+                fullWidth
+                value={bulkConfig.seatSpacing}
+                onChange={(e) => setBulkConfig({...bulkConfig, seatSpacing: parseInt(e.target.value)})}
+                InputProps={{ inputProps: { min: 20 } }}
+              />
             </Grid>
-
+            
+            <Grid item xs={12} sm={6}>
+              <Typography gutterBottom>Curvatura (grados)</Typography>
+              <Slider
+                value={bulkConfig.curvature}
+                onChange={(e, newValue) => setBulkConfig({...bulkConfig, curvature: newValue})}
+                min={0}
+                max={120}
+                step={5}
+                valueLabelDisplay="auto"
+              />
+            </Grid>
+            
+            <Grid item xs={6} sm={3}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={bulkConfig.fixedWidth}
+                    onChange={(e) => setBulkConfig({...bulkConfig, fixedWidth: e.target.checked})}
+                  />
+                }
+                label="Ancho fijo"
+              />
+            </Grid>
+            
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Opciones avanzadas</Typography>
+              <Divider sx={{ my: 1 }}>Etiquetas</Divider>
             </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Dirección de numeración</InputLabel>
-                <Select
-                  value={bulkAddConfig.startFromRight}
-                  onChange={(e) => setBulkAddConfig({...bulkAddConfig, startFromRight: e.target.value})}
-                  label="Dirección de numeración"
-                >
-                  <MenuItem value={false}>De izquierda a derecha</MenuItem>
-                  <MenuItem value={true}>De derecha a izquierda</MenuItem>
-                </Select>
-              </FormControl>
+            
+            <Grid item xs={6} sm={3}>
+              <TextField
+                label="Fila inicial"
+                fullWidth
+                value={bulkConfig.startRow}
+                onChange={(e) => setBulkConfig({...bulkConfig, startRow: e.target.value})}
+                helperText="Letra (A-Z) o número"
+              />
             </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Tipo de numeración</InputLabel>
-                <Select
-                  value={bulkAddConfig.useOnlyEven ? "even" : (bulkAddConfig.useOnlyOdd ? "odd" : "normal")}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setBulkAddConfig({
-                      ...bulkAddConfig, 
-                      useOnlyEven: value === "even",
-                      useOnlyOdd: value === "odd"
-                    });
-                  }}
-                  label="Tipo de numeración"
-                >
-                  <MenuItem value="normal">Normal (1,2,3,4...)</MenuItem>
-                  <MenuItem value="even">Solo pares (2,4,6,8...)</MenuItem>
-                  <MenuItem value="odd">Solo impares (1,3,5,7...)</MenuItem>
-                </Select>
-              </FormControl>
+            
+            <Grid item xs={6} sm={3}>
+              <TextField
+                label="Prefijo"
+                fullWidth
+                value={bulkConfig.prefix}
+                onChange={(e) => setBulkConfig({...bulkConfig, prefix: e.target.value})}
+                helperText="Ej: 'Zona VIP '"
+              />
             </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
+            
+            <Grid item xs={6} sm={3}>
               <TextField
                 label="Sufijo de fila"
-                type="text"
                 fullWidth
-                value={bulkAddConfig.rowSuffix}
-                onChange={(e) => setBulkAddConfig({...bulkAddConfig, rowSuffix: e.target.value})}
-                placeholder="Ej: - "
+                value={bulkConfig.rowSuffix}
+                onChange={(e) => setBulkConfig({...bulkConfig, rowSuffix: e.target.value})}
+                helperText="Ej: ' - ' o 'F'"
               />
             </Grid>
-
-            <Grid item xs={12} sm={6} md={4}>
+            
+            <Grid item xs={6} sm={3}>
               <TextField
                 label="Prefijo de asiento"
-                type="text"
                 fullWidth
-                value={bulkAddConfig.seatPrefix}
-                onChange={(e) => setBulkAddConfig({...bulkAddConfig, seatPrefix: e.target.value})}
-                placeholder="Ej: Asiento "
+                value={bulkConfig.seatPrefix}
+                onChange={(e) => setBulkConfig({...bulkConfig, seatPrefix: e.target.value})}
+                helperText="Ej: 'S' o 'Asiento '"
               />
             </Grid>
+            
+            <Grid item xs={6} sm={3}>
+              <TextField
+                label="Número inicial"
+                type="number"
+                fullWidth
+                value={bulkConfig.startingNumber}
+                onChange={(e) => setBulkConfig({...bulkConfig, startingNumber: parseInt(e.target.value)})}
+                InputProps={{ inputProps: { min: 1 } }}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={9}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={bulkConfig.customRowLabels}
+                      onChange={(e) => setBulkConfig({...bulkConfig, customRowLabels: e.target.checked})}
+                    />
+                  }
+                  label="Usar números en lugar de letras para filas"
+                />
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={bulkConfig.useNumberPadding}
+                      onChange={(e) => setBulkConfig({...bulkConfig, useNumberPadding: e.target.checked})}
+                    />
+                  }
+                  label="Padding en números (01, 02...)"
+                />
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={bulkConfig.useOnlyEven}
+                      onChange={(e) => setBulkConfig({
+                        ...bulkConfig, 
+                        useOnlyEven: e.target.checked,
+                        useOnlyOdd: e.target.checked ? false : bulkConfig.useOnlyOdd
+                      })}
+                    />
+                  }
+                  label="Usar solo números pares"
+                />
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={bulkConfig.useOnlyOdd}
+                      onChange={(e) => setBulkConfig({
+                        ...bulkConfig, 
+                        useOnlyOdd: e.target.checked,
+                        useOnlyEven: e.target.checked ? false : bulkConfig.useOnlyEven
+                      })}
+                    />
+                  }
+                  label="Usar solo números impares"
+                />
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Typography variant="subtitle2" gutterBottom>Formato de ejemplo:</Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                {generateSeatLabel(0, 0, bulkConfig)}
+              </Typography>
+            </Grid>
           </Grid>
-          
-          <Box sx={{ my: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Vista previa:
-            </Typography>
-            <Typography variant="body1" fontWeight="bold">
-              {generateSeatLabel(0, 0, bulkAddConfig)} ··· {generateSeatLabel(0, bulkAddConfig.seatsPerRow-1, bulkAddConfig)}
-            </Typography>
-            <Typography variant="body1">
-              ⋮
-            </Typography>
-            <Typography variant="body1" fontWeight="bold">
-              {generateSeatLabel(bulkAddConfig.rows-1, 0, bulkAddConfig)} ··· {generateSeatLabel(bulkAddConfig.rows-1, bulkAddConfig.seatsPerRow-1, bulkAddConfig)}
-            </Typography>
-          </Box>
-          
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(0, 0, 0, 0.05)', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              Se crearán {bulkAddConfig.rows * bulkAddConfig.seatsPerRow} asientos con etiquetas desde {bulkAddConfig.startRow}{bulkAddConfig.startingNumber} hasta {String.fromCharCode(bulkAddConfig.startRow.charCodeAt(0) + bulkAddConfig.rows - 1)}{bulkAddConfig.startingNumber + bulkAddConfig.seatsPerRow - 1}
-            </Typography>
-          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenBulkAddDialog(false)}>Cancelar</Button>
-          <Button 
-            onClick={handleBulkAdd} 
-            variant="contained"
-          >
-            Añadir Asientos
-          </Button>
+          <Button onClick={() => setOpenBulkDialog(false)}>Cancelar</Button>
+          <Button onClick={handleBulkAdd} variant="contained" color="primary">Añadir</Button>
         </DialogActions>
       </Dialog>
       
-      {/* Diálogo para editar textos informativos */}
-      <Dialog 
-        open={openTextDialog} 
-        onClose={() => setOpenTextDialog(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {selectedText ? 'Editar Texto Informativo' : 'Añadir Texto Informativo'}
-        </DialogTitle>
-        <DialogContent>
-          {selectedText && (
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Contenido del texto"
-                  value={selectedText.content}
-                  onChange={(e) => setSelectedText({...selectedText, content: e.target.value})}
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Posición X"
-                  type="number"
-                  value={selectedText.x}
-                  onChange={(e) => setSelectedText({...selectedText, x: parseInt(e.target.value)})}
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Posición Y"
-                  type="number"
-                  value={selectedText.y}
-                  onChange={(e) => setSelectedText({...selectedText, y: parseInt(e.target.value)})}
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Tamaño de letra"
-                  type="number"
-                  value={selectedText.fontSize}
-                  onChange={(e) => setSelectedText({...selectedText, fontSize: parseInt(e.target.value)})}
-                  inputProps={{ min: 8, max: 36 }}
-                />
-              </Grid>
-              
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label="Color"
-                  value={selectedText.color}
-                  onChange={(e) => setSelectedText({...selectedText, color: e.target.value})}
-                  placeholder="white, black, #ff0000, etc."
-                />
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenTextDialog(false)}>Cancelar</Button>
-          <Button 
-            onClick={handleSaveText} 
-            variant="contained"
-            disabled={!selectedText?.content}
-          >
-            Guardar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Selector de color */}
+      {openColorPicker && (
+        <Box 
+          sx={{
+            ...styles.colorPickerPopover,
+            top: colorPickerPosition.y,
+            left: colorPickerPosition.x
+          }}
+        >
+          <Box 
+            sx={{ 
+              position: 'fixed', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              bottom: 0, 
+              zIndex: 999
+            }}
+            onClick={handleCloseColorPicker}
+          />
+          <Box sx={{ position: 'relative', zIndex: 1000 }}>
+            <SketchPicker
+              color={
+                colorPickerTarget === 'seat' ? seatColor :
+                colorPickerTarget === 'border' ? seatBorderColor :
+                colorPickerTarget === 'label' ? seatLabelColor :
+                colorPickerTarget === 'section' ? sectionColor :
+                colorPickerTarget === 'text' ? textColor :
+                colorPickerTarget === 'canvas' ? canvasBackground :
+                '#000000'
+              }
+              onChange={handleColorChange}
+            />
+          </Box>
+        </Box>
+      )}
       
       {/* Snackbar para notificaciones */}
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={6000}
+        autoHideDuration={4000}
         onClose={handleCloseSnackbar}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity={snackbar.severity} 
-          sx={{ width: '100%' }}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 };
 
