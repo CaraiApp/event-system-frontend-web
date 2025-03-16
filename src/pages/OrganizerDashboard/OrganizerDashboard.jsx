@@ -506,25 +506,67 @@ const OrganizerDashboard = () => {
                 4. Comprueba los encabezados enviados en cada petición.
               </Typography>
               
-              <Button 
-                variant="outlined" 
-                color="primary" 
-                size="small" 
-                onClick={() => console.clear()} 
-                sx={{ mt: 1, mr: 1 }}
-              >
-                Limpiar Consola
-              </Button>
+              <Box sx={{ mt: 2, mb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography variant="subtitle2" fontWeight="bold">Modo de datos</Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    variant={localStorage.getItem('useMockData') === 'true' ? 'contained' : 'outlined'}
+                    color="warning"
+                    size="small"
+                    onClick={() => {
+                      localStorage.setItem('useMockData', 'true');
+                      alert('Modo de datos mock activado. Recarga la página para ver los cambios.');
+                    }}
+                    sx={{ flex: 1 }}
+                  >
+                    Usar Datos Mock
+                  </Button>
+                  <Button
+                    variant={localStorage.getItem('useMockData') !== 'true' ? 'contained' : 'outlined'}
+                    color="success"
+                    size="small"
+                    onClick={() => {
+                      localStorage.removeItem('useMockData');
+                      alert('Modo de datos reales activado. Recarga la página para ver los cambios.');
+                    }}
+                    sx={{ flex: 1 }}
+                  >
+                    Usar Datos Reales
+                  </Button>
+                </Box>
+              </Box>
               
-              <Button 
-                variant="outlined" 
-                color="warning" 
-                size="small" 
-                onClick={() => setDebugInfo({user: null, apiCalls: [], errors: []})} 
-                sx={{ mt: 1 }}
-              >
-                Reiniciar Datos de Depuración
-              </Button>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                <Button 
+                  variant="outlined" 
+                  color="primary" 
+                  size="small" 
+                  onClick={() => console.clear()} 
+                >
+                  Limpiar Consola
+                </Button>
+                
+                <Button 
+                  variant="outlined" 
+                  color="warning" 
+                  size="small" 
+                  onClick={() => setDebugInfo({user: null, apiCalls: [], errors: []})} 
+                >
+                  Reiniciar Datos de Depuración
+                </Button>
+                
+                <Button 
+                  variant="outlined" 
+                  color="error" 
+                  size="small" 
+                  onClick={() => {
+                    localStorage.clear();
+                    alert('Almacenamiento local limpiado. Se cerrará la sesión al recargar.');
+                  }} 
+                >
+                  Limpiar LocalStorage
+                </Button>
+              </Box>
             </Box>
           </Paper>
         )}

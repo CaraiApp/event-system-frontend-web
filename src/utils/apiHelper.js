@@ -72,6 +72,8 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
     data = null,
     params = null,
     headers = {},
+    useMockData = false, // Nuevo parámetro para forzar datos mock
+    mockDataGenerator = null // Función para generar datos mock para este endpoint específico
   } = options;
   
   console.log(`Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
@@ -102,6 +104,12 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
     console.log(`Modo producción detectado, usando cabecera X-Requested-With`);
   }
 
+  // Si se solicita explícitamente usar datos mock, saltamos las peticiones a la API
+  if (useMockData && mockDataGenerator) {
+    console.log('⚠️ Usando datos mock por solicitud explícita');
+    return mockDataGenerator();
+  }
+
   // Log para debugging
   console.log(`Intentando ${method.toUpperCase()} a endpoint principal:`, primaryEndpoint);
   
@@ -118,6 +126,8 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
       },
       ...(params && { params }),
       ...(data && { data }),
+      // Añadir timeout razonable para evitar esperas muy largas
+      timeout: 8000 // 8 segundos
     };
     
     const response = await axiosInstance(config);
@@ -146,6 +156,7 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
             },
             ...(params && { params }),
             ...(data && { data }),
+            timeout: 5000 // Timeout más corto para alternativas
           };
           
           const fallbackResponse = await axiosInstance(config);
@@ -158,7 +169,13 @@ export const apiRequestWithFallback = async (primaryEndpoint, fallbackEndpoints 
       }
     }
     
-    // Si llegamos aquí, todos los intentos fallaron
+    // Si tenemos un generador de datos mock, usarlo como último recurso
+    if (mockDataGenerator) {
+      console.log('⚠️ Todos los endpoints API fallaron. Usando datos mock como fallback.');
+      return mockDataGenerator();
+    }
+    
+    // Si llegamos aquí, todos los intentos fallaron y no hay datos mock
     console.error('Todos los endpoints fallaron. Último error:', error);
     throw error;
   }
@@ -234,6 +251,158 @@ export const normalizeResponse = (response, dataKey = null) => {
  * @param {string} userRole - Rol del usuario (organizer, admin, user)
  * @returns {Promise<object>} - Respuesta de la API con eventos
  */
+// Generador de datos mock para eventos
+const generateMockEvents = (userRole = 'user') => {
+  console.log('Generando datos mock para eventos, rol:', userRole);
+  
+  // Eventos base
+  const mockEvents = [
+    {
+      _id: 'evt-1',
+      name: 'Concierto de Rock',
+      desc: 'Gran concierto de rock con bandas locales',
+      eventDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      eventDate2: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+      venue: 'Teatro Principal de Melilla',
+      address: 'Calle Principal 123, Melilla',
+      owner: { username: 'Producciones Rock' },
+      photo: 'https://via.placeholder.com/500x300?text=Concierto+Rock',
+      vipprice: 25.00,
+      economyprice: 15.00,
+      currency: 'EUR',
+      category: 'Música',
+      status: 'active',
+      featured: true,
+      published: true,
+      vipSize: 50,
+      economySize: 150,
+      ticket: 'Online'
+    },
+    {
+      _id: 'evt-2',
+      name: 'Partido Benéfico',
+      desc: 'Partido de fútbol a beneficio de causas locales',
+      eventDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      eventDate2: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+      venue: 'Estadio Álvarez Claro',
+      address: 'Avenida Deportiva 45, Melilla',
+      owner: { username: 'Club Deportivo Melilla' },
+      photo: 'https://via.placeholder.com/500x300?text=Partido+Benefico',
+      vipprice: 20.00,
+      economyprice: 10.00,
+      currency: 'EUR',
+      category: 'Deportes',
+      status: 'active',
+      featured: true,
+      published: true,
+      vipSize: 100,
+      economySize: 2000,
+      ticket: 'Online'
+    },
+    {
+      _id: 'evt-3',
+      name: 'Festival de Teatro',
+      desc: 'Semana del teatro con compañías nacionales',
+      eventDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
+      eventDate2: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
+      venue: 'Teatro Kursaal',
+      address: 'Plaza de las Culturas 7, Melilla',
+      owner: { username: 'Asociación Cultural Teatro' },
+      photo: 'https://via.placeholder.com/500x300?text=Festival+Teatro',
+      vipprice: 25.00,
+      economyprice: 15.00,
+      currency: 'EUR',
+      category: 'Teatro',
+      status: 'active',
+      featured: false,
+      published: true,
+      vipSize: 30,
+      economySize: 200,
+      ticket: 'Online'
+    },
+    {
+      _id: 'evt-4',
+      name: 'Exposición de Arte Moderno',
+      desc: 'Muestra de arte contemporáneo de artistas locales',
+      eventDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      eventDate2: new Date(Date.now() + 17 * 24 * 60 * 60 * 1000).toISOString(),
+      venue: 'Galería Municipal',
+      address: 'Calle Arte 23, Melilla',
+      owner: { username: 'Fundación Artes Plásticas' },
+      photo: 'https://via.placeholder.com/500x300?text=Exposicion+Arte',
+      vipprice: 12.00,
+      economyprice: 8.00,
+      currency: 'EUR',
+      category: 'Arte',
+      status: 'pending',
+      featured: false,
+      published: false,
+      vipSize: 0,
+      economySize: 100,
+      ticket: 'Walk-in'
+    },
+    {
+      _id: 'evt-5',
+      name: 'Festival Gastronómico',
+      desc: 'Degustación de platos típicos de la región',
+      eventDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+      eventDate2: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
+      venue: 'Plaza de España',
+      address: 'Plaza de España s/n, Melilla',
+      owner: { username: 'Asociación de Hosteleros' },
+      photo: 'https://via.placeholder.com/500x300?text=Festival+Gastronomico',
+      vipprice: 30.00,
+      economyprice: 15.00,
+      currency: 'EUR',
+      category: 'Gastronomía',
+      status: 'cancelled',
+      featured: false,
+      published: true,
+      vipSize: 50,
+      economySize: 200,
+      ticket: 'Online'
+    }
+  ];
+  
+  // Para organizadores, filtrar o crear eventos específicos
+  if (userRole === 'organizer') {
+    // Filtrar eventos solo del organizador actual (simulado)
+    return {
+      data: {
+        success: true,
+        data: {
+          events: mockEvents.filter(e => e.owner.username === 'Producciones Rock' || e.owner.username === 'Asociación Cultural Teatro'),
+          totalCount: 2
+        }
+      }
+    };
+  }
+  
+  // Para admin, mostrar todos
+  if (userRole === 'admin') {
+    return {
+      data: {
+        success: true,
+        data: {
+          events: mockEvents,
+          totalCount: mockEvents.length
+        }
+      }
+    };
+  }
+  
+  // Para usuarios, mostrar solo eventos publicados
+  return {
+    data: {
+      success: true,
+      data: {
+        events: mockEvents.filter(e => e.published === true),
+        totalCount: mockEvents.filter(e => e.published === true).length
+      }
+    }
+  };
+};
+
 export const getEvents = async (userRole, params = {}) => {
   const endpoints = userRole === 'organizer'
     ? ['/api/v1/events/getuserEvent'] // Para organizadores
@@ -241,7 +410,6 @@ export const getEvents = async (userRole, params = {}) => {
         '/api/v1/events/getAllEvents', // Principal para usuarios y admin
         '/api/v1/events',             // Alternativa 1
         '/api/events',                // Alternativa 2
-        '/events',                    // Alternativa 3
         '/api/v1/dashboard/admin/events' // Alternativa para admin
       ];
   
@@ -251,126 +419,29 @@ export const getEvents = async (userRole, params = {}) => {
   
   try {
     console.log('🔄 Intentando obtener eventos para rol:', userRole);
-    console.log('API Request: GET', primaryEndpoint, 'con parámetros:', params);
     
-    let errorLog = [];
-    try {
-      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints, { params });
-      console.log('✅ Éxito al obtener eventos:', response.status);
-      return normalizeResponse(response, 'events');
-    } catch (error) {
-      // Registrar el error para diagnóstico
-      console.error(`❌ Error en getEvents con endpoint principal: ${error.message}`);
-      errorLog.push({ endpoint: primaryEndpoint, error: error.message });
-      
-      // Intentar manualmente cada endpoint para diagnóstico
-      for (const endpoint of fallbackEndpoints) {
-        try {
-          console.log(`API Request: GET ${endpoint}`, params);
-          // Obtener token para autenticación
-          const token = localStorage.getItem('token');
-          const headers = {};
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-          headers['Accept'] = 'application/json';
-          
-          const testResponse = await axios.get(buildFullUrl(endpoint), { 
-            headers,
-            params
-          });
-          console.log(`✅ Éxito con endpoint alternativo ${endpoint}`);
-          return normalizeResponse(testResponse, 'events');
-        } catch (testError) {
-          console.error(`❌ Error con endpoint alternativo ${endpoint}: ${testError.message}`);
-          errorLog.push({ endpoint, error: testError.message });
-          
-          // Si hay un cuerpo de respuesta, registrarlo para diagnóstico
-          if (testError.response) {
-            console.error('Response Error Details:', testError.response.data);
-          }
-        }
+    // Verificar si debemos usar datos mock
+    const shouldUseMockData = !isProduction && (
+      localStorage.getItem('useMockData') === 'true' || 
+      localStorage.getItem('useMockEvents') === 'true'
+    );
+    
+    const response = await apiRequestWithFallback(
+      primaryEndpoint, 
+      fallbackEndpoints, 
+      {
+        params,
+        useMockData: shouldUseMockData,
+        mockDataGenerator: () => generateMockEvents(userRole)
       }
-      
-      // Si llegamos aquí, todos los intentos fallaron
-      console.error('❌ Error en todos los intentos de conexión a eventos:', error.message);
-      console.error('📋 Registro de errores de eventos:', errorLog);
-      
-      // Proporcionar datos mock para desarrollo cuando la API no está disponible
-      console.log('Usando datos mock para eventos, ya que la API no está disponible');
-      
-      const mockEvents = [
-        {
-          id: 'evt-1',
-          title: 'Concierto de Rock',
-          description: 'Gran concierto de rock con bandas locales',
-          startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
-          location: 'Teatro Principal de Melilla',
-          organizer: 'Producciones Rock',
-          image: 'https://via.placeholder.com/500x300?text=Concierto+Rock',
-          price: 25.00,
-          category: 'Conciertos',
-          status: 'active',
-          featured: true,
-          ticketsAvailable: 150
-        },
-        {
-          id: 'evt-2',
-          title: 'Partido Benéfico',
-          description: 'Partido de fútbol a beneficio de causas locales',
-          startDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
-          location: 'Estadio Álvarez Claro',
-          organizer: 'Club Deportivo Melilla',
-          image: 'https://via.placeholder.com/500x300?text=Partido+Benefico',
-          price: 10.00,
-          category: 'Deportes',
-          status: 'active',
-          featured: true,
-          ticketsAvailable: 2000
-        },
-        {
-          id: 'evt-3',
-          title: 'Festival de Teatro',
-          description: 'Semana del teatro con compañías nacionales',
-          startDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-          endDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
-          location: 'Varios teatros de Melilla',
-          organizer: 'Asociación Cultural Teatro',
-          image: 'https://via.placeholder.com/500x300?text=Festival+Teatro',
-          price: 15.00,
-          category: 'Teatro',
-          status: 'active',
-          featured: false,
-          ticketsAvailable: 500
-        }
-      ];
-      
-      return {
-        data: {
-          success: true,
-          data: {
-            events: mockEvents,
-            totalCount: mockEvents.length
-          }
-        }
-      };
-    }
-  } catch (finalError) {
-    console.error('Error crítico en getEvents:', finalError);
-    // Devolver estructura de datos vacía pero correcta para evitar errores en componentes
-    return {
-      data: {
-        success: true,
-        data: {
-          events: [],
-          totalCount: 0,
-          dataNotAvailable: true,
-          error: finalError.message
-        }
-      }
-    };
+    );
+    
+    return normalizeResponse(response, 'events');
+  } catch (error) {
+    console.error('Error crítico en getEvents:', error);
+    
+    // Como último recurso, devolver datos mock
+    return generateMockEvents(userRole);
   }
 };
 
@@ -507,120 +578,101 @@ const buildFullUrl = (endpoint) => {
   return endpoint;
 };
 
-export const getCategories = async () => {
+// Generador de datos mock para categorías
+const generateMockCategories = () => {
+  console.log('Generando datos mock para categorías');
+  const mockCategories = [
+    {
+      id: 'cat-1',
+      name: 'Conciertos',
+      description: 'Eventos musicales y conciertos en vivo',
+      icon: 'music_note',
+      color: '#3498db',
+      imageUrl: 'https://via.placeholder.com/300x200?text=Conciertos',
+      featured: true,
+      eventCount: 5
+    },
+    {
+      id: 'cat-2',
+      name: 'Deportes',
+      description: 'Eventos deportivos y competiciones',
+      icon: 'sports_soccer',
+      color: '#2ecc71',
+      imageUrl: 'https://via.placeholder.com/300x200?text=Deportes',
+      featured: true,
+      eventCount: 3
+    },
+    {
+      id: 'cat-3',
+      name: 'Teatro',
+      description: 'Obras de teatro y espectáculos',
+      icon: 'theater_comedy',
+      color: '#e74c3c',
+      imageUrl: 'https://via.placeholder.com/300x200?text=Teatro',
+      featured: false,
+      eventCount: 2
+    },
+    {
+      id: 'cat-4',
+      name: 'Cine',
+      description: 'Proyecciones y festivales de cine',
+      icon: 'movie',
+      color: '#9b59b6',
+      imageUrl: 'https://via.placeholder.com/300x200?text=Cine',
+      featured: false,
+      eventCount: 4
+    },
+    {
+      id: 'cat-5',
+      name: 'Exposiciones',
+      description: 'Galerías y exposiciones de arte',
+      icon: 'palette',
+      color: '#f39c12',
+      imageUrl: 'https://via.placeholder.com/300x200?text=Exposiciones',
+      featured: false,
+      eventCount: 2
+    }
+  ];
+  
+  return {
+    data: {
+      success: true,
+      data: {
+        categories: mockCategories,
+        totalCount: mockCategories.length
+      }
+    }
+  };
+};
+
+export const getCategories = async (useForcedMock = false) => {
   const primaryEndpoint = '/api/v1/dashboard/admin/categories';
   const fallbackEndpoints = [
     '/api/v1/categories',
-    '/api/categories',
-    '/api/categories/test' // Endpoint adicional para probar
+    '/api/categories'
   ];
   
   try {
     console.log('🔄 Intentando obtener categorías desde múltiples endpoints...');
-    // Registrar cada intento para diagnóstico
-    let errorLog = [];
     
-    try {
-      console.log(`API Request: GET ${primaryEndpoint}`, {});
-      const response = await apiRequestWithFallback(primaryEndpoint, fallbackEndpoints);
-      console.log('✅ Éxito al obtener categorías');
-      return normalizeResponse(response, 'categories');
-    } catch (error) {
-      // Registrar el error para diagnóstico
-      console.error(`❌ Error en getCategories: ${error.message}`);
-      errorLog.push({ endpoint: primaryEndpoint, error: error.message });
-      
-      // Intentar manualmente cada endpoint para diagnosticar
-      for (const endpoint of fallbackEndpoints) {
-        try {
-          console.log(`API Request: GET ${endpoint}`, {});
-          // Intentar directamente con axios para ver qué está fallando
-          // Obtener token para autenticación
-          const token = localStorage.getItem('token');
-          const headers = {};
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-          headers['Accept'] = 'application/json';
-          
-          const testResponse = await axios.get(buildFullUrl(endpoint), { headers });
-          console.log(`✅ Éxito con endpoint alternativo ${endpoint}`);
-          return normalizeResponse(testResponse, 'categories');
-        } catch (testError) {
-          console.error(`❌ Error con endpoint alternativo ${endpoint}: ${testError.message}`);
-          errorLog.push({ endpoint, error: testError.message });
-          
-          // Si hay un cuerpo de respuesta, registrarlo para diagnóstico
-          if (testError.response) {
-            console.error('Response Error Details:', testError.response.data);
-          }
-        }
+    // En entorno de desarrollo o si se fuerza el uso de mock data, podemos usar directamente los datos simulados
+    const shouldUseMockData = useForcedMock || (!isProduction && localStorage.getItem('useMockData') === 'true');
+    
+    const response = await apiRequestWithFallback(
+      primaryEndpoint, 
+      fallbackEndpoints,
+      {
+        useMockData: shouldUseMockData,
+        mockDataGenerator: generateMockCategories
       }
-      
-      // Si llegamos aquí, todos los intentos fallaron
-      console.error('❌ Error en todos los intentos de conexión a categorías:', error.message);
-      console.error('📋 Registro de errores de categorías:', errorLog);
-      
-      // Proporcionar datos mock para desarrollo cuando la API no está disponible
-      console.log('Usando datos mock para categorías, ya que la API no está disponible');
-      
-      const mockCategories = [
-        {
-          id: 'cat-1',
-          name: 'Conciertos',
-          description: 'Eventos musicales y conciertos en vivo',
-          icon: 'music_note',
-          color: '#3498db',
-          imageUrl: 'https://via.placeholder.com/300x200?text=Conciertos',
-          featured: true,
-          eventCount: 5
-        },
-        {
-          id: 'cat-2',
-          name: 'Deportes',
-          description: 'Eventos deportivos y competiciones',
-          icon: 'sports_soccer',
-          color: '#2ecc71',
-          imageUrl: 'https://via.placeholder.com/300x200?text=Deportes',
-          featured: true,
-          eventCount: 3
-        },
-        {
-          id: 'cat-3',
-          name: 'Teatro',
-          description: 'Obras de teatro y espectáculos',
-          icon: 'theater_comedy',
-          color: '#e74c3c',
-          imageUrl: 'https://via.placeholder.com/300x200?text=Teatro',
-          featured: false,
-          eventCount: 2
-        }
-      ];
-      
-      return {
-        data: {
-          success: true,
-          data: {
-            categories: mockCategories,
-            totalCount: mockCategories.length
-          }
-        }
-      };
-    }
-  } catch (finalError) {
-    console.error('Error crítico en getCategories:', finalError);
-    // Asegurar que siempre devolvemos una estructura válida
-    return {
-      data: {
-        success: true,
-        data: {
-          categories: [],
-          totalCount: 0,
-          dataNotAvailable: true,
-          error: finalError.message
-        }
-      }
-    };
+    );
+    
+    return normalizeResponse(response, 'categories');
+  } catch (error) {
+    console.error('Error crítico en getCategories:', error);
+    
+    // Último recurso: generar datos mock
+    return generateMockCategories();
   }
 };
 
