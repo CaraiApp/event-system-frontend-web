@@ -663,7 +663,7 @@ export const getCategories = async (useForcedMock = false) => {
     console.log('🔄 Intentando obtener categorías desde múltiples endpoints...');
     
     // En entorno de desarrollo o si se fuerza el uso de mock data, podemos usar directamente los datos simulados
-    const shouldUseMockData = true; */
+    const shouldUseMockData = true; 
     
     const response = await apiRequestWithFallback(
       primaryEndpoint, 
@@ -681,6 +681,7 @@ export const getCategories = async (useForcedMock = false) => {
     // Último recurso: generar datos mock
     return generateMockCategories();
   }
+  */
 };
 
 // Exportar la instancia de axios para uso general
