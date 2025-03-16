@@ -9,22 +9,27 @@ import axios from "axios";
 import { Category } from "@mui/icons-material";
 
 const EventCard = ({ event, onPublish, onFeature, onDelete, onUpdate }) => {
+  // Verificar que event existe
+  if (!event) {
+    return null;
+  }
+  
+  // Extraer propiedades con valores por defecto para prevenir errores
   const {
-    _id,
-    name,
-    venue,
-    address,
-    photo,
-
-    currency,
-
-category,
-    vipprice,
-    economyprice,
-    featured,
-    published,
-    owner,
-    ticket
+    _id = '',
+    name = 'Sin título',
+    venue = 'Ubicación no disponible',
+    address = 'Dirección no disponible',
+    photo = '',
+    currency = 'EUR',
+    category = '',
+    vipprice = 0,
+    economyprice = 0,
+    featured = false,
+    published = false,
+    owner = {},
+    ticket = '',
+    status = ''
   } = event;
 
   const navigate = useNavigate();

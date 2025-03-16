@@ -240,8 +240,21 @@ console.log(updatedEvent, 'updated event')
   };
 
 
-  const filteredEvents = events?.length > 0 
-  ? events.filter((event) => {
+  // Verificar que events es un array válido
+  const safeEvents = Array.isArray(events) ? events : [];
+  
+  // Verificar si hay eventos dentro del objeto data para manejar diferentes formatos de respuesta
+  let eventsToFilter = safeEvents;
+  if (!Array.isArray(events) && events?.data?.events) {
+    eventsToFilter = events.data.events;
+  } else if (!Array.isArray(events) && events?.events) {
+    eventsToFilter = events.events;
+  }
+  
+  const filteredEvents = Array.isArray(eventsToFilter) && eventsToFilter.length > 0 
+  ? eventsToFilter.filter((event) => {
+      if (!event) return false;
+      
       if (userRole === "user") {
         // Mostrar eventos publicados O eventos cancelados (que estuvieron publicados antes)
         return event.published || (event.status === 'cancelled' && event.hasOwnProperty('status'));
